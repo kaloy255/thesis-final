@@ -1,7 +1,22 @@
 <template>
     <InstructorLayout>
         <Head title="Review Assessment" />
-        <div class="py-12">
+        <div v-if="loadError" class="py-12">
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <p class="text-amber-600 dark:text-amber-400">{{ loadError }}</p>
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Redirecting to create page...</p>
+                </div>
+            </div>
+        </div>
+        <div v-else-if="!reviewData" class="py-12">
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <p class="text-gray-500 dark:text-gray-400">Loading...</p>
+                </div>
+            </div>
+        </div>
+        <div v-else class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div
                     class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg"
@@ -29,14 +44,14 @@
                                     over.
                                 </p>
                             </div>
-                            <div class="flex space-x-3">
-                                <Link
-                                    :href="route('instructor.lessons.create')"
-                                    class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                >
-                                    Back to Create
-                                </Link>
-                            </div>
+                        </div>
+
+                        <!-- Save Error Banner -->
+                        <div
+                            v-if="saveError"
+                            class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300"
+                        >
+                            {{ saveError }}
                         </div>
 
                         <!-- AI Provider Info -->
@@ -440,130 +455,148 @@
                             </div>
                         </div>
 
-                        <!-- Questions List -->
-                        <div v-if="items.length > 0" class="space-y-4">
-                            <div
-                                v-for="(item, index) in items"
-                                :key="index"
-                                class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900"
-                            >
-                                <div
-                                    class="flex justify-between items-start mb-3"
-                                >
-                                    <div class="flex-1">
-                                        <span
-                                            class="text-sm font-medium text-gray-500 dark:text-gray-400"
+                        <!-- Questions Grouped List -->
+                        <div v-if="items.length > 0" class="space-y-8">
+                            <template v-for="typeKey in ['multiple_choice', 'identification', 'true_or_false']" :key="typeKey">
+                                <div v-if="groupedAndSortedItems[typeKey].length > 0">
+                                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+                                        {{ formatType(typeKey) }}
+                                    </h3>
+                                    
+                                    <div class="space-y-4">
+                                        <div
+                                            v-for="(item, index) in groupedAndSortedItems[typeKey]"
+                                            :key="getRealIndex(item)"
+                                            class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900"
                                         >
-                                            Question {{ index + 1 }} -
-                                            {{ formatType(item.type) }}
-                                        </span>
+                                            <div
+                                                class="flex justify-between items-start mb-3"
+                                            >
+                                                <div class="flex-1">
+                                                    <div class="flex items-center gap-2 flex-wrap">
+                                                        <span
+                                                            class="text-sm font-medium text-gray-500 dark:text-gray-400"
+                                                        >
+                                                            Question {{ getGlobalIndex(typeKey, index) + 1 }}
+                                                        </span>
+                                                        <span
+                                                            v-if="item.bloom_level"
+                                                            :class="getBloomBadgeClass(item.bloom_level)"
+                                                            class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold"
+                                                        >
+                                                            {{ formatBloomLevel(item.bloom_level) }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    @click="deleteItem(getRealIndex(item))"
+                                                    class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                                                >
+                                                    <svg
+                                                        class="w-5 h-5"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                            </div>
+
+                                            <!-- Question Text -->
+                                            <div class="mb-3">
+                                                <label
+                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                                                >
+                                                    Question
+                                                </label>
+                                                <textarea
+                                                    v-model="item.question"
+                                                    rows="2"
+                                                    class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+                                                ></textarea>
+                                            </div>
+
+                                            <!-- Choices (Multiple Choice Only) -->
+                                            <div
+                                                v-if="item.type === 'multiple_choice'"
+                                                class="mb-3"
+                                            >
+                                                <label
+                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                                                >
+                                                    Choices
+                                                </label>
+                                                <div
+                                                    v-for="(
+                                                        choice, choiceIndex
+                                                    ) in item.choices"
+                                                    :key="choiceIndex"
+                                                    class="flex mb-2"
+                                                >
+                                                    <input
+                                                        v-model="item.choices[choiceIndex]"
+                                                        type="text"
+                                                        class="flex-1 border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <!-- Correct Answer -->
+                                            <div>
+                                                <label
+                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                                                >
+                                                    Correct Answer
+                                                </label>
+                                                <!-- Dropdown for Multiple Choice -->
+                                                <select
+                                                    v-if="item.type === 'multiple_choice'"
+                                                    v-model="item.correct_answer"
+                                                    class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+                                                >
+                                                    <option value="">
+                                                        Select correct answer
+                                                    </option>
+                                                    <option
+                                                        v-for="(
+                                                            choice, choiceIdx
+                                                        ) in item.choices"
+                                                        :key="choiceIdx"
+                                                        :value="choice"
+                                                    >
+                                                        {{ choice }}
+                                                    </option>
+                                                </select>
+                                                <!-- Dropdown for True/False -->
+                                                <select
+                                                    v-else-if="
+                                                        item.type === 'true_or_false'
+                                                    "
+                                                    v-model="item.correct_answer"
+                                                    class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+                                                >
+                                                    <option value="">Select answer</option>
+                                                    <option value="True">True</option>
+                                                    <option value="False">False</option>
+                                                </select>
+                                                <!-- Textarea for Identification -->
+                                                <textarea
+                                                    v-else
+                                                    v-model="item.correct_answer"
+                                                    rows="1"
+                                                    class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+                                                ></textarea>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <button
-                                        @click="deleteItem(index)"
-                                        class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                                    >
-                                        <svg
-                                            class="w-5 h-5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                            />
-                                        </svg>
-                                    </button>
                                 </div>
-
-                                <!-- Question Text -->
-                                <div class="mb-3">
-                                    <label
-                                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                                    >
-                                        Question
-                                    </label>
-                                    <textarea
-                                        v-model="item.question"
-                                        rows="2"
-                                        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
-                                    ></textarea>
-                                </div>
-
-                                <!-- Choices (Multiple Choice Only) -->
-                                <div
-                                    v-if="item.type === 'multiple_choice'"
-                                    class="mb-3"
-                                >
-                                    <label
-                                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                                    >
-                                        Choices
-                                    </label>
-                                    <div
-                                        v-for="(
-                                            choice, choiceIndex
-                                        ) in item.choices"
-                                        :key="choiceIndex"
-                                        class="flex mb-2"
-                                    >
-                                        <input
-                                            v-model="item.choices[choiceIndex]"
-                                            type="text"
-                                            class="flex-1 border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
-                                        />
-                                    </div>
-                                </div>
-
-                                <!-- Correct Answer -->
-                                <div>
-                                    <label
-                                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                                    >
-                                        Correct Answer
-                                    </label>
-                                    <!-- Dropdown for Multiple Choice -->
-                                    <select
-                                        v-if="item.type === 'multiple_choice'"
-                                        v-model="item.correct_answer"
-                                        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
-                                    >
-                                        <option value="">
-                                            Select correct answer
-                                        </option>
-                                        <option
-                                            v-for="(
-                                                choice, choiceIdx
-                                            ) in item.choices"
-                                            :key="choiceIdx"
-                                            :value="choice"
-                                        >
-                                            {{ choice }}
-                                        </option>
-                                    </select>
-                                    <!-- Dropdown for True/False -->
-                                    <select
-                                        v-else-if="
-                                            item.type === 'true_or_false'
-                                        "
-                                        v-model="item.correct_answer"
-                                        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
-                                    >
-                                        <option value="">Select answer</option>
-                                        <option value="True">True</option>
-                                        <option value="False">False</option>
-                                    </select>
-                                    <!-- Textarea for Identification -->
-                                    <textarea
-                                        v-else
-                                        v-model="item.correct_answer"
-                                        rows="1"
-                                        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
-                                    ></textarea>
-                                </div>
-                            </div>
+                            </template>
                         </div>
 
                         <!-- Empty State -->
@@ -585,14 +618,24 @@
                                 <span v-else>Cancel</span>
                             </button>
                             <button
-                                @click="saveAssessment"
+                                @click="saveAssessment('draft')"
                                 :disabled="
                                     saving || cancelling || items.length === 0
                                 "
-                                class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150 disabled:opacity-50"
+                                class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 focus:bg-yellow-700 active:bg-yellow-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition ease-in-out duration-150 disabled:opacity-50"
                             >
-                                <span v-if="saving">Saving...</span>
-                                <span v-else>Save Assessment</span>
+                                <span v-if="saving && !cancelling">Saving...</span>
+                                <span v-else>Save as Draft</span>
+                            </button>
+                            <button
+                                @click="saveAssessment('published')"
+                                :disabled="
+                                    saving || cancelling || items.length === 0
+                                "
+                                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150 disabled:opacity-50"
+                            >
+                                <span v-if="saving && !cancelling">Saving...</span>
+                                <span v-else>Publish</span>
                             </button>
                         </div>
                     </div>
@@ -603,43 +646,104 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { Link, router } from "@inertiajs/vue3";
+import { ref, computed, onMounted } from "vue";
+import { router, usePage } from "@inertiajs/vue3";
 import InstructorLayout from "@/Layouts/InstructorLayout.vue";
 import SectionAssignment from "@/Components/SectionAssignment.vue";
 import InputError from "@/Components/InputError.vue";
 import { Head } from "@inertiajs/vue3";
+import { useToast } from "@/Stores/useToast";
+import { useLessonReviewStore } from "@/Stores/useLessonReview";
 
 const props = defineProps({
-    lesson: Object,
-    items: Array,
+    token: String,
+    subjects: Array,
     departments: Array,
     sections: Array,
-    selectedSectionIds: Array,
-    aiMetadata: Object,
 });
 
-// Ensure items have proper structure, especially choices as arrays
-const items = ref(
-    (props.items || []).map((item) => {
-        if (item.type === "multiple_choice") {
-            // Ensure choices is always an array
-            if (!item.choices || !Array.isArray(item.choices)) {
-                // If choices is a string, try to parse it
-                if (typeof item.choices === "string") {
-                    try {
-                        item.choices = JSON.parse(item.choices);
-                    } catch (e) {
-                        item.choices = [];
-                    }
+const { success: showToast } = useToast();
+const lessonReviewStore = useLessonReviewStore();
+const page = usePage();
+
+const saveError = computed(() => {
+    const err = page.props.errors?.error;
+    return typeof err === "string" ? err : null;
+});
+
+// Raw data loaded from Pinia
+const reviewData = ref(null);
+const loadError = ref(null);
+
+// Transform questions from Pinia data into items format
+function questionsToItems(questions) {
+    if (!questions || typeof questions !== "object") return [];
+    const result = [];
+    for (const type of ["multiple_choice", "identification", "true_or_false"]) {
+        const arr = questions[type];
+        if (Array.isArray(arr)) {
+            for (const q of arr) {
+                const item = {
+                    type,
+                    question: q.question || "",
+                    correct_answer: q.correct_answer || "",
+                    bloom_level: q.bloom_level ?? null,
+                };
+                if (type === "multiple_choice" && Array.isArray(q.choices)) {
+                    item.choices = [...q.choices];
                 } else {
-                    item.choices = [];
+                    item.choices = null;
                 }
+                result.push(item);
+            }
+        }
+    }
+    return result;
+}
+
+// Ensure items have proper structure, especially choices as arrays
+const items = ref([]);
+
+// Lesson display object (for header)
+const lesson = computed(() => {
+    if (!reviewData.value) return { title: "", subject: null };
+    const subject = (props.subjects || []).find(
+        (s) => String(s.id) === String(reviewData.value.subject_id)
+    );
+    return {
+        title: reviewData.value.title || "",
+        subject: subject ? { name: subject.name } : null,
+    };
+});
+
+// AI metadata for display
+const aiMetadata = computed(() => reviewData.value?.ai_metadata ?? {});
+
+onMounted(() => {
+    const data = lessonReviewStore.load(props.token);
+    if (!data) {
+        loadError.value = "Review session expired or not found. Please create a new assessment.";
+        router.visit(route("instructor.lessons.create"), {
+            preserveState: false,
+            onSuccess: () => {
+                // Flash will be set by backend if we add it
+            },
+        });
+        return;
+    }
+    reviewData.value = data;
+    const rawItems = questionsToItems(data.questions);
+    items.value = rawItems.map((item) => {
+        if (item.type === "multiple_choice") {
+            if (!item.choices || !Array.isArray(item.choices)) {
+                item.choices = typeof item.choices === "string"
+                    ? (() => { try { return JSON.parse(item.choices); } catch { return []; } })()
+                    : [];
             }
         }
         return item;
-    })
-);
+    });
+});
 
 // Question type counts
 const questionCounts = computed(() => {
@@ -657,6 +761,63 @@ const questionCounts = computed(() => {
     };
 });
 
+// Group and Sort Items Logic
+const bloomOrder = {
+    remember: 1,
+    understand: 2,
+    apply: 3,
+    analyze: 4,
+    evaluate: 5,
+    create: 6
+};
+
+// Group items by type, then sort inner by bloom level
+// Returning structure: { 'multiple_choice': [...], 'identification': [...], 'true_or_false': [...] }
+const groupedAndSortedItems = computed(() => {
+    const map = {
+        multiple_choice: [],
+        identification: [],
+        true_or_false: []
+    };
+    
+    // Sort all items first based on Bloom's Order
+    const sorted = [...items.value].sort((a, b) => {
+        const orderA = a.bloom_level ? bloomOrder[a.bloom_level] : 0;
+        const orderB = b.bloom_level ? bloomOrder[b.bloom_level] : 0;
+        return orderA - orderB;
+    });
+
+    // Bucket them by type
+    sorted.forEach(item => {
+        if (map[item.type]) {
+            map[item.type].push(item);
+        }
+    });
+    
+    return map;
+});
+
+// Calculate global index manually across grouped maps for display
+const getGlobalIndex = (type, groupIndex) => {
+    let globalIdx = 0;
+    
+    // Order of types presentation
+    const types = ['multiple_choice', 'identification', 'true_or_false'];
+    
+    for (const t of types) {
+        if (t === type) {
+            return globalIdx + groupIndex;
+        }
+        globalIdx += groupedAndSortedItems.value[t].length;
+    }
+    return globalIdx;
+};
+
+// Real index logic for deletion (we need index of original array)
+const getRealIndex = (item) => {
+    return items.value.indexOf(item);
+};
+
 // Provider badge styling based on provider name
 const providerBadgeClass = computed(() => {
     const provider = props.aiMetadata?.provider_used?.toLowerCase();
@@ -673,7 +834,26 @@ const providerBadgeClass = computed(() => {
 });
 const saving = ref(false);
 const cancelling = ref(false);
-const selectedSectionIds = ref([...(props.selectedSectionIds || [])]);
+const selectedSectionIds = ref([]);
+
+// Bloom's Taxonomy badge styling
+const bloomBadgeStyles = {
+    remember: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300",
+    understand: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
+    apply: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300",
+    analyze: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300",
+    evaluate: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
+    create: "bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300",
+};
+
+const getBloomBadgeClass = (level) => {
+    return bloomBadgeStyles[level] || "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
+};
+
+const formatBloomLevel = (level) => {
+    if (!level) return '';
+    return level.charAt(0).toUpperCase() + level.slice(1);
+};
 
 // Add Question Form State
 const showAddForm = ref(false);
@@ -769,29 +949,46 @@ const deleteItem = (index) => {
     }
 };
 
-const saveAssessment = () => {
+const saveAssessment = (status = "draft") => {
     if (items.value.length === 0) {
         alert("Please add at least one question before saving.");
         return;
     }
+    if (!reviewData.value) return;
 
     saving.value = true;
 
-    router.post(
-        route("instructor.lessons.review.save"),
-        {
-            items: items.value,
-            section_ids: selectedSectionIds.value,
+    const payload = {
+        subject_id: reviewData.value.subject_id,
+        professor_id: reviewData.value.professor_id,
+        title: reviewData.value.title,
+        file_path: reviewData.value.file_path,
+        extracted_content: reviewData.value.extracted_content,
+        assessment_title: reviewData.value.assessment_title,
+        file_name: reviewData.value.file_name ?? null,
+        file_size: reviewData.value.file_size ?? null,
+        mime_type: reviewData.value.mime_type ?? null,
+        ai_metadata: reviewData.value.ai_metadata ?? {},
+        items: items.value,
+        section_ids: selectedSectionIds.value,
+        status,
+    };
+
+    router.post(route("instructor.lessons.review.save"), payload, {
+        onSuccess: () => {
+            saving.value = false;
+            lessonReviewStore.remove(props.token);
+            const msg =
+                status === "draft"
+                    ? "Assessment saved as draft successfully!"
+                    : "Assessment published successfully!";
+            showToast(msg);
         },
-        {
-            onSuccess: () => {
-                saving.value = false;
-            },
-            onError: () => {
-                saving.value = false;
-            },
-        }
-    );
+        onError: (errors) => {
+            saving.value = false;
+            // Errors are shown via page.props.errors in saveError computed
+        },
+    });
 };
 
 const cancelReview = () => {
@@ -802,15 +999,20 @@ const cancelReview = () => {
     ) {
         return;
     }
+    if (!reviewData.value?.file_path) {
+        router.visit(route("instructor.lessons.create"));
+        return;
+    }
 
     cancelling.value = true;
 
     router.post(
         route("instructor.lessons.review.cancel"),
-        {},
+        { file_path: reviewData.value.file_path },
         {
             onSuccess: () => {
                 cancelling.value = false;
+                lessonReviewStore.remove(props.token);
             },
             onError: () => {
                 cancelling.value = false;
@@ -897,6 +1099,7 @@ const addQuestion = () => {
             question: newQuestion.value.question.trim(),
             choices: filledChoices,
             correct_answer: newQuestion.value.correct_answer,
+            bloom_level: null,
         });
     } else if (newQuestion.value.type === "true_or_false") {
         items.value.push({
@@ -904,6 +1107,7 @@ const addQuestion = () => {
             question: newQuestion.value.question.trim(),
             choices: null,
             correct_answer: newQuestion.value.correct_answer,
+            bloom_level: null,
         });
     } else {
         // Identification
@@ -912,6 +1116,7 @@ const addQuestion = () => {
             question: newQuestion.value.question.trim(),
             choices: null,
             correct_answer: newQuestion.value.correct_answer.trim(),
+            bloom_level: null,
         });
     }
 

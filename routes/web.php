@@ -14,8 +14,10 @@ use App\Http\Controllers\Student\DashboardController as StudentDashboardControll
 use App\Http\Controllers\Student\NotificationController as StudentNotificationController;
 use App\Http\Controllers\Student\ProfileController as StudentProfileController;
 use App\Http\Controllers\Student\SubjectController as StudentSubjectController;
+use App\Http\Controllers\Instructor\AssessmentHistoryController;
 use App\Http\Controllers\Instructor\DashboardController as InstructorDashboardController;
 use App\Http\Controllers\Instructor\LessonController;
+use App\Http\Controllers\Instructor\LogController as InstructorLogController;
 use App\Http\Controllers\Instructor\NotificationController as InstructorNotificationController;
 use App\Http\Controllers\Instructor\ProfileController as InstructorProfileController;
 use Illuminate\Support\Facades\Route;
@@ -50,8 +52,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->as('admin.')->group(funct
     Route::post('instructors/import', [InstructorController::class, 'import'])->name('instructors.import');
     Route::get('instructors/template/download', [InstructorController::class, 'downloadTemplate'])->name('instructors.template');
 
+    Route::post('departments/import', [DepartmentController::class, 'import'])->name('departments.import');
+    Route::get('departments/template/download', [DepartmentController::class, 'downloadTemplate'])->name('departments.template');
     Route::resource('departments', DepartmentController::class)->except(['show']);
+    Route::post('sections/import', [SectionController::class, 'import'])->name('sections.import');
+    Route::get('sections/template/download', [SectionController::class, 'downloadTemplate'])->name('sections.template');
     Route::resource('sections', SectionController::class)->except(['show']);
+    Route::post('subjects/import', [SubjectController::class, 'import'])->name('subjects.import');
+    Route::get('subjects/template/download', [SubjectController::class, 'downloadTemplate'])->name('subjects.template');
     Route::resource('subjects', SubjectController::class)->except(['show']);
 
     Route::get('assignments', [ProfessorSubjectController::class, 'index'])->name('assignments.index');
@@ -80,6 +88,8 @@ Route::middleware(['auth', 'student'])->prefix('student')->as('student.')->group
     Route::post('assessments/{assessment}/submit', [StudentAssessmentController::class, 'store'])->name('assessments.store');
     Route::get('assessments/{assessment}/history', [StudentAssessmentController::class, 'history'])->name('assessments.history');
     Route::get('assessments/{assessment}/results/{attempt}', [StudentAssessmentController::class, 'results'])->name('assessments.results');
+    Route::post('assessments/{assessment}/adaptive/{attempt}', [StudentAssessmentController::class, 'generateAdaptive'])->name('assessments.adaptive');
+    Route::post('assessments/{assessment}/cheating-log', [StudentAssessmentController::class, 'logCheating'])->name('assessments.cheating-log');
 
     // Notifications
     Route::get('notifications/unread', [StudentNotificationController::class, 'index'])->name('notifications.unread');
@@ -95,6 +105,7 @@ Route::middleware(['auth', 'student'])->prefix('student')->as('student.')->group
 // Instructor Routes
 Route::middleware(['auth', 'instructor'])->prefix('instructor')->as('instructor.')->group(function () {
     Route::get('/', [InstructorDashboardController::class, 'index'])->name('dashboard');
+    Route::get('logs', [InstructorLogController::class, 'index'])->name('logs.index');
 
 
     // Subjects & Join Requests
@@ -102,6 +113,7 @@ Route::middleware(['auth', 'instructor'])->prefix('instructor')->as('instructor.
     Route::get('subjects/{subject}/requests', [\App\Http\Controllers\Instructor\SubjectController::class, 'requests'])->name('subjects.requests');
     Route::post('subjects/{subject}/requests/{studentSubject}/approve', [\App\Http\Controllers\Instructor\SubjectController::class, 'approve'])->name('subjects.requests.approve');
     Route::post('subjects/{subject}/requests/{studentSubject}/decline', [\App\Http\Controllers\Instructor\SubjectController::class, 'decline'])->name('subjects.requests.decline');
+    Route::delete('subjects/{subject}/requests/{studentSubject}/drop', [\App\Http\Controllers\Instructor\SubjectController::class, 'drop'])->name('subjects.requests.drop');
 
     // Lessons - Manual Creation
     Route::get('lessons/create-manual', [\App\Http\Controllers\Instructor\LessonController::class, 'createManual'])->name('lessons.createManual');
@@ -112,10 +124,14 @@ Route::middleware(['auth', 'instructor'])->prefix('instructor')->as('instructor.
     Route::post('lessons/{lesson}/publish', [\App\Http\Controllers\Instructor\LessonController::class, 'publish'])->name('lessons.publish');
     Route::post('lessons/{lesson}/unpublish', [\App\Http\Controllers\Instructor\LessonController::class, 'unpublish'])->name('lessons.unpublish');
 
-    // Lesson Review (session-based)
-    Route::get('lessons/review', [\App\Http\Controllers\Instructor\LessonController::class, 'review'])->name('lessons.review');
+    // Lesson Review (Pinia + token-based)
+    Route::get('lessons/review/{token}', [\App\Http\Controllers\Instructor\LessonController::class, 'review'])->name('lessons.review');
     Route::post('lessons/review/save', [\App\Http\Controllers\Instructor\LessonController::class, 'saveFromReview'])->name('lessons.review.save');
     Route::post('lessons/review/cancel', [\App\Http\Controllers\Instructor\LessonController::class, 'cancelReview'])->name('lessons.review.cancel');
+
+    // Assessment History
+    Route::get('assessments/{assessment}/history', [AssessmentHistoryController::class, 'show'])->name('assessments.history');
+    Route::get('assessments/{assessment}/history/students/{student}', [AssessmentHistoryController::class, 'showStudent'])->name('assessments.history.student');
 
     // Notifications
     Route::get('notifications/unread', [InstructorNotificationController::class, 'index'])->name('notifications.unread');

@@ -44,10 +44,24 @@ class StoreLessonRequest extends FormRequest
                 'max:10240', // 10MB in KB
                 new NoMediaFilesRule(),
             ],
-            'multiple_choice_count' => 'required|integer|min:0',
-            'identification_count' => 'required|integer|min:0',
-            'true_or_false_count' => 'required|integer|min:0',
-            'difficulty' => 'required|in:easy,medium,hard',
+            'bloom_levels' => 'required|array|min:1',
+            'bloom_levels.*' => 'in:remember,understand,apply,analyze,evaluate,create',
+            'question_distribution' => [
+                'required',
+                'array',
+                function ($attribute, $value, $fail) {
+                    $total = 0;
+                    foreach ($value as $levelCounts) {
+                        $total += ($levelCounts['mcq'] ?? 0) + ($levelCounts['identification'] ?? 0) + ($levelCounts['tf'] ?? 0);
+                    }
+                    if ($total < 1) {
+                        $fail('Please configure at least one question across all selected Bloom\'s levels.');
+                    }
+                },
+            ],
+            'question_distribution.*.mcq' => 'nullable|integer|min:0',
+            'question_distribution.*.identification' => 'nullable|integer|min:0',
+            'question_distribution.*.tf' => 'nullable|integer|min:0',
         ];
     }
 
@@ -66,17 +80,12 @@ class StoreLessonRequest extends FormRequest
             'file.required' => 'Please upload a lesson file.',
             'file.mimes' => 'File must be in DOCX, PDF, PPTX, or TXT format.',
             'file.max' => 'File size must not exceed 10MB.',
-            'multiple_choice_count.required' => 'Please specify number of multiple choice questions.',
-            'multiple_choice_count.integer' => 'Multiple choice count must be a number.',
-            'multiple_choice_count.min' => 'Multiple choice count must be at least 0.',
-            'identification_count.required' => 'Please specify number of identification questions.',
-            'identification_count.integer' => 'Identification count must be a number.',
-            'identification_count.min' => 'Identification count must be at least 0.',
-            'true_or_false_count.required' => 'Please specify number of true/false questions.',
-            'true_or_false_count.integer' => 'True/false count must be a number.',
-            'true_or_false_count.min' => 'True/false count must be at least 0.',
-            'difficulty.required' => 'Please select a difficulty level.',
-            'difficulty.in' => 'Difficulty must be easy, medium, or hard.',
+            'bloom_levels.required' => 'Please select at least one Bloom\'s Taxonomy level.',
+            'bloom_levels.array' => 'Bloom\'s levels must be an array.',
+            'bloom_levels.min' => 'Please select at least one Bloom\'s Taxonomy level.',
+            'bloom_levels.*.in' => 'Invalid Bloom\'s Taxonomy level selected.',
+            'question_distribution.required' => 'Question distribution data is required.',
+            'question_distribution.array' => 'Question distribution must be an array.',
         ];
     }
 }

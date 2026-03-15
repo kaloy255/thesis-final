@@ -107,7 +107,102 @@
                         <option value="published">Published</option>
                     </select>
                 </div>
+
+                <!-- Section Filter Dropdown -->
+                <div class="relative">
+                    <button
+                        type="button"
+                        @click="sectionDropdownOpen = !sectionDropdownOpen"
+                        class="inline-flex items-center justify-between w-full min-w-[180px] px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent text-sm"
+                    >
+                        <span class="truncate">
+                            {{ sectionFilterLabel }}
+                        </span>
+                        <svg
+                            class="ml-2 h-4 w-4 shrink-0 transition-transform"
+                            :class="{ 'rotate-180': sectionDropdownOpen }"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <!-- Dropdown Panel -->
+                    <Transition
+                        enter-active-class="transition ease-out duration-100"
+                        enter-from-class="opacity-0 scale-95"
+                        enter-to-class="opacity-100 scale-100"
+                        leave-active-class="transition ease-in duration-75"
+                        leave-from-class="opacity-100 scale-100"
+                        leave-to-class="opacity-0 scale-95"
+                    >
+                        <div
+                            v-show="sectionDropdownOpen"
+                            class="absolute right-0 z-50 mt-1 w-72 origin-top-right rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 py-1 max-h-64 overflow-auto"
+                        >
+                            <div class="px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Filter by sections
+                                </p>
+                            </div>
+                            <div class="py-1">
+                                <label
+                                    v-for="section in sections"
+                                    :key="section.id"
+                                    class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        :value="section.id"
+                                        v-model="selectedSectionIds"
+                                        @change="handleSectionFilterChange"
+                                        class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700"
+                                    />
+                                    <div class="flex-1 min-w-0">
+                                        <span class="block text-sm text-gray-900 dark:text-white truncate">
+                                            {{ section.name }}
+                                        </span>
+                                        <span
+                                            v-if="section.department"
+                                            class="block text-xs text-gray-500 dark:text-gray-400 truncate"
+                                        >
+                                            {{ section.department.name }}
+                                        </span>
+                                    </div>
+                                </label>
+                                <div
+                                    v-if="sections.length === 0"
+                                    class="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400"
+                                >
+                                    No sections available
+                                </div>
+                            </div>
+                            <div
+                                v-if="selectedSectionIds.length > 0"
+                                class="px-3 py-2 border-t border-gray-200 dark:border-gray-700"
+                            >
+                                <button
+                                    type="button"
+                                    @click="clearSectionFilter"
+                                    class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                                >
+                                    Clear selection
+                                </button>
+                            </div>
+                        </div>
+                    </Transition>
+                </div>
             </div>
+
+            <!-- Click outside overlay to close section dropdown -->
+            <div
+                v-if="sectionDropdownOpen"
+                @click="sectionDropdownOpen = false"
+                class="fixed inset-0 z-40"
+                aria-hidden="true"
+            />
 
             <!-- Lessons Grid -->
             <div
@@ -120,15 +215,29 @@
                     <div
                         v-for="lesson in lessons.data"
                         :key="lesson.id"
-                        class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200"
+                        class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200"
                     >
+                        <div
+                            class="h-28 p-4 flex items-start justify-end"
+                            :style="getLessonHeaderStyle(lesson.id)"
+                        >
+                            <span
+                                class="text-xs text-gray-700 bg-white/80 px-2.5 py-1 rounded-full"
+                            >
+                                {{ formatDate(lesson.created_at) }}
+                            </span>
+                        </div>
+
+                        <div class="p-6">
                         <!-- Card Header -->
                         <div class="mb-4">
-                            <h3
-                                class="text-lg font-semibold text-gray-900 dark:text-white mb-1.5 line-clamp-2 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors"
-                            >
-                                {{ lesson.title }}
-                            </h3>
+                            <div class="flex items-center justify-between">
+                                <h3
+                                    class="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors"
+                                >
+                                    {{ lesson.title }}
+                                </h3>
+                            </div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">
                                 {{ lesson.subject?.name || "No subject" }}
                             </p>
@@ -204,16 +313,66 @@
                             </span>
                         </div>
 
+                        <!-- Assigned Sections (expandable) -->
+                        <div
+                            v-if="
+                                lesson.assessments?.[0]?.sections?.length > 0
+                            "
+                            class="mb-4"
+                        >
+                            <div class="flex flex-wrap gap-1.5">
+                                <span
+                                    v-for="sec in getVisibleSections(lesson)"
+                                    :key="sec.id"
+                                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 shrink-0"
+                                >
+                                    {{ sec.name }}
+                                </span>
+                            </div>
+                            <button
+                                v-if="getHiddenSectionCount(lesson) > 0 || expandedSections[lesson.id]"
+                                type="button"
+                                @click="toggleSectionsExpand(lesson.id)"
+                                class="mt-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 focus:outline-none"
+                            >
+                                {{
+                                    expandedSections[lesson.id]
+                                        ? "Show less"
+                                        : `+${getHiddenSectionCount(lesson)} more`
+                                }}
+                            </button>
+                        </div>
+
                         <!-- Footer -->
                         <div
-                            class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700/50"
+                            class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700/50"
                         >
-                            <span
-                                class="text-xs text-gray-500 dark:text-gray-400"
-                            >
-                                {{ formatDate(lesson.created_at) }}
-                            </span>
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-end gap-2">
+                                <Link
+                                    v-if="getMainAssessmentId(lesson)"
+                                    :href="
+                                        route(
+                                            'instructor.assessments.history',
+                                            getMainAssessmentId(lesson)
+                                        )
+                                    "
+                                    class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors duration-150"
+                                >
+                                    <svg
+                                        class="w-3.5 h-3.5 mr-1.5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                        />
+                                    </svg>
+                                    History
+                                </Link>
                                 <Link
                                     :href="
                                         route(
@@ -258,6 +417,7 @@
                                     Delete
                                 </button>
                             </div>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -356,18 +516,23 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed, watch } from "vue";
 import { Link, router, Head } from "@inertiajs/vue3";
 import InstructorLayout from "@/Layouts/InstructorLayout.vue";
 import ConfirmationModal from "@/Components/ConfirmationModal.vue";
 
 const props = defineProps({
     lessons: Object,
+    sections: {
+        type: Array,
+        default: () => [],
+    },
     filters: {
         type: Object,
         default: () => ({
             search: "",
             status: "all",
+            section_ids: [],
         }),
     },
 });
@@ -376,7 +541,53 @@ const showDeleteModal = ref(false);
 const lessonToDelete = ref(null);
 const searchQuery = ref(props.filters?.search || "");
 const statusFilter = ref(props.filters?.status || "all");
+const selectedSectionIds = ref([...(props.filters?.section_ids || [])].map(Number));
+const sectionDropdownOpen = ref(false);
 let searchTimeout = null;
+
+const SECTION_PREVIEW_LIMIT = 4;
+const expandedSections = ref({});
+
+const getVisibleSections = (lesson) => {
+    const sections = lesson.assessments?.[0]?.sections || [];
+    if (sections.length === 0) return [];
+    if (expandedSections.value[lesson.id]) return sections;
+    return sections.slice(0, SECTION_PREVIEW_LIMIT);
+};
+
+const getHiddenSectionCount = (lesson) => {
+    const sections = lesson.assessments?.[0]?.sections || [];
+    const visible = getVisibleSections(lesson).length;
+    return Math.max(0, sections.length - visible);
+};
+
+const toggleSectionsExpand = (lessonId) => {
+    expandedSections.value = {
+        ...expandedSections.value,
+        [lessonId]: !expandedSections.value[lessonId],
+    };
+};
+
+const sectionFilterLabel = computed(() => {
+    if (selectedSectionIds.value.length === 0) return "All Sections";
+    if (selectedSectionIds.value.length === 1) {
+        const s = props.sections?.find((sec) => sec.id === selectedSectionIds.value[0]);
+        return s ? s.name : "1 section";
+    }
+    return `${selectedSectionIds.value.length} sections`;
+});
+
+// Sync section filter when props change (e.g. browser back/forward)
+watch(
+    () => props.filters?.section_ids,
+    (ids) => {
+        const newIds = [...(ids || [])].map(Number);
+        if (JSON.stringify([...selectedSectionIds.value].sort()) !== JSON.stringify([...newIds].sort())) {
+            selectedSectionIds.value = newIds;
+        }
+    },
+    { immediate: true }
+);
 
 const formatDate = (date) => {
     return new Date(date).toLocaleDateString("en-US", {
@@ -384,6 +595,28 @@ const formatDate = (date) => {
         month: "short",
         day: "numeric",
     });
+};
+
+const lessonCardImages = [
+    "/images/images/card-images/card-picture-1.png",
+    "/images/images/card-images/card-picture-2.png",
+    "/images/images/card-images/card-picture-3.png",
+    "/images/images/card-images/card-picture-4.png",
+    "/images/images/card-images/card-picture-5.png",
+];
+
+const getLessonHeaderStyle = (lessonId) => {
+    const id = Number(lessonId);
+    const imageIndex = Number.isFinite(id)
+        ? Math.abs(id) % lessonCardImages.length
+        : 0;
+    const imageUrl = lessonCardImages[imageIndex];
+
+    return {
+        backgroundImage: `linear-gradient(to right, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08)), url(${imageUrl})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+    };
 };
 
 const deleteLesson = (id) => {
@@ -401,18 +634,28 @@ const confirmDelete = () => {
 };
 
 const applyFilters = () => {
-    router.get(
-        route("instructor.lessons.index"),
-        {
-            search: searchQuery.value || null,
-            status: statusFilter.value,
-        },
-        {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        }
-    );
+    const params = {
+        search: searchQuery.value || null,
+        status: statusFilter.value,
+    };
+    if (selectedSectionIds.value.length > 0) {
+        params.section_ids = selectedSectionIds.value;
+    }
+    router.get(route("instructor.lessons.index"), params, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
+};
+
+const handleSectionFilterChange = () => {
+    applyFilters();
+};
+
+const clearSectionFilter = () => {
+    selectedSectionIds.value = [];
+    applyFilters();
+    sectionDropdownOpen.value = false;
 };
 
 const handleSearch = () => {
@@ -426,5 +669,12 @@ const handleSearch = () => {
 
 const handleStatusFilter = () => {
     applyFilters();
+};
+
+const getMainAssessmentId = (lesson) => {
+    const assessments = lesson.assessments || [];
+    if (!assessments.length) return null;
+    const main = assessments.find((a) => !a.parent_assessment_id);
+    return (main || assessments[0])?.id ?? null;
 };
 </script>

@@ -33,12 +33,27 @@ class GroqProvider implements AIServiceInterface
 
     protected function buildPrompt(string $content, string $previousContext, array $options): array
     {
-        $multipleChoiceCount = $options['multiple_choice_count'] ?? 0;
-        $identificationCount = $options['identification_count'] ?? 0;
-        $trueOrFalseCount = $options['true_or_false_count'] ?? 0;
-        $difficulty = $options['difficulty'] ?? 'medium';
+        if (isset($options['is_adaptive']) && $options['is_adaptive']) {
+            return $this->buildAdaptivePrompt($content, $previousContext, $options);
+        }
 
-        $systemPrompt = "You are an expert assessment generator. Generate educational assessment questions based on the provided lesson content. Always respond with valid JSON only.";
+        $distribution = $options['question_distribution'] ?? [];
+        $bloomLevels = $options['bloom_levels'] ?? ['remember', 'understand'];
+
+        $totalMcq = 0;
+        $totalId = 0;
+        $totalTf = 0;
+
+        foreach ($distribution as $counts) {
+            $totalMcq += $counts['mcq'] ?? 0;
+            $totalId += $counts['identification'] ?? 0;
+            $totalTf += $counts['tf'] ?? 0;
+        }
+
+        $systemPrompt = "You are an expert assessment generator aligned with Bloom's Taxonomy. "
+            . "Generate educational assessment questions based on the provided lesson content. "
+            . "Each question must be tagged with its appropriate Bloom's Taxonomy cognitive level. "
+            . "Always respond with valid JSON only.";
 
         $userPrompt = "Generate assessment questions based on this lesson content:\n\n";
 
@@ -49,34 +64,59 @@ class GroqProvider implements AIServiceInterface
         }
 
         $userPrompt .= $content . "\n\n";
-        $userPrompt .= "Question Requirements:\n";
-        $userPrompt .= "- Multiple Choice: {$multipleChoiceCount} questions\n";
-        $userPrompt .= "- Identification: {$identificationCount} questions\n";
-        $userPrompt .= "- True/False: {$trueOrFalseCount} questions\n";
-        $userPrompt .= "- Difficulty Level: {$difficulty}\n\n";
+        $userPrompt .= "Question Requirements (Total):\n";
+        $userPrompt .= "- Multiple Choice: {$totalMcq} questions\n";
+        $userPrompt .= "- Identification: {$totalId} questions\n";
+        $userPrompt .= "- True/False: {$totalTf} questions\n";
+
+        // Add Bloom's Taxonomy instructions with specific distribution mapping
+        $userPrompt .= BloomsTaxonomyConfig::getPromptInstructions($distribution);
 
         $userPrompt .= "Return ONLY a valid JSON response with this exact structure:\n";
-        $userPrompt .= "{\n";
-        $userPrompt .= '  "multiple_choice": [' . "\n";
-        $userPrompt .= '    {' . "\n";
-        $userPrompt .= '      "question": "Question text here",' . "\n";
-        $userPrompt .= '      "choices": ["Choice A", "Choice B", "Choice C", "Choice D"],' . "\n";
-        $userPrompt .= '      "correct_answer": "Choice A"' . "\n";
-        $userPrompt .= '    }' . "\n";
-        $userPrompt .= '  ],' . "\n";
-        $userPrompt .= '  "identification": [' . "\n";
-        $userPrompt .= '    {' . "\n";
-        $userPrompt .= '      "question": "Question text here",' . "\n";
-        $userPrompt .= '      "correct_answer": "Answer text"' . "\n";
-        $userPrompt .= '    }' . "\n";
-        $userPrompt .= '  ],' . "\n";
-        $userPrompt .= '  "true_or_false": [' . "\n";
-        $userPrompt .= '    {' . "\n";
-        $userPrompt .= '      "question": "Statement text here",' . "\n";
-        $userPrompt .= '      "correct_answer": "True" or "False"' . "\n";
-        $userPrompt .= '    }' . "\n";
-        $userPrompt .= '  ]' . "\n";
-        $userPrompt .= "}\n";
+        $userPrompt .= BloomsTaxonomyConfig::getJsonStructure();
+
+        return [
+            'system' => $systemPrompt,
+            'user' => $userPrompt,
+        ];
+    }
+
+    protected function buildAdaptivePrompt(string $content, string $previousContext, array $options): array
+    {
+        $totalMcq = $options['multiple_choice_count'] ?? 0;
+        $totalId = $options['identification_count'] ?? 0;
+        $totalTf = $options['true_or_false_count'] ?? 0;
+
+        $systemPrompt = "You are an expert, empathetic educational assessment generator. "
+            . "Generate an adaptive practice assessment to help a student overcome specific learning gaps. "
+            . "You have been provided with the student's previous mistakes and the corresponding lesson content. "
+            . "Analyze the mistakes, determine the core misunderstandings, and generate questions that will test those concepts "
+            . "and gently build their understanding, without being overly punitive. "
+            . "Assign the most appropriate Bloom's Taxonomy cognitive level to each question based on what the student needs. "
+            . "Always respond with valid JSON only.";
+
+        $userPrompt = "Generate an adaptive assessment based on the following student performance and lesson content:\n\n";
+
+        if (!empty($previousContext)) {
+            $userPrompt .= "IMPORTANT: The following sections have already been generated in a previous chunk. Avoid duplicating topics:\n\n";
+            $userPrompt .= $previousContext . "\n\n";
+            $userPrompt .= "Current section to generate questions from:\n\n";
+        }
+
+        $userPrompt .= $content . "\n\n";
+        $userPrompt .= "Question Requirements (Total to generate):\n";
+        $userPrompt .= "- Multiple Choice: {$totalMcq} questions\n";
+        $userPrompt .= "- Identification: {$totalId} questions\n";
+        $userPrompt .= "- True/False: {$totalTf} questions\n\n";
+
+        $userPrompt .= "Instructions:\n";
+        $userPrompt .= "1. Read the STUDENT'S WRONG ANSWERS carefully to identify their knowledge gaps.\n";
+        $userPrompt .= "2. Cross-reference these gaps with the LESSON CONTENT.\n";
+        $userPrompt .= "3. Create NEW questions that target these specific gaps. Do not just repeat the old questions.\n";
+        $userPrompt .= "4. For each question, decide the best 'bloom_level' (remember, understand, apply, analyze, evaluate, create) that fits the concept.\n\n";
+
+        $userPrompt .= "Return ONLY a valid JSON response with this exact structure:\n";
+        $userPrompt .= BloomsTaxonomyConfig::getJsonStructure();
 
         return [
             'system' => $systemPrompt,
