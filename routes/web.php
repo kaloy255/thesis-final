@@ -17,6 +17,7 @@ use App\Http\Controllers\Student\SubjectController as StudentSubjectController;
 use App\Http\Controllers\Instructor\AssessmentHistoryController;
 use App\Http\Controllers\Instructor\DashboardController as InstructorDashboardController;
 use App\Http\Controllers\Instructor\LessonController;
+use App\Http\Controllers\Instructor\LogController as InstructorLogController;
 use App\Http\Controllers\Instructor\NotificationController as InstructorNotificationController;
 use App\Http\Controllers\Instructor\ProfileController as InstructorProfileController;
 use Illuminate\Support\Facades\Route;
@@ -104,6 +105,7 @@ Route::middleware(['auth', 'student'])->prefix('student')->as('student.')->group
 // Instructor Routes
 Route::middleware(['auth', 'instructor'])->prefix('instructor')->as('instructor.')->group(function () {
     Route::get('/', [InstructorDashboardController::class, 'index'])->name('dashboard');
+    Route::get('logs', [InstructorLogController::class, 'index'])->name('logs.index');
 
 
     // Subjects & Join Requests

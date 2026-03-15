@@ -167,9 +167,17 @@ const props = defineProps({
                         Your latest actions and updates
                     </p>
                 </div>
-                <span class="text-xs text-text-secondary">
-                    Latest {{ logs?.length || 0 }} entries
-                </span>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs text-text-secondary">
+                        Latest {{ logs?.length || 0 }} entries
+                    </span>
+                    <Link
+                        :href="route('instructor.logs.index')"
+                        class="btn-ghost text-sm"
+                    >
+                        Show All
+                    </Link>
+                </div>
             </div>
 
             <!-- Empty State -->
@@ -199,13 +207,22 @@ const props = defineProps({
                 </p>
             </div>
 
-            <!-- Activity Cards -->
-            <div v-else class="space-y-3">
-                <RecentActivityCard
-                    v-for="log in logs"
-                    :key="log.id"
-                    :log="log"
+            <!-- Timeline -->
+            <div v-else class="relative">
+                <!-- Vertical line (centered with w-8 node = left-4) -->
+                <div
+                    class="absolute left-4 top-4 bottom-4 w-0.5 bg-border-light dark:bg-border-dark rounded-full"
+                    aria-hidden="true"
                 />
+                <div class="space-y-0">
+                    <RecentActivityCard
+                        v-for="(log, index) in logs"
+                        :key="log.id"
+                        :log="log"
+                        :timeline="true"
+                        :is-last="index === logs.length - 1"
+                    />
+                </div>
             </div>
         </div>
     </InstructorLayout>

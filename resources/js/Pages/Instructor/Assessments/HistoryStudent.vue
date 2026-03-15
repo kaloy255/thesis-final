@@ -1,7 +1,12 @@
 <script setup>
 import InstructorLayout from "@/Layouts/InstructorLayout.vue";
+import Modal from "@/Components/Modal.vue";
 import { Head } from "@inertiajs/vue3";
 import { ref } from "vue";
+
+const showCheatingDialog = ref(false);
+const openCheatingDialog = () => { showCheatingDialog.value = true; };
+const closeCheatingDialog = () => { showCheatingDialog.value = false; };
 
 const props = defineProps({
     assessment: Object,
@@ -98,27 +103,46 @@ const getEventLabel = (eventType) => {
         <div class="max-w-4xl mx-auto">
             <!-- Header -->
             <div class="mb-6">
-                <div class="card p-6">
-                    <h1
-                        class="text-2xl font-bold text-text-primary dark:text-text-inverted mb-2"
-                    >
-                        {{ student.name }} - Attempts
-                    </h1>
-                    <div class="text-sm text-text-secondary space-y-1">
-                        <p>
-                            <span class="font-medium">Assessment:</span>
-                            {{ assessment.title }}
-                        </p>
-                        <p>
-                            <span class="font-medium">Subject:</span>
-                            {{ assessment.subject.name }}
-                            ({{ assessment.subject.code }})
-                        </p>
-                        <p>
-                            <span class="font-medium">Lesson:</span>
-                            {{ assessment.lesson.title }}
-                        </p>
+                <div class="card p-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div>
+                        <h1
+                            class="text-2xl font-bold text-text-primary dark:text-text-inverted mb-2"
+                        >
+                            {{ student.name }} - Attempts
+                        </h1>
+                        <div class="text-sm text-text-secondary space-y-1">
+                            <p>
+                                <span class="font-medium">Assessment:</span>
+                                {{ assessment.title }}
+                            </p>
+                            <p>
+                                <span class="font-medium">Subject:</span>
+                                {{ assessment.subject.name }}
+                                ({{ assessment.subject.code }})
+                            </p>
+                            <p>
+                                <span class="font-medium">Lesson:</span>
+                                {{ assessment.lesson.title }}
+                            </p>
+                        </div>
                     </div>
+                    <!-- Compact cheating alert trigger -->
+                    <button
+                        v-if="cheating_logs && cheating_logs.length > 0"
+                        type="button"
+                        @click="openCheatingDialog"
+                        class="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 text-red-800 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm font-medium shrink-0"
+                        aria-label="View suspicious activity log"
+                    >
+                        <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Suspicious activity</span>
+                        <span class="px-2 py-0.5 text-xs font-semibold bg-red-500 text-white rounded-full">
+                            {{ cheating_logs.length }}
+                        </span>
+                    </button>
                 </div>
             </div>
 
@@ -159,27 +183,6 @@ const getEventLabel = (eventType) => {
                         class="text-sm font-medium text-text-primary dark:text-text-inverted"
                     >
                         {{ formatDate(summary.latest_attempt_date) || "N/A" }}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cheating Activity Alert Banner -->
-            <div
-                v-if="cheating_logs && cheating_logs.length > 0"
-                class="mb-6 card p-4 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-lg"
-            >
-                <div class="flex items-center gap-3">
-                    <svg class="w-6 h-6 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div class="flex-1">
-                        <h3 class="text-sm font-semibold text-red-800 dark:text-red-300">
-                            ⚠ {{ cheating_logs.length }} Suspicious Activit{{ cheating_logs.length === 1 ? 'y' : 'ies' }} Detected
-                        </h3>
-                        <p class="text-xs text-red-700 dark:text-red-400 mt-1">
-                            This student triggered cheating detection alerts during assessment taking. See details below.
-                        </p>
                     </div>
                 </div>
             </div>
@@ -369,44 +372,59 @@ const getEventLabel = (eventType) => {
                 </div>
             </div>
 
-            <!-- Suspicious Activity Log -->
-            <div v-if="cheating_logs && cheating_logs.length > 0" class="mt-8 space-y-4">
-                <h2 class="text-xl font-semibold text-text-primary dark:text-text-inverted mb-4 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Suspicious Activity Log
-                    <span class="ml-2 px-2.5 py-0.5 text-xs font-semibold bg-red-500 text-white rounded-full">
-                        {{ cheating_logs.length }}
-                    </span>
-                </h2>
-
-                <div class="card overflow-hidden">
-                    <div class="divide-y divide-border-light dark:divide-border-dark">
-                        <div
-                            v-for="log in cheating_logs"
-                            :key="log.id"
-                            class="flex items-center gap-4 p-4 hover:bg-surface-muted dark:hover:bg-surface-dark-muted transition-colors"
-                        >
-                            <span
-                                :class="[
-                                    'px-2.5 py-1 text-xs font-semibold rounded-full whitespace-nowrap',
-                                    getEventBadgeClass(log.event_type),
-                                ]"
+            <!-- Suspicious Activity Dialog -->
+            <Modal :show="showCheatingDialog" @close="closeCheatingDialog" max-width="lg">
+                <div class="p-6">
+                    <div class="flex items-center gap-2 mb-4">
+                        <svg class="w-6 h-6 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h2 class="text-xl font-semibold text-text-primary dark:text-text-inverted">
+                            Suspicious activity – {{ student.name }}
+                        </h2>
+                        <span class="px-2.5 py-0.5 text-xs font-semibold bg-red-500 text-white rounded-full">
+                            {{ cheating_logs.length }}
+                        </span>
+                    </div>
+                    <p class="text-sm text-text-secondary mb-4">
+                        This student triggered cheating detection alerts during this assessment.
+                    </p>
+                    <div class="max-h-[60vh] overflow-y-auto rounded-lg border border-border-light dark:border-border-dark">
+                        <div class="divide-y divide-border-light dark:divide-border-dark">
+                            <div
+                                v-for="log in cheating_logs"
+                                :key="log.id"
+                                class="flex items-center gap-4 p-4 hover:bg-surface-muted dark:hover:bg-surface-dark-muted transition-colors"
                             >
-                                {{ getEventLabel(log.event_type) }}
-                            </span>
-                            <p class="flex-1 text-sm text-text-primary dark:text-text-inverted truncate">
-                                {{ log.description }}
-                            </p>
-                            <span class="text-xs text-text-secondary whitespace-nowrap">
-                                {{ formatDate(log.created_at) }}
-                            </span>
+                                <span
+                                    :class="[
+                                        'px-2.5 py-1 text-xs font-semibold rounded-full whitespace-nowrap shrink-0',
+                                        getEventBadgeClass(log.event_type),
+                                    ]"
+                                >
+                                    {{ getEventLabel(log.event_type) }}
+                                </span>
+                                <p class="flex-1 text-sm text-text-primary dark:text-text-inverted min-w-0">
+                                    {{ log.description }}
+                                </p>
+                                <span class="text-xs text-text-secondary whitespace-nowrap shrink-0">
+                                    {{ formatDate(log.created_at) }}
+                                </span>
+                            </div>
                         </div>
                     </div>
+                    <div class="mt-6 flex justify-end">
+                        <button
+                            type="button"
+                            @click="closeCheatingDialog"
+                            class="px-4 py-2 text-sm font-medium rounded-lg bg-accent-primary text-white hover:opacity-90 transition-opacity"
+                        >
+                            Close
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </Modal>
         </div>
     </InstructorLayout>
 </template>

@@ -200,20 +200,6 @@ class StudentController extends Controller
                 ]);
             }
 
-            if ($headers[0] !== $idNumberKey) {
-                return back()->with('flash', [
-                    'type' => 'error',
-                    'message' => 'Invalid column order. The first column must be "id_number" but found "' . $headers[0] . '". Current order: ' . implode(', ', $headers),
-                ]);
-            }
-
-            if (count($headers) > 1 && $headers[1] !== $nameKey) {
-                return back()->with('flash', [
-                    'type' => 'error',
-                    'message' => 'Invalid column order. The second column must be "name" but found "' . $headers[1] . '". Current order: ' . implode(', ', $headers),
-                ]);
-            }
-
             // Hash password once (reused for all rows)
             $hashedPassword = Hash::make('chcc@2025');
 
