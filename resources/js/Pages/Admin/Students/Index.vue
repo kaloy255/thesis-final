@@ -417,7 +417,7 @@ const formatDate = (dateString) => {
                         id="search"
                         v-model="searchQuery"
                         type="text"
-                        placeholder="Search by ID number or name..."
+                        placeholder="Search by email or name..."
                         class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
                     />
                 </div>
