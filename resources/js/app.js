@@ -10,7 +10,7 @@ import { initTheme } from "./Stores/useTheme";
 import { useLoading } from "./Stores/useLoading";
 import LoadingIndicator from "./Components/LoadingIndicator.vue";
 
-const appName = import.meta.env.VITE_APP_NAME || "SkillSight";
+const appName = import.meta.env.VITE_APP_NAME || "Adaptive Mastery";
 
 // Initialize loading state management
 const { start, stop } = useLoading();
