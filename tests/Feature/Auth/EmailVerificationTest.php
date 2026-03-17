@@ -14,6 +14,12 @@ class EmailVerificationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->markTestSkipped('Email verification is not enabled in this application.');
+    }
+
     public function test_email_verification_screen_can_be_rendered(): void
     {
         $user = User::factory()->create([

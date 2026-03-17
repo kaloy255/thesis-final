@@ -23,7 +23,7 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_number' => fake()->unique()->numberBetween(2000, 9000),
+            'email' => fake()->unique()->numerify('#######') . '@chcc.edu.ph',
             'name' => fake()->name(),
             'role' => 'student',
             'password' => static::$password ??= Hash::make('password'),

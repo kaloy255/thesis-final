@@ -56,7 +56,7 @@ class AuthenticatedSessionController extends Controller
         // If role is not recognized, logout and return error
         Auth::logout();
         return back()->withErrors([
-            'id_number' => 'Invalid user role.',
+            'email' => 'Invalid user role.',
         ]);
     }
 

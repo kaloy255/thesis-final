@@ -162,7 +162,7 @@ watch(showRequestsModal, (newValue) => {
                                         {{ student.student_name }}
                                     </h4>
                                     <p class="text-sm text-text-secondary truncate">
-                                        ID: {{ student.student_id_number }} • Section: {{ student.section_name }}
+                                        Email: {{ student.student_email }} • Section: {{ student.section_name }}
                                     </p>
                                 </div>
                             </div>
@@ -250,7 +250,7 @@ watch(showRequestsModal, (newValue) => {
                                                     {{ request.student_name }}
                                                 </h4>
                                                 <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                                                    ID: {{ request.student_id_number }} • Section: {{ request.section_name }}
+                                                    Email: {{ request.student_email }} • Section: {{ request.section_name }}
                                                 </p>
                                                 <p class="text-xs text-gray-400 mt-0.5">
                                                     Requested: {{ new Date(request.requested_at).toLocaleDateString() }}

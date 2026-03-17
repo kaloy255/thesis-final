@@ -72,13 +72,13 @@ watch(searchQuery, () => {
 });
 
 const createForm = useForm({
-    id_number: "",
+    email: "",
     name: "",
     department_id: "",
 });
 
 const editForm = useForm({
-    id_number: "",
+    email: "",
     name: "",
     department_id: "",
 });
@@ -182,7 +182,7 @@ const closeCreateModal = () => {
 
 const openEditModal = (instructor) => {
     editingInstructor.value = instructor;
-    editForm.id_number = instructor.id_number;
+    editForm.email = instructor.email;
     editForm.name = instructor.name;
     editForm.department_id = instructor.professor?.department_id || "";
     editForm.clearErrors();
@@ -462,7 +462,7 @@ const formatDate = (dateString) => {
                                         <span
                                             class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
                                         >
-                                            {{ instructor.id_number }}
+                                            {{ instructor.email }}
                                         </span>
                                     </div>
                                     <div class="flex items-center gap-2">
@@ -605,7 +605,7 @@ const formatDate = (dateString) => {
                     <!-- Drag-and-drop file upload -->
                     <div>
                         <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                            Upload an Excel or CSV file with <strong>id_number</strong> (1st column) and <strong>name</strong> (2nd column). Default password: <strong>chcc@2025</strong>. Large imports may take a moment—please wait.
+                            Upload an Excel or CSV file with <strong>email</strong> (1st column) and <strong>name</strong> (2nd column). Emails must end with <strong>@chcc.edu.ph</strong>. Default password: <strong>chcc@2025</strong>. Large imports may take a moment—please wait.
                         </p>
                         <InputLabel for="import_file" value="Select File" class="mb-2" />
                         <div
@@ -734,22 +734,22 @@ const formatDate = (dateString) => {
                 <form @submit.prevent="submitCreate" class="space-y-6">
                     <div>
                         <InputLabel
-                            for="create_id_number"
-                            value="ID Number"
+                            for="create_email"
+                            value="Email"
                             class="mb-2"
                         />
                         <TextInput
-                            id="create_id_number"
-                            v-model="createForm.id_number"
-                            type="text"
+                            id="create_email"
+                            v-model="createForm.email"
+                            type="email"
                             class="block w-full"
-                            placeholder="Enter instructor ID number"
+                            placeholder="Enter instructor email (must end with @chcc.edu.ph)"
                             required
                             autofocus
                         />
                         <InputError
                             class="mt-2"
-                            :message="createForm.errors.id_number"
+                            :message="createForm.errors.email"
                         />
                     </div>
                     <div>
@@ -838,21 +838,21 @@ const formatDate = (dateString) => {
                 <form @submit.prevent="submitEdit" class="space-y-6">
                     <div>
                         <InputLabel
-                            for="edit_id_number"
-                            value="ID Number"
+                            for="edit_email"
+                            value="Email"
                             class="mb-2"
                         />
                         <TextInput
-                            id="edit_id_number"
-                            v-model="editForm.id_number"
-                            type="text"
+                            id="edit_email"
+                            v-model="editForm.email"
+                            type="email"
                             class="block w-full"
                             required
                             autofocus
                         />
                         <InputError
                             class="mt-2"
-                            :message="editForm.errors.id_number"
+                            :message="editForm.errors.email"
                         />
                     </div>
                     <div>

@@ -19,33 +19,33 @@ class ProfessorSubjectSeeder extends Seeder
     public function run(): void
     {
         // Define subject assignments
-        // Format: ['instructor_id_number' => ['subject_codes' => [...], 'subject_names' => [...]]]
+        // Format: ['instructor_email' => ['subject_codes' => [...], 'subject_names' => [...]]]
         $assignments = [
             // Alice Instructor (2001) - Computer Science department
-            '2001' => [
+            '2001@chcc.edu.ph' => [
                 'subject_codes' => ['CS201', 'CS301'], // Data Structures, Algorithms
             ],
             // Bob Instructor (2002) - IT department
-            '2002' => [
+            '2002@chcc.edu.ph' => [
                 'subject_codes' => ['IT210', 'CS310'], // Database Systems, Operating Systems
             ],
         ];
 
-        foreach ($assignments as $instructorIdNumber => $config) {
-            // Find instructor by ID number
-            $user = User::where('id_number', $instructorIdNumber)
+        foreach ($assignments as $instructorEmail => $config) {
+            // Find instructor by email
+            $user = User::where('email', $instructorEmail)
                 ->where('role', 'instructor')
                 ->first();
 
             if (!$user) {
-                $this->command->warn("Instructor with ID number {$instructorIdNumber} not found. Skipping...");
+                $this->command->warn("Instructor with email {$instructorEmail} not found. Skipping...");
                 continue;
             }
 
             $professor = Professor::where('user_id', $user->id)->first();
 
             if (!$professor) {
-                $this->command->warn("Professor record not found for instructor {$user->name} (ID: {$instructorIdNumber}). Skipping...");
+                $this->command->warn("Professor record not found for instructor {$user->name} (Email: {$instructorEmail}). Skipping...");
                 continue;
             }
 
@@ -67,7 +67,7 @@ class ProfessorSubjectSeeder extends Seeder
             $subjects = $subjects->unique('id');
 
             if ($subjects->isEmpty()) {
-                $this->command->warn("No subjects found for instructor {$user->name} (ID: {$instructorIdNumber}). Skipping...");
+                $this->command->warn("No subjects found for instructor {$user->name} (Email: {$instructorEmail}). Skipping...");
                 continue;
             }
 

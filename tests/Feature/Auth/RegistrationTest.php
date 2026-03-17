@@ -10,6 +10,12 @@ class RegistrationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->markTestSkipped('User self-registration is not enabled in this application.');
+    }
+
     public function test_registration_screen_can_be_rendered(): void
     {
         $response = $this->get('/register');

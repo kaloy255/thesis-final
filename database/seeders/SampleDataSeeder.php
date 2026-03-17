@@ -63,13 +63,13 @@ class SampleDataSeeder extends Seeder
 
         // Instructors
         $instructors = [
-            ['id_number' => 2001, 'name' => 'Alice Instructor', 'department_index' => 0],
-            ['id_number' => 2002, 'name' => 'Bob Instructor', 'department_index' => 1],
+            ['email' => '2001@chcc.edu.ph', 'name' => 'Alice Instructor', 'department_index' => 0],
+            ['email' => '2002@chcc.edu.ph', 'name' => 'Bob Instructor', 'department_index' => 1],
         ];
 
         foreach ($instructors as $instructor) {
             $user = User::firstOrCreate(
-                ['id_number' => $instructor['id_number']],
+                ['email' => $instructor['email']],
                 [
                     'name' => $instructor['name'],
                     'role' => 'instructor',
@@ -88,14 +88,14 @@ class SampleDataSeeder extends Seeder
 
         // Students
         $studentEntries = [
-            ['id_number' => 3001, 'name' => 'Charlie Student', 'section_name' => 'BSCS-4A'],
-            ['id_number' => 3002, 'name' => 'Dana Student', 'section_name' => 'BSCS-4B'],
-            ['id_number' => 3003, 'name' => 'Evan Student', 'section_name' => 'BSIT-3A'],
+            ['email' => '3001@chcc.edu.ph', 'name' => 'Charlie Student', 'section_name' => 'BSCS-4A'],
+            ['email' => '3002@chcc.edu.ph', 'name' => 'Dana Student', 'section_name' => 'BSCS-4B'],
+            ['email' => '3003@chcc.edu.ph', 'name' => 'Evan Student', 'section_name' => 'BSIT-3A'],
         ];
 
         foreach ($studentEntries as $entry) {
             $user = User::firstOrCreate(
-                ['id_number' => $entry['id_number']],
+                ['email' => $entry['email']],
                 [
                     'name' => $entry['name'],
                     'role' => 'student',

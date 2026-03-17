@@ -96,7 +96,7 @@ class SubjectController extends Controller
             return [
                 'id' => $request->id,
                 'student_name' => $request->student->user->name,
-                'student_id_number' => $request->student->user->id_number,
+                'student_email' => $request->student->user->email,
                 'section_name' => $request->student->section->name,
                 'requested_at' => $request->created_at,//->format('M d, Y h:i A'),
                 'created_at' => $request->created_at,
@@ -113,7 +113,7 @@ class SubjectController extends Controller
                 return [
                     'id' => $record->id,
                     'student_name' => $record->student->user->name,
-                    'student_id_number' => $record->student->user->id_number,
+                    'student_email' => $record->student->user->email,
                     'section_name' => $record->student->section->name,
                     'approved_at' => $record->updated_at,
                 ];

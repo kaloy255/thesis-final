@@ -14,7 +14,7 @@ class AdminAccessTest extends TestCase
     {
         $admin = User::factory()->create([
             'role' => 'admin',
-            'id_number' => 9999,
+            'email' => 'admin_test@chcc.edu.ph',
         ]);
 
         $response = $this->actingAs($admin)->get('/admin');
@@ -25,7 +25,7 @@ class AdminAccessTest extends TestCase
     {
         $user = User::factory()->create([
             'role' => 'student',
-            'id_number' => 8888,
+            'email' => 'student_test@chcc.edu.ph',
         ]);
 
         $response = $this->actingAs($user)->get('/admin');

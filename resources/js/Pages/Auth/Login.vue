@@ -14,7 +14,7 @@ defineProps({
 });
 
 const form = useForm({
-    id_number: "",
+    email: "",
     password: "",
 });
 
@@ -336,17 +336,16 @@ onUnmounted(() => {
                     <div class="space-y-3">
                         <div>
                             <InputLabel
-                                for="id_number"
-                                value="ID Number"
+                                for="email"
+                                value="Email"
                                 class="text-text-primary dark:text-text-inverted"
                             />
 
                             <TextInput
-                                id="id_number"
-                                type="text"
-                                inputmode="numeric"
+                                id="email"
+                                type="email"
                                 class="mt-1 block w-full"
-                                v-model="form.id_number"
+                                v-model="form.email"
                                 required
                                 autofocus
                                 autocomplete="username"
@@ -354,7 +353,7 @@ onUnmounted(() => {
 
                             <InputError
                                 class="mt-2"
-                                :message="form.errors.id_number"
+                                :message="form.errors.email"
                             />
                         </div>
 

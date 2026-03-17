@@ -33,7 +33,7 @@ class StudentController extends Controller
             ->when($search, function ($query, $term) {
                 $query->where(function ($q) use ($term) {
                     $q->where('name', 'like', "%{$term}%")
-                        ->orWhere('id_number', 'like', "%{$term}%");
+                        ->orWhere('email', 'like', "%{$term}%");
                 });
             })
             ->when($sectionId, function ($query, $id) {
@@ -71,7 +71,7 @@ class StudentController extends Controller
         $data = $request->validated();
 
         $user = User::create([
-            'id_number' => $data['id_number'],
+            'email' => $data['email'],
             'name' => $data['name'],
             'role' => 'student',
             'password' => Hash::make('chcc@2025'),
@@ -109,7 +109,7 @@ class StudentController extends Controller
 
         $data = $request->validated();
 
-        $student->id_number = $data['id_number'];
+        $student->email = $data['email'];
         $student->name = $data['name'];
 
         $student->save();
@@ -175,16 +175,16 @@ class StudentController extends Controller
 
             $firstRow = $allRows->first();
             $headers = array_keys($firstRow);
-            $hasIdNumber = false;
+            $hasEmail = false;
             $hasName = false;
-            $idNumberKey = null;
+            $emailKey = null;
             $nameKey = null;
 
             foreach ($headers as $header) {
                 $normalizedHeader = strtolower(trim($header));
-                if ($normalizedHeader === 'id_number' || $normalizedHeader === 'id number') {
-                    $hasIdNumber = true;
-                    $idNumberKey = $header;
+                if ($normalizedHeader === 'email') {
+                    $hasEmail = true;
+                    $emailKey = $header;
                 }
                 if ($normalizedHeader === 'name') {
                     $hasName = true;
@@ -192,19 +192,19 @@ class StudentController extends Controller
                 }
             }
 
-            if (!$hasIdNumber || !$hasName) {
+            if (!$hasEmail || !$hasName) {
                 $foundHeaders = implode(', ', array_map(fn ($h) => '"' . $h . '"', $headers));
                 return back()->with('flash', [
                     'type' => 'error',
-                    'message' => "Invalid Excel format. Required columns: 'id_number' and 'name'. Found columns: {$foundHeaders}. Please download the template and follow the correct format.",
+                    'message' => "Invalid Excel format. Required columns: 'email' and 'name'. Found columns: {$foundHeaders}. Please download the template and follow the correct format.",
                 ]);
             }
 
             // Hash password once (reused for all rows)
             $hashedPassword = Hash::make('chcc@2025');
 
-            // Pre-load existing id_numbers (1 query instead of N)
-            $existingIdNumbers = User::pluck('id_number')->flip()->toArray();
+            // Pre-load existing emails (1 query instead of N)
+            $existingEmails = User::pluck('email')->map(fn ($v) => strtolower((string) $v))->flip()->toArray();
 
             DB::beginTransaction();
 
@@ -214,34 +214,40 @@ class StudentController extends Controller
 
             foreach ($allRows as $line) {
                 $rowNumber++;
-                $idNumber = isset($line[$idNumberKey]) ? trim((string) $line[$idNumberKey]) : null;
+                $email = isset($line[$emailKey]) ? strtolower(trim((string) $line[$emailKey])) : null;
                 $name = isset($line[$nameKey]) ? trim((string) $line[$nameKey]) : null;
 
-                if (empty($idNumber) && empty($name)) {
+                if (empty($email) && empty($name)) {
                     continue;
                 }
 
-                if (empty($idNumber)) {
-                    $errors[] = "Row {$rowNumber}: ID number is required";
+                if (empty($email)) {
+                    $errors[] = "Row {$rowNumber}: Email is required";
+                    $skipped++;
+                    continue;
+                }
+
+                if (! str_ends_with($email, '@chcc.edu.ph')) {
+                    $errors[] = "Row {$rowNumber}: Email must end with @chcc.edu.ph ({$email})";
                     $skipped++;
                     continue;
                 }
 
                 if (empty($name)) {
-                    $errors[] = "Row {$rowNumber}: Name is required (ID: {$idNumber})";
+                    $errors[] = "Row {$rowNumber}: Name is required (Email: {$email})";
                     $skipped++;
                     continue;
                 }
 
-                if (isset($existingIdNumbers[$idNumber])) {
-                    $errors[] = "Row {$rowNumber}: ID number '{$idNumber}' already exists";
+                if (isset($existingEmails[$email])) {
+                    $errors[] = "Row {$rowNumber}: Email '{$email}' already exists";
                     $skipped++;
                     continue;
                 }
-                $existingIdNumbers[$idNumber] = true;
+                $existingEmails[$email] = true;
 
                 $userBatch[] = [
-                    'id_number' => $idNumber,
+                    'email' => $email,
                     'name' => $name,
                     'role' => 'student',
                     'password' => $hashedPassword,
@@ -325,15 +331,15 @@ class StudentController extends Controller
     {
         $data = [
             [
-                'id_number' => '20210001',
+                'email' => '20210001@chcc.edu.ph',
                 'name' => 'Juan Dela Cruz',
             ],
             [
-                'id_number' => '20210002',
+                'email' => '20210002@chcc.edu.ph',
                 'name' => 'Maria Santos',
             ],
             [
-                'id_number' => '20210003',
+                'email' => '20210003@chcc.edu.ph',
                 'name' => 'Jose Rizal',
             ],
         ];

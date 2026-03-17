@@ -27,7 +27,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_number' => ['required', 'integer'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'ends_with:@chcc.edu.ph'],
             'password' => ['required', 'string'],
         ];
     }
@@ -41,11 +41,11 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('id_number', 'password'), false)) {
+        if (! Auth::attempt($this->only('email', 'password'), false)) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'id_number' => trans('auth.failed'),
+                'email' => trans('auth.failed'),
             ]);
         }
 
@@ -80,6 +80,6 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('id_number')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
     }
 }
