@@ -20,8 +20,12 @@
         "vue": "^3.4.0"
     },
     "dependencies": {
+        "@iconify/vue": "^5.0.0",
         "@lottiefiles/dotlottie-vue": "^0.11.3",
+        "chart.js": "^4.5.1",
         "pinia": "^2.1.7",
+        "primeicons": "^7.0.0",
+        "primevue": "^4.5.4",
         "ziggy-js": "^2.6.0"
     }
 }

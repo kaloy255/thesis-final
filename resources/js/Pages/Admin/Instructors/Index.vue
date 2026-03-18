@@ -307,20 +307,10 @@ const formatDate = (dateString) => {
                 <div class="flex gap-2">
                     <button
                         @click="openImportModal"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
                     >
-                        <svg
-                            class="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                            />
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                         </svg>
                         Import Instructors
                     </button>
@@ -371,7 +361,7 @@ const formatDate = (dateString) => {
                         id="search"
                         v-model="searchQuery"
                         type="text"
-                        placeholder="Search by ID number or name..."
+                        placeholder="Search by email or name..."
                         class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
                     />
                 </div>
@@ -595,8 +585,9 @@ const formatDate = (dateString) => {
                             v-model="importForm.department_id"
                             :options="departmentOptions"
                             placeholder="Search and select department..."
+                           
                         />
-                        <InputError class="mt-2" :message="importForm.errors.department_id" />
+                        <InputError class="mt-2"  :message="importForm.errors.department_id" />
                         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                             All instructors in the file will be assigned to this department
                         </p>
@@ -605,7 +596,7 @@ const formatDate = (dateString) => {
                     <!-- Drag-and-drop file upload -->
                     <div>
                         <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                            Upload an Excel or CSV file with <strong>email</strong> (1st column) and <strong>name</strong> (2nd column). Emails must end with <strong>@chcc.edu.ph</strong>. Default password: <strong>chcc@2025</strong>. Large imports may take a moment—please wait.
+                            Upload an Excel or CSV file with <strong>email</strong> / <strong>email address</strong> / <strong>username</strong> (1st column) and <strong>name</strong> (2nd column). Default password: <strong>chcc@2025</strong>. Large imports may take a moment—please wait.
                         </p>
                         <InputLabel for="import_file" value="Select File" class="mb-2" />
                         <div
@@ -743,7 +734,7 @@ const formatDate = (dateString) => {
                             v-model="createForm.email"
                             type="email"
                             class="block w-full"
-                            placeholder="Enter instructor email (must end with @chcc.edu.ph)"
+                            placeholder="Enter instructor email"
                             required
                             autofocus
                         />

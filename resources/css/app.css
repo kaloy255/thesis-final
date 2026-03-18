@@ -166,3 +166,31 @@
     border-top-color: #8b5cf6 !important;
     border-left-color: #ec4899 !important;
 }
+
+/* PrimeVue DatePicker - make panel + selected day blue */
+.p-datepicker-panel {
+    background: rgb(255, 255, 255) !important;
+    border-color: rgba(0, 0, 0, 0.99) !important;
+    border-width: 1px !important;
+    border-radius: 10px !important;
+    padding: 10px !important;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1) !important;
+    border-radius: 10px !important;
+    border-width: 1px !important;
+    border-color: rgba(0, 0, 0, 0.99) !important;
+    border-radius: 10px !important;
+    border-width: 1px !important;
+    border-color: rgba(0, 0, 0, 0.99) !important;
+    border-radius: 10px !important;
+}
+
+
+.p-datepicker-day-selected,
+.p-datepicker-day-selected-range {
+    background: #3b83f6b3 !important;
+    color: #ffffff !important;
+}
+
+
+
+

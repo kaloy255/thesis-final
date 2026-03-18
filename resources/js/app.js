@@ -9,6 +9,7 @@ import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
 import { initTheme } from "./Stores/useTheme";
 import { useLoading } from "./Stores/useLoading";
 import LoadingIndicator from "./Components/LoadingIndicator.vue";
+import PrimeVue from "primevue/config";
 
 const appName = import.meta.env.VITE_APP_NAME || "Adaptive Mastery";
 
@@ -45,7 +46,7 @@ createInertiaApp({
             render: () => h("div", [h(App, props), h(LoadingIndicator)]),
         });
 
-        return app.use(createPinia()).use(plugin).use(ZiggyVue).mount(el);
+        return app.use(createPinia()).use(PrimeVue).use(plugin).use(ZiggyVue).mount(el);
     },
     progress: {
         color: "#086fff",

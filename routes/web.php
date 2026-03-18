@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\AiUsageController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\InstructorController;
 use App\Http\Controllers\Admin\LogController;
@@ -39,6 +40,8 @@ Route::redirect('/', '/login');
 // Admin Routes
 Route::middleware(['auth', 'admin'])->prefix('admin')->as('admin.')->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('ai-usage/daily', [AiUsageController::class, 'daily'])->name('ai-usage.daily');
 
     // Students
     Route::resource('students', StudentController::class)->except(['show']);

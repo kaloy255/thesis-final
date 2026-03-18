@@ -353,20 +353,10 @@ const formatDate = (dateString) => {
                 <div class="flex gap-2">
                     <button
                         @click="openImportModal"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
                     >
-                        <svg
-                            class="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                            />
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                         </svg>
                         Import Students
                     </button>
@@ -923,7 +913,7 @@ const formatDate = (dateString) => {
                     <!-- Drag-and-drop file upload -->
                     <div>
                         <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                            Upload an Excel or CSV file with <strong>email</strong> (1st column) and <strong>name</strong> (2nd column). Emails must end with <strong>@chcc.edu.ph</strong>. Default password: <strong>chcc@2025</strong>. Large imports may take a moment—please wait.
+                            Upload an Excel or CSV file with <strong>id_number</strong> / <strong>id number</strong> / <strong>student#</strong> (1st column) and <strong>name</strong> (2nd column). The system will generate the student email as <strong>{id}@chcc.edu.ph</strong>. Default password: <strong>chcc@2025</strong>. Large imports may take a moment—please wait.
                         </p>
                         <InputLabel for="import_file" value="Select File" class="mb-2" />
                         <div

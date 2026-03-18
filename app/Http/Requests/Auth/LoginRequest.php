@@ -27,7 +27,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'lowercase', 'email', 'ends_with:@chcc.edu.ph'],
+            'email' => ['required', 'string', 'lowercase', 'email'],
             'password' => ['required', 'string'],
         ];
     }

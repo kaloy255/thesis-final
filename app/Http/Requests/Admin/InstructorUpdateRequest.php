@@ -17,7 +17,7 @@ class InstructorUpdateRequest extends FormRequest
         $userId = $this->route('instructor')?->id;
 
         return [
-            'email' => ['required', 'string', 'lowercase', 'email', 'ends_with:@chcc.edu.ph', Rule::unique('users', 'email')->ignore($userId)],
+            'email' => ['required', 'string', 'lowercase', 'email', Rule::unique('users', 'email')->ignore($userId)],
             'name' => ['required', 'string', 'max:255'],
             'password' => ['nullable', 'string', 'min:8'],
             'department_id' => ['required', 'exists:departments,id'],

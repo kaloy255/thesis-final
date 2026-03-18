@@ -175,16 +175,16 @@ class StudentController extends Controller
 
             $firstRow = $allRows->first();
             $headers = array_keys($firstRow);
-            $hasEmail = false;
+            $hasId = false;
             $hasName = false;
-            $emailKey = null;
+            $idKey = null;
             $nameKey = null;
 
             foreach ($headers as $header) {
                 $normalizedHeader = strtolower(trim($header));
-                if ($normalizedHeader === 'email') {
-                    $hasEmail = true;
-                    $emailKey = $header;
+                if (in_array($normalizedHeader, ['id number', 'id_number', 'student#', 'student #'], true)) {
+                    $hasId = true;
+                    $idKey = $header;
                 }
                 if ($normalizedHeader === 'name') {
                     $hasName = true;
@@ -192,11 +192,11 @@ class StudentController extends Controller
                 }
             }
 
-            if (!$hasEmail || !$hasName) {
+            if (!$hasId || !$hasName) {
                 $foundHeaders = implode(', ', array_map(fn ($h) => '"' . $h . '"', $headers));
                 return back()->with('flash', [
                     'type' => 'error',
-                    'message' => "Invalid Excel format. Required columns: 'email' and 'name'. Found columns: {$foundHeaders}. Please download the template and follow the correct format.",
+                    'message' => "Invalid Excel format. Required columns: 'id_number' and 'name'. Accepted ID headers: 'id number', 'id_number', 'student#', 'student #'. Found columns: {$foundHeaders}. Please download the template and follow the correct format.",
                 ]);
             }
 
@@ -214,7 +214,8 @@ class StudentController extends Controller
 
             foreach ($allRows as $line) {
                 $rowNumber++;
-                $email = isset($line[$emailKey]) ? strtolower(trim((string) $line[$emailKey])) : null;
+                $idValue = isset($line[$idKey]) ? trim((string) $line[$idKey]) : null;
+                $email = $idValue !== null && $idValue !== '' ? strtolower($idValue . '@chcc.edu.ph') : null;
                 $name = isset($line[$nameKey]) ? trim((string) $line[$nameKey]) : null;
 
                 if (empty($email) && empty($name)) {
@@ -222,7 +223,7 @@ class StudentController extends Controller
                 }
 
                 if (empty($email)) {
-                    $errors[] = "Row {$rowNumber}: Email is required";
+                    $errors[] = "Row {$rowNumber}: ID is required";
                     $skipped++;
                     continue;
                 }
@@ -331,15 +332,15 @@ class StudentController extends Controller
     {
         $data = [
             [
-                'email' => '20210001@chcc.edu.ph',
+                'Student#' => '20210001',
                 'name' => 'Juan Dela Cruz',
             ],
             [
-                'email' => '20210002@chcc.edu.ph',
+                'Student#' => '20210002',
                 'name' => 'Maria Santos',
             ],
             [
-                'email' => '20210003@chcc.edu.ph',
+                'Student#' => '20210003',
                 'name' => 'Jose Rizal',
             ],
         ];

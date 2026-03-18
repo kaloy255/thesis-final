@@ -14,19 +14,19 @@ import { Head } from "@inertiajs/vue3";
 
         <!-- Quick Stats -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="card p-6">
+            <div class="card p-6 hover:shadow-xl hover:border-l-4 hover:border-blue-500 transition-all duration-300">
                 <div class="text-sm text-text-secondary mb-2">My Subjects</div>
                 <div class="text-3xl font-bold text-text-primary dark:text-text-inverted">0</div>
                 <p class="text-xs text-text-secondary mt-2">Enrolled subjects</p>
             </div>
 
-            <div class="card p-6">
+            <div class="card p-6 hover:shadow-xl hover:border-l-4 hover:border-amber-500 transition-all duration-300">
                 <div class="text-sm text-text-secondary mb-2">Pending Assessments</div>
                 <div class="text-3xl font-bold text-text-primary dark:text-text-inverted">0</div>
                 <p class="text-xs text-text-secondary mt-2">To be completed</p>
             </div>
 
-            <div class="card p-6">
+            <div class="card p-6 hover:shadow-xl hover:border-l-4 hover:border-green-500 transition-all duration-300">
                 <div class="text-sm text-text-secondary mb-2">Completed Assessments</div>
                 <div class="text-3xl font-bold text-text-primary dark:text-text-inverted">0</div>
                 <p class="text-xs text-text-secondary mt-2">Finished assessments</p>
@@ -34,7 +34,7 @@ import { Head } from "@inertiajs/vue3";
         </div>
 
         <!-- Recent Activity -->
-        <div class="card p-6">
+        <div class="card p-6 hover:shadow-xl hover:border-l-4 hover:border-indigo-500 transition-all duration-300">
             <h2 class="text-lg font-semibold text-text-primary dark:text-text-inverted mb-4">
                 Recent Activity
             </h2>

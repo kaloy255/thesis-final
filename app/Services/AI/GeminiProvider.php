@@ -9,6 +9,8 @@ class GeminiProvider implements AIServiceInterface
     protected string $apiKey;
     protected string $model;
     protected int $timeout;
+    protected ?array $lastUsage = null;
+    protected ?string $lastPromptText = null;
 
     public function __construct(array $config)
     {
@@ -20,6 +22,7 @@ class GeminiProvider implements AIServiceInterface
     public function generateAssessment(string $content, array $options = []): array
     {
         $prompt = $this->buildPrompt($content, '', $options);
+        $this->lastPromptText = $prompt;
 
         return $this->makeRequest($prompt);
     }
@@ -27,8 +30,24 @@ class GeminiProvider implements AIServiceInterface
     public function generateChunk(string $chunkContent, string $previousContext, array $options = []): array
     {
         $prompt = $this->buildPrompt($chunkContent, $previousContext, $options);
+        $this->lastPromptText = $prompt;
 
         return $this->makeRequest($prompt);
+    }
+
+    public function getLastUsage(): ?array
+    {
+        return $this->lastUsage;
+    }
+
+    public function getLastPromptText(): ?string
+    {
+        return $this->lastPromptText;
+    }
+
+    public function getModel(): string
+    {
+        return $this->model;
     }
 
     protected function buildPrompt(string $content, string $previousContext, array $options): string
@@ -135,6 +154,8 @@ class GeminiProvider implements AIServiceInterface
             }
 
             $data = $response->json();
+            // Gemini usage metadata isn't always present/consistent across versions; we keep this best-effort.
+            $this->lastUsage = $data['usageMetadata'] ?? ($data['usage'] ?? null);
 
             if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
                 throw new \Exception('Invalid response structure from Gemini');

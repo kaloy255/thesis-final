@@ -14,7 +14,7 @@ class InstructorStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'lowercase', 'email', 'ends_with:@chcc.edu.ph', 'unique:users,email'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'unique:users,email'],
             'name' => ['required', 'string', 'max:255'],
             'department_id' => ['required', 'exists:departments,id'],
         ];

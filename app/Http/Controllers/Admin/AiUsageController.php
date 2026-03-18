@@ -5,41 +5,18 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AiTokenUsage;
 use Carbon\Carbon;
-use App\Models\Department;
-use App\Models\Log;
-use App\Models\Professor;
-use App\Models\Section;
-use App\Models\Subject;
-use App\Models\User;
-use Inertia\Inertia;
+use Illuminate\Http\Request;
 
-class DashboardController extends Controller
+class AiUsageController extends Controller
 {
-    public function index()
-    {
-        $stats = [
-            'professors' => Professor::count(),
-            'students' => User::where('role', 'student')->count(),
-            'departments' => Department::count(),
-            'sections' => Section::count(),
-            'subjects' => Subject::count(),
-        ];
-
-        $logs = Log::with('user')->latest()->take(5)->get();
-
-        $from = request()->query('from');
-        $to = request()->query('to');
-
-        $aiUsage = $this->buildDailyUsage($from, $to);
-
-        return Inertia::render('Admin/Dashboard', [
-            'stats' => $stats,
-            'logs' => $logs,
-            'aiUsage' => $aiUsage,
-        ]);
-    }
-
-    protected function buildDailyUsage(?string $from, ?string $to): array
+    /**
+     * Daily aggregated token usage for charting.
+     *
+     * Query params:
+     * - from: YYYY-MM-DD
+     * - to: YYYY-MM-DD
+     */
+    public function daily(Request $request)
     {
         $providers = ['openai', 'gemini', 'groq'];
 
@@ -47,8 +24,11 @@ class DashboardController extends Controller
         $defaultFrom = now()->subDays(29)->toDateString(); // last 30 days
 
         try {
-            $fromDate = Carbon::parse($from ?? $defaultFrom)->startOfDay();
-            $toDate = Carbon::parse($to ?? $defaultTo)->startOfDay();
+            $from = $request->query('from', $defaultFrom);
+            $to = $request->query('to', $defaultTo);
+
+            $fromDate = Carbon::parse($from)->startOfDay();
+            $toDate = Carbon::parse($to)->startOfDay();
         } catch (\Throwable) {
             $fromDate = Carbon::parse($defaultFrom)->startOfDay();
             $toDate = Carbon::parse($defaultTo)->startOfDay();
@@ -100,14 +80,14 @@ class DashboardController extends Controller
             $series[$provider][$labelIndex[$day]] = (int) $row->total_tokens;
         }
 
-        return [
+        return response()->json([
             'labels' => $labels,
             'series' => $series,
             'meta' => [
                 'from' => $fromDate->toDateString(),
                 'to' => $toDate->toDateString(),
             ],
-        ];
+        ]);
     }
 }
 

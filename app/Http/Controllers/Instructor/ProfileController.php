@@ -22,7 +22,7 @@ class ProfileController extends Controller
     public function update(Request $request)
     {
         $validated = $request->validate([
-            'email' => ['required', 'string', 'lowercase', 'email', 'ends_with:@chcc.edu.ph', 'unique:users,email,' . auth()->id()],
+            'email' => ['required', 'string', 'lowercase', 'email', 'unique:users,email,' . auth()->id()],
         ]);
 
         $request->user()->update($validated);

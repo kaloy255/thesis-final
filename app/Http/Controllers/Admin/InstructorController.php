@@ -175,7 +175,7 @@ class InstructorController extends Controller
 
             foreach ($headers as $header) {
                 $normalizedHeader = strtolower(trim($header));
-                if ($normalizedHeader === 'email') {
+                if (in_array($normalizedHeader, ['email', 'email address', 'username'], true)) {
                     $hasEmail = true;
                     $emailKey = $header;
                 }
@@ -189,7 +189,7 @@ class InstructorController extends Controller
                 $foundHeaders = implode(', ', array_map(fn ($h) => '"' . $h . '"', $headers));
                 return back()->with('flash', [
                     'type' => 'error',
-                    'message' => "Invalid Excel format. Required columns: 'email' and 'name'. Found columns: {$foundHeaders}. Please download the template and follow the correct format.",
+                    'message' => "Invalid Excel format. Required columns: 'email' and 'name'. Accepted email headers: 'email', 'email address', 'username'. Found columns: {$foundHeaders}. Please download the template and follow the correct format.",
                 ]);
             }
 
@@ -216,12 +216,6 @@ class InstructorController extends Controller
 
                 if (empty($email)) {
                     $errors[] = "Row {$rowNumber}: Email is required";
-                    $skipped++;
-                    continue;
-                }
-
-                if (! str_ends_with($email, '@chcc.edu.ph')) {
-                    $errors[] = "Row {$rowNumber}: Email must end with @chcc.edu.ph ({$email})";
                     $skipped++;
                     continue;
                 }
@@ -319,15 +313,15 @@ class InstructorController extends Controller
     {
         $data = [
             [
-                'email' => '10001@chcc.edu.ph',
+                'Email Address' => 'juandelacruz@chcc.edu.ph',
                 'name' => 'Prof. Juan Dela Cruz',
             ],
             [
-                'email' => '10002@chcc.edu.ph',
+                'Email Address' => 'mariasantos@chcc.edu.ph',
                 'name' => 'Prof. Maria Santos',
             ],
             [
-                'email' => '10003@chcc.edu.ph',
+                'Email Address' => 'joserizal@chcc.edu.ph',
                 'name' => 'Prof. Jose Rizal',
             ],
         ];
