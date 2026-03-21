@@ -108,8 +108,9 @@ const props = defineProps({
             </div>
 
             <!-- Total Assessments Card -->
-            <div
-                class="card p-6 hover:shadow-xl hover:border-l-4 hover:border-purple-500 transition-all duration-300"
+            <Link
+                :href="route('instructor.lessons.index')"
+                class="card p-6 hover:shadow-xl hover:border-l-4 hover:border-purple-500 transition-all duration-300 cursor-pointer group block"
             >
                 <div class="flex items-center justify-between">
                     <div class="flex-1">
@@ -128,14 +129,14 @@ const props = defineProps({
                         </p>
                     </div>
                     <div
-                        class="h-12 w-12 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-600/10 flex items-center justify-center"
+                        class="h-12 w-12 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-600/10 flex items-center justify-center group-hover:scale-110 transition-transform"
                     >
                         <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                         </svg>
                     </div>
                 </div>
-            </div>
+            </Link>
 
             <!-- (Removed cards tied to lessons/assessments) -->
 
