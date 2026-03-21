@@ -416,7 +416,7 @@ const formatDate = (dateString) => {
             <!-- Instructors Table -->
             <div v-else class="divide-y divide-gray-200 border-b border-gray-200 dark:divide-gray-700">
                 <div
-                    v-for="instructor in props.instructors.data"
+                    v-for="(instructor, index) in props.instructors.data"
                     :key="instructor.id"
                     class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
                 >
@@ -424,6 +424,7 @@ const formatDate = (dateString) => {
                         <!-- Instructor Info -->
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-4">
+                                <span class="text-sm font-medium text-gray-400 dark:text-gray-500 w-6 text-right flex-shrink-0">{{ (props.instructors.from || 1) + index }}.</span>
                                 <div class="flex-shrink-0">
                                     <div
                                         class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-semibold text-lg"

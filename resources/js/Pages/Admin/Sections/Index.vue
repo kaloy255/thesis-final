@@ -359,7 +359,7 @@ const formatDate = (dateString) => {
             <!-- Sections Table -->
             <div v-else class="divide-y divide-gray-200 border-b border-gray-200 dark:divide-gray-700">
                 <div
-                    v-for="section in props.sections.data"
+                    v-for="(section, index) in props.sections.data"
                     :key="section.id"
                     class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
                 >
@@ -367,6 +367,7 @@ const formatDate = (dateString) => {
                         <!-- Section Info -->
                         <div class="flex-1 min-w-0">
                             <div v-if="editingId !== section.id" class="flex items-center gap-4">
+                                <span class="text-sm font-medium text-gray-400 dark:text-gray-500 w-6 text-right flex-shrink-0">{{ (props.sections.from || 1) + index }}.</span>
                                 <div class="flex-shrink-0">
                                     <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
                                         <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

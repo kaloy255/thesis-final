@@ -363,7 +363,7 @@ const truncateText = (text, maxLength = 80) => {
             <!-- Subjects Table -->
             <div v-else class="divide-y divide-gray-200 border-b border-gray-200 dark:divide-gray-700">
                 <div
-                    v-for="subject in props.subjects.data"
+                    v-for="(subject, index) in props.subjects.data"
                     :key="subject.id"
                     class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
                 >
@@ -374,6 +374,7 @@ const truncateText = (text, maxLength = 80) => {
                                 v-if="editingId !== subject.id"
                                 class="flex items-center gap-4"
                             >
+                                <span class="text-sm font-medium text-gray-400 dark:text-gray-500 w-6 text-right flex-shrink-0">{{ (props.subjects.from || 1) + index }}.</span>
                                 <div class="flex-shrink-0">
                                     <div
                                         class="w-12 h-12 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center"

@@ -472,7 +472,7 @@ const formatDate = (dateString) => {
             <!-- Students Table -->
             <div v-else class="divide-y divide-gray-200 border-b border-gray-200 dark:divide-gray-700">
                 <div
-                    v-for="student in props.students.data"
+                    v-for="(student, index) in props.students.data"
                     :key="student.id"
                     class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
                 >
@@ -480,6 +480,7 @@ const formatDate = (dateString) => {
                         <!-- Student Info -->
                         <div class="flex-1 flex min-w-0">
                             <div class="flex  items-center gap-4">
+                                <span class="text-sm font-medium text-gray-400 dark:text-gray-500 w-6 text-right flex-shrink-0">{{ (props.students.from || 1) + index }}.</span>
                                 <div class="flex-shrink-0">
                                     <div
                                         class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-semibold text-lg"

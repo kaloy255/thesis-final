@@ -311,7 +311,7 @@ const formatDate = (dateString) => {
             <!-- Departments Table -->
             <div v-else class="divide-y divide-gray-200 dark:divide-gray-700 border-b border-gray-200 ">
                 <div
-                    v-for="department in props.departments.data"
+                    v-for="(department, index) in props.departments.data"
                     :key="department.id"
                     class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
                 >
@@ -319,6 +319,7 @@ const formatDate = (dateString) => {
                         <!-- Department Name -->
                         <div class="flex-1 min-w-0">
                             <div v-if="editingId !== department.id" class="flex items-center gap-3">
+                                <span class="text-sm font-medium text-gray-400 dark:text-gray-500 w-6 text-right flex-shrink-0">{{ (props.departments.from || 1) + index }}.</span>
                                 <div class="flex-shrink-0">
                                     <div class="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
                                         <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
