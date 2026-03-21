@@ -314,7 +314,7 @@ const onApplyRange = async () => {
                     <div
                         class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform"
                     >
-                        <Icon icon="icon-park-outline:people" class="w-5 h-5" />
+                        <Icon icon="simple-line-icons:people" class="w-5 h-5" />
                     </div>
                 </div>
             </Link>
@@ -335,7 +335,7 @@ const onApplyRange = async () => {
                     <div
                         class="w-10 h-10 rounded-xl bg-green-500/10 text-green-600 dark:text-green-400 flex items-center justify-center group-hover:scale-110 transition-transform"
                     >
-                        <Icon icon="icon-park-outline:people" class="w-5 h-5" />
+                        <Icon icon="simple-line-icons:people" class="w-5 h-5" />
                     </div>
                 </div>
             </Link>

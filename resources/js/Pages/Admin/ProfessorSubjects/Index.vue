@@ -10,6 +10,7 @@ import { Head, router, useForm } from "@inertiajs/vue3";
 import { ref, computed } from "vue";
 import { useToast } from "@/Stores/useToast";
 import ConfirmationModal from "@/Components/ConfirmationModal.vue";
+import { Icon } from "@iconify/vue";
 
 const props = defineProps({
     subjects: Array,
@@ -232,19 +233,7 @@ const formatDate = (dateString) => {
                         v-if="subject.assignments.length === 0"
                         class="py-6 text-center"
                     >
-                        <svg
-                            class="mx-auto w-8 h-8 text-gray-300 dark:text-gray-600 mb-2"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="1.5"
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                            />
-                        </svg>
+                        <Icon icon="simple-line-icons:people" class="w-5 h-5 text-gray-400 dark:text-gray-400 mx-auto mb-4" />
                         <p class="text-xs text-gray-400 dark:text-gray-500">
                             No instructor assigned
                         </p>

@@ -19,6 +19,7 @@ const props = defineProps({
 
 const form = useForm({
     name: "",
+    code: "",
 });
 
 const { success, error, warning } = useToast();
@@ -153,6 +154,7 @@ const startEdit = (row) => {
     if (!updateForms[row.id]) {
         updateForms[row.id] = useForm({
             name: row.name,
+            code: row.code,
         });
     }
 };
@@ -327,6 +329,9 @@ const formatDate = (dateString) => {
                                 <div class="flex-1 min-w-0">
                                     <p class="text-base font-medium text-gray-900 dark:text-white truncate">
                                         {{ department.name }}
+                                        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                            {{ department.code }}
+                                        </span>
                                     </p>
                                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                                         Created {{ formatDate(department.created_at) }}
@@ -336,19 +341,37 @@ const formatDate = (dateString) => {
                             
                             <!-- Edit Mode -->
                             <div v-else class="space-y-2">
-                                <input
-                                    v-model="(updateForms[department.id] ||= useForm({ name: department.name })).name"
-                                    type="text"
-                                    class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                                    placeholder="Department name"
-                                    @keyup.enter="saveEdit(department.id, department)"
-                                    @keyup.esc="cancelEdit(department.id)"
-                                    autofocus
-                                />
-                                <InputError
-                                    class="text-xs"
-                                    :message="updateForms[department.id]?.errors?.name"
-                                />
+                                <div class="flex gap-2">
+                                    <div class="flex-1">
+                                        <input
+                                            v-model="(updateForms[department.id] ||= useForm({ name: department.name, code: department.code })).name"
+                                            type="text"
+                                            class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                            placeholder="Department name"
+                                            @keyup.enter="saveEdit(department.id, department)"
+                                            @keyup.esc="cancelEdit(department.id)"
+                                            autofocus
+                                        />
+                                        <InputError
+                                            class="text-xs mt-1"
+                                            :message="updateForms[department.id]?.errors?.name"
+                                        />
+                                    </div>
+                                    <div class="w-1/3">
+                                        <input
+                                            v-model="(updateForms[department.id] ||= useForm({ name: department.name, code: department.code })).code"
+                                            type="text"
+                                            class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all uppercase"
+                                            placeholder="Code"
+                                            @keyup.enter="saveEdit(department.id, department)"
+                                            @keyup.esc="cancelEdit(department.id)"
+                                        />
+                                        <InputError
+                                            class="text-xs mt-1"
+                                            :message="updateForms[department.id]?.errors?.code"
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -457,7 +480,7 @@ const formatDate = (dateString) => {
                     </div>
                     <div>
                         <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                            Upload an Excel or CSV file with a <strong>name</strong> or <strong>department</strong> column. Duplicate names will be skipped.
+                            Upload an Excel or CSV file with <strong>name</strong> and <strong>code</strong> columns. Duplicate names or codes will be skipped.
                         </p>
                         <InputLabel for="import_file" value="Select File" class="mb-2" />
                         <div
@@ -567,18 +590,32 @@ const formatDate = (dateString) => {
                     </button>
                 </div>
                 <form @submit.prevent="submitCreate" class="space-y-6">
-                    <div>
-                        <InputLabel for="create_name" value="Department Name" class="mb-2" />
-                        <TextInput
-                            id="create_name"
-                            v-model="form.name"
-                            type="text"
-                            class="block w-full"
-                            placeholder="Enter department name"
-                            required
-                            autofocus
-                        />
-                        <InputError class="mt-2" :message="form.errors.name" />
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="md:col-span-2">
+                            <InputLabel for="create_name" value="Department Name" class="mb-2" />
+                            <TextInput
+                                id="create_name"
+                                v-model="form.name"
+                                type="text"
+                                class="block w-full"
+                                placeholder="Enter department name"
+                                required
+                                autofocus
+                            />
+                            <InputError class="mt-2" :message="form.errors.name" />
+                        </div>
+                        <div>
+                            <InputLabel for="create_code" value="Code" class="mb-2" />
+                            <TextInput
+                                id="create_code"
+                                v-model="form.code"
+                                type="text"
+                                class="block w-full uppercase"
+                                placeholder="e.g. IT"
+                                required
+                            />
+                            <InputError class="mt-2" :message="form.errors.code" />
+                        </div>
                     </div>
                     <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                         <SecondaryButton

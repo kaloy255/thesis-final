@@ -21,7 +21,8 @@ class DepartmentController extends Controller
         $perPage = min(max((int) $request->input('per_page', 10), 1), 100);
 
         $departments = Department::when($search, function ($query, $term) {
-            $query->where('name', 'like', "%{$term}%");
+            $query->where('name', 'like', "%{$term}%")
+                  ->orWhere('code', 'like', "%{$term}%");
         })
             ->orderBy('name')
             ->paginate($perPage)
@@ -78,21 +79,24 @@ class DepartmentController extends Controller
             $firstRow = $allRows->first();
             $headers = array_keys($firstRow);
 
-            // Find name column (flexible: name, department, department name)
+            // Find name and code columns
             $nameKey = null;
+            $codeKey = null;
             foreach ($headers as $header) {
                 $normalized = strtolower(trim($header));
                 if (in_array($normalized, ['name', 'department', 'department name', 'department_name'])) {
                     $nameKey = $header;
-                    break;
+                }
+                if (in_array($normalized, ['code', 'department code', 'department_code'])) {
+                    $codeKey = $header;
                 }
             }
 
-            if (!$nameKey) {
+            if (!$nameKey || !$codeKey) {
                 $foundHeaders = implode(', ', array_map(fn($h) => '"' . $h . '"', $headers));
                 return back()->with('flash', [
                     'type' => 'error',
-                    'message' => "Invalid format. Required column: 'name' or 'department'. Found: {$foundHeaders}. Please download the template.",
+                    'message' => "Invalid format. Required columns: 'name' AND 'code'. Found: {$foundHeaders}. Please download the template.",
                 ]);
             }
 
@@ -101,18 +105,19 @@ class DepartmentController extends Controller
             foreach ($allRows as $line) {
                 $rowNumber++;
                 $name = isset($line[$nameKey]) ? trim((string) $line[$nameKey]) : null;
+                $code = isset($line[$codeKey]) ? trim((string) $line[$codeKey]) : null;
 
-                if (empty($name)) {
+                if (empty($name) || empty($code)) {
                     continue;
                 }
 
-                if (Department::where('name', $name)->exists()) {
-                    $errors[] = "Row {$rowNumber}: Department '{$name}' already exists";
+                if (Department::where('name', $name)->orWhere('code', $code)->exists()) {
+                    $errors[] = "Row {$rowNumber}: Department '{$name}' or Code '{$code}' already exists";
                     $skipped++;
                     continue;
                 }
 
-                Department::create(['name' => $name]);
+                Department::create(['name' => $name, 'code' => $code]);
                 $this->logAction($request->user(), "Imported department {$name}");
                 $imported++;
             }
@@ -141,9 +146,9 @@ class DepartmentController extends Controller
     public function downloadTemplate(): StreamedResponse
     {
         $data = [
-            ['name' => 'Information Technology'],
-            ['name' => 'Computer Science'],
-            ['name' => 'Engineering'],
+            ['name' => 'Information Technology', 'code' => 'IT'],
+            ['name' => 'Computer Science', 'code' => 'CS'],
+            ['name' => 'Engineering', 'code' => 'ENG'],
         ];
 
         return (new FastExcel(collect($data)))->download('departments_template.xlsx');

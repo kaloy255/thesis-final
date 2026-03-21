@@ -12,6 +12,7 @@ import SearchableSelect from "@/Components/SearchableSelect.vue";
 import { Head, Link, router, useForm } from "@inertiajs/vue3";
 import { ref, watch, computed } from "vue";
 import { useToast } from "@/Stores/useToast";
+import { Icon } from "@iconify/vue";
 
 const props = defineProps({
     instructors: Object,
@@ -384,19 +385,7 @@ const formatDate = (dateString) => {
         >
             <!-- Empty State -->
             <div v-if="!hasInstructors" class="p-12 text-center absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%]">
-                <svg
-                    class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                    />
-                </svg>
+                <Icon icon="simple-line-icons:people" class="w-10 h-10 text-blue-600 dark:text-blue-400 mx-auto mb-4" />
                 <h3
                     class="text-sm font-medium text-gray-900 dark:text-white mb-1"
                 >

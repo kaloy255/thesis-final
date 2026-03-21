@@ -37,7 +37,6 @@ const isImportDragging = ref(false);
 const importFileName = ref("");
 
 const importForm = useForm({
-    department_id: "",
     file: null,
 });
 
@@ -139,7 +138,7 @@ const getImportErrorMessage = (errors) => {
         const v = errors[field];
         return Array.isArray(v) ? v[0] : typeof v === "string" ? v : null;
     };
-    return first("department_id") || first("file") || first("error") || "Failed to import. Please check your file and department selection.";
+    return first("file") || first("error") || "Failed to import. Please check your file.";
 };
 
 const submitImport = () => {
@@ -586,21 +585,9 @@ const formatDate = (dateString) => {
                         </button>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                            Upload an Excel or CSV file with section names only (a <strong>name</strong> or <strong>section</strong> column). Duplicates will be skipped.
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            Upload a spreadsheet. You can use <strong>Format 1</strong> (multiple columns, where headers are department codes) or <strong>Format 2</strong> (single <code>name</code> column, where department is auto-detected from the section name).
                         </p>
-                        <div>
-                        <InputLabel value="Department" class="mb-2" />
-                            <SearchableSelect
-                                v-model="importForm.department_id"
-                                :options="departmentOptions"
-                                placeholder="Select department to import sections into..."
-                            />
-                            <InputError
-                                class="mt-2"
-                                :message="importForm.errors.department_id"
-                            />
-                        </div>
                         <InputLabel for="import_file" value="Select File" class="mb-2" />
                         <div
                             class="mt-1 relative overflow-hidden rounded-lg p-[2px]"
