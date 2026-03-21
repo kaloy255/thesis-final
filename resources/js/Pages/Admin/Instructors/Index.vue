@@ -50,7 +50,7 @@ const departmentFilterOptions = computed(() => [
     { value: "", label: "All departments" },
     ...(props.departments || []).map((d) => ({
         value: String(d.id),
-        label: d.name,
+        label: d.professors_count !== undefined ? `(${d.professors_count}) ${d.name}` : d.name,
     })),
 ]);
 

@@ -43,7 +43,7 @@ class InstructorController extends Controller
 
         return Inertia::render('Admin/Instructors/Index', [
             'instructors' => $instructors,
-            'departments' => Department::orderBy('name')->get(),
+            'departments' => Department::withCount('professors')->orderBy('name')->get(),
             'filters' => [
                 'search' => $search,
                 'department_id' => $departmentId,

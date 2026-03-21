@@ -50,7 +50,7 @@ class StudentController extends Controller
         return Inertia::render('Admin/Students/Index', [
             'students' => $students,
             'departments' => Department::orderBy('name')->get(),
-            'sections' => Section::with('department')->orderBy('name')->get(),
+            'sections' => Section::with('department')->withCount('students')->orderBy('name')->get(),
             'filters' => [
                 'search' => $search,
                 'department_id' => $departmentId,

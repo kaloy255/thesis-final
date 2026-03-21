@@ -61,7 +61,6 @@ const departmentFilterOptions = computed(() => [
     })),
 ]);
 
-// Section options for filter - filtered by selected department (cascading)
 const sectionFilterOptions = computed(() => {
     const base = [{ value: "", label: "All sections" }];
     const sections = props.sections || [];
@@ -71,7 +70,7 @@ const sectionFilterOptions = computed(() => {
         // No department selected: show all sections
         const opts = sections.map((s) => ({
             value: String(s.id),
-            label: s.name,
+            label: s.students_count !== undefined ? `(${s.students_count}) ${s.name}` : s.name,
             sublabel: s.department?.name,
         }));
         return [...base, ...opts];
@@ -82,7 +81,7 @@ const sectionFilterOptions = computed(() => {
         .filter((s) => String(s.department_id) === deptId)
         .map((s) => ({
             value: String(s.id),
-            label: s.name,
+            label: s.students_count !== undefined ? `(${s.students_count}) ${s.name}` : s.name,
         }));
     return [...base, ...filtered];
 });

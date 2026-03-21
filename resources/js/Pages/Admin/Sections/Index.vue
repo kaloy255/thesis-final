@@ -56,7 +56,10 @@ const departmentFilterId = ref(
 
 const departmentFilterOptions = computed(() => [
     { value: "", label: "All departments" },
-    ...departmentOptions.value.map((o) => ({ value: String(o.value), label: o.label })),
+    ...props.departments.map((d) => ({ 
+        value: String(d.id), 
+        label: d.sections_count !== undefined ? `(${d.sections_count}) ${d.name}` : d.name 
+    })),
 ]);
 
 const applyFilters = () => {

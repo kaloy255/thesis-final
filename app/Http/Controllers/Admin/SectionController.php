@@ -35,7 +35,7 @@ class SectionController extends Controller
 
         return Inertia::render('Admin/Sections/Index', [
             'sections' => $sections,
-            'departments' => Department::orderBy('name')->get(),
+            'departments' => Department::withCount('sections')->orderBy('name')->get(),
             'filters' => [
                 'search' => $search,
                 'department_id' => $departmentId,
