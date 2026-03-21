@@ -92,7 +92,7 @@ class SectionController extends Controller
             'BSCRIM' => 'BSCRIM',
             'BSISM' => 'BSCRIM',
             'BSCS' => 'BSCS',
-            'BSN' => 'BSN',
+            'BSN' => 'BSN',       
         ];
 
         // Fetch all departments into a collection keyed by uppercase code
