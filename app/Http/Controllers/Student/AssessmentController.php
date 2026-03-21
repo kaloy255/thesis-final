@@ -399,7 +399,7 @@ class AssessmentController extends Controller
                 'no_answer' => $noAnswer,
                 'score' => $score,
             ],
-            'show_adaptive_button' => $score < 100,
+            'show_adaptive_button' => $score < 100 && !empty($assessment->lesson->extracted_content),
             'has_wrong_answers' => $wrongAnswers > 0,
             'items' => $items,
         ]);

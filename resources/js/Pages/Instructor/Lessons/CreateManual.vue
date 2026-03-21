@@ -118,6 +118,78 @@
                     </div>
                 </div>
 
+                <!-- Support File Upload Panel (Collapsible) -->
+                <div class="mb-6 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm bg-white dark:bg-gray-800">
+                    <!-- Toggle Header -->
+                    <button
+                        type="button"
+                        @click="showFilePanel = !showFilePanel"
+                        class="w-full flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-700 dark:hover:to-gray-800 transition-colors group"
+                    >
+                        <div class="flex items-center gap-3">
+                            <div class="p-1.5 bg-blue-100 dark:bg-blue-900/50 rounded-lg group-hover:bg-blue-200 dark:group-hover:bg-blue-800 transition-colors">
+                                <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                            </div>
+                            <div class="text-left">
+                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Attach Support File <span class="text-xs font-normal text-gray-500 ml-1">(Optional)</span></h3>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                    <template v-if="fileName">
+                                        <span class="text-indigo-600 dark:text-indigo-400 font-medium truncate max-w-[200px] sm:max-w-md inline-block align-bottom">{{ fileName }}</span>
+                                    </template>
+                                    <template v-else>
+                                        Upload a document to enable AI adaptive questions
+                                    </template>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="p-1 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': showFilePanel }">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
+                    </button>
+
+                    <!-- Expandable Content -->
+                    <div v-show="showFilePanel" class="border-t border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-800">
+                        <div
+                            class="relative overflow-hidden rounded-xl border-2 border-dashed transition-colors"
+                            :class="[
+                                isDragging ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-gray-700 hover:border-indigo-400 dark:hover:border-indigo-600',
+                                fileError || form.errors.file ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : ''
+                            ]"
+                            @dragover.prevent="isDragging = true"
+                            @dragleave.prevent="isDragging = false"
+                            @drop.prevent="handleDrop"
+                        >
+                            <div class="flex flex-col items-center justify-center p-8 text-center">
+                                <div v-if="!form.file" class="space-y-3">
+                                    <div class="w-12 h-12 mx-auto bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                                    </div>
+                                    <div class="flex text-sm text-gray-600 dark:text-gray-400 justify-center">
+                                        <label for="file_upload" class="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                            <span>Click to upload</span>
+                                            <input id="file_upload" type="file" class="sr-only" accept=".docx,.pdf,.pptx,.txt" @change="handleFileSelect" />
+                                        </label>
+                                        <p class="pl-1">or drag and drop</p>
+                                    </div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">DOCX, PDF, PPTX or TXT (Max 10MB)</p>
+                                </div>
+                                <div v-else class="flex flex-col items-center gap-3">
+                                    <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    </div>
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ fileName }}</div>
+                                    <button type="button" @click="removeFile" class="text-xs font-semibold text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
+                                        Remove file
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <InputError class="mt-2" :message="fileError || form.errors.file" />
+                    </div>
+                </div>
+
                 <!-- Section Assignment Panel (Collapsible) -->
                 <div class="mb-6 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
                     <!-- Toggle Header -->
@@ -686,10 +758,16 @@ const form = useForm({
     status: "draft",
     section_ids: [],
     questions: [],
+    file: null,
 });
 
 const questions = ref([]);
 const showAddQuestionForm = ref(false);
+
+const fileName = ref("");
+const fileError = ref("");
+const isDragging = ref(false);
+const showFilePanel = ref(false);
 
 const expandedQuestionIndex = ref(null);
 const toggleQuestion = (index) => {
@@ -752,6 +830,35 @@ const handleTypeChange = () => {
     }
     newQuestion.value.correct_answer = "";
     clearErrors();
+};
+
+const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        form.file = file;
+        fileName.value = file.name;
+        fileError.value = "";
+    }
+};
+
+const handleDrop = (event) => {
+    isDragging.value = false;
+    event.preventDefault();
+    const file = event.dataTransfer?.files?.[0];
+    if (file) {
+        form.file = file;
+        fileName.value = file.name;
+        fileError.value = "";
+    }
+};
+
+const removeFile = () => {
+    form.file = null;
+    fileName.value = "";
+    fileError.value = "";
+    // Reset the input so the same file can be selected again
+    const input = document.getElementById('file_upload');
+    if (input) input.value = '';
 };
 
 const addChoice = () => {
@@ -917,6 +1024,7 @@ const submitForm = () => {
     form.questions = questions.value;
 
     form.post(route("instructor.lessons.storeManual"), {
+        forceFormData: true,
         onSuccess: () => {
             // Success handled by redirect
         },
