@@ -393,24 +393,27 @@ const truncateText = (text, maxLength = 80) => {
                                         </svg>
                                     </div>
                                 </div>
-                                <div class="flex-1 min-w-0 space-y-2">
+                                <div class="flex-1 min-w-0 flex justify-between">
                                     <div
-                                        class="flex items-center gap-3 flex-wrap"
+                                        class="flex flex-col items-center flex-wrap"
                                     >
-                                        <span
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
-                                        >
-                                            {{ subject.code }}
-                                        </span>
+                                        
                                         <p
                                             class="text-base font-medium text-gray-900 dark:text-white"
                                         >
                                             {{ subject.name }}
                                         </p>
+
+                                        <span
+                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
+                                        >
+                                            {{ subject.code }}
+                                        </span>
                                     </div>
-                                    <p
+
+                                    <div class="flex-1 text-center flex justify-between items-center">  <p
                                         v-if="subject.description"
-                                        class="text-sm text-gray-600 dark:text-gray-400"
+                                        class="text-sm text-gray-600 dark:text-gray-400 flex-1"
                                     >
                                         {{ truncateText(subject.description) }}
                                     </p>
@@ -420,7 +423,8 @@ const truncateText = (text, maxLength = 80) => {
                                     >
                                         Created
                                         {{ formatDate(subject.created_at) }}
-                                    </p>
+                                    </p></div>
+                                  
                                 </div>
                             </div>
 

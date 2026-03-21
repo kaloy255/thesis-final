@@ -380,10 +380,10 @@ const formatDate = (dateString) => {
 
         <!-- Instructors List -->
         <div
-            class="bg-white dark:bg-gray-800 min-h-[calc(100vh-330px)] flex justify-center items-center rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+            class="bg-white dark:bg-gray-800 min-h-[calc(100vh-330px)] flex flex-col relative justify-between rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
         >
             <!-- Empty State -->
-            <div v-if="!hasInstructors" class="p-12 text-center">
+            <div v-if="!hasInstructors" class="p-12 text-center absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%]">
                 <svg
                     class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4"
                     fill="none"
@@ -425,7 +425,7 @@ const formatDate = (dateString) => {
             </div>
 
             <!-- Instructors Table -->
-            <div v-else class="divide-y divide-gray-200 dark:divide-gray-700">
+            <div v-else class="divide-y divide-gray-200 border-b border-gray-200 dark:divide-gray-700">
                 <div
                     v-for="instructor in props.instructors.data"
                     :key="instructor.id"
