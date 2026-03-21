@@ -29,7 +29,7 @@ const subjectFilterOptions = computed(() => [
     { value: "", label: "All subjects" },
     ...props.subjects.map((s) => ({
         value: String(s.id),
-        label: `${s.code} — ${s.name}`,
+        label: `(${s.assignments?.length || 0}) ${s.code} — ${s.name}`,
     })),
 ]);
 
