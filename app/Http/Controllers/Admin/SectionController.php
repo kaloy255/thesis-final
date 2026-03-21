@@ -81,10 +81,10 @@ class SectionController extends Controller
         // Hardcoded mapping for Format 2 (program code in section name -> department code)
         $programMapping = [
             'BEED' => 'EDUC',
-            'BSEdEng' => 'EDUC',
-            'BSEdFil' => 'EDUC',
-            'BSEdMath' => 'EDUC',
-            'BSEdSocSci' => 'EDUC',
+            'BSEDENG' => 'EDUC',
+            'BSEDFIL' => 'EDUC',
+            'BSEDMATH' => 'EDUC',
+            'BSEDSOCSCI' => 'EDUC',
             'BSEDE' => 'EDUC',
             'BSHM' => 'BSHM',
             'BSA' => 'BSBAA',
@@ -93,7 +93,6 @@ class SectionController extends Controller
             'BSISM' => 'BSCRIM',
             'BSCS' => 'BSCS',
             'BSN' => 'BSN',
-            'BSC' => 'BSN',
         ];
 
         // Fetch all departments into a collection keyed by uppercase code
