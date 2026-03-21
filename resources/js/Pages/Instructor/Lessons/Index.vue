@@ -215,7 +215,7 @@
                     <div
                         v-for="lesson in lessons.data"
                         :key="lesson.id"
-                        class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200"
+                        class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200 flex flex-col"
                     >
                         <div
                             class="h-28 p-4 flex items-start justify-end"
@@ -228,7 +228,7 @@
                             </span>
                         </div>
 
-                        <div class="p-6">
+                        <div class="p-6 flex flex-col flex-grow">
                         <!-- Card Header -->
                         <div class="mb-4">
                             <div class="flex items-center justify-between">
@@ -345,7 +345,7 @@
 
                         <!-- Footer -->
                         <div
-                            class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700/50"
+                            class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700/50 mt-auto"
                         >
                             <div class="flex items-end gap-2">
                                 <Link
