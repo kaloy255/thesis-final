@@ -215,7 +215,13 @@ class StudentController extends Controller
             foreach ($allRows as $line) {
                 $rowNumber++;
                 $idValue = isset($line[$idKey]) ? trim((string) $line[$idKey]) : null;
-                $email = $idValue !== null && $idValue !== '' ? strtolower($idValue . '@chcc.edu.ph') : null;
+                if ($idValue === null || $idValue === '') {
+                    $email = null;
+                } elseif (str_contains($idValue, '@')) {
+                    $email = strtolower($idValue);
+                } else {
+                    $email = strtolower($idValue) . '@chcc.edu.ph';
+                }
                 $name = isset($line[$nameKey]) ? trim((string) $line[$nameKey]) : null;
 
                 if (empty($email) && empty($name)) {
