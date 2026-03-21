@@ -20,15 +20,15 @@ class SectionController extends Controller
     {
         $search = $request->string('search')->toString();
         $departmentId = $request->input('department_id');
-        $perPage = min(max((int) $request->input('per_page', 10), 1), 100);
+        $perPage = min(max((int)$request->input('per_page', 10), 1), 100);
 
         $sections = Section::with('department')
             ->when($search, function ($query, $term) {
-                $query->where('name', 'like', "%{$term}%");
-            })
+            $query->where('name', 'like', "%{$term}%");
+        })
             ->when($departmentId, function ($query, $id) {
-                $query->where('department_id', $id);
-            })
+            $query->where('department_id', $id);
+        })
             ->orderBy('name')
             ->paginate($perPage)
             ->withQueryString();
@@ -72,7 +72,7 @@ class SectionController extends Controller
     public function import(SectionImportRequest $request)
     {
         $file = $request->file('file');
-        
+
         $imported = 0;
         $errors = [];
         $skipped = 0;
@@ -122,9 +122,9 @@ class SectionController extends Controller
             }
 
             $isFormat1 = !$nameKey; // Multi-column
-            
+
             DB::beginTransaction();
-            
+
             $stats = []; // To track per-department imports
 
             if ($isFormat1) {
@@ -136,7 +136,8 @@ class SectionController extends Controller
                     if ($departmentsByCode->has($code)) {
                         $validColumns[$header] = $departmentsByCode->get($code)->id;
                         $stats[$code] = 0;
-                    } else if (!empty($code)) {
+                    }
+                    else if (!empty($code)) {
                         $errors[] = "Column '{$header}' skipped — no matching department found.";
                     }
                 }
@@ -151,8 +152,9 @@ class SectionController extends Controller
                 foreach ($allRows as $line) {
                     $rowNumber++;
                     foreach ($validColumns as $header => $deptId) {
-                        $name = isset($line[$header]) ? trim((string) $line[$header]) : null;
-                        if (empty($name)) continue;
+                        $name = isset($line[$header]) ? trim((string)$line[$header]) : null;
+                        if (empty($name))
+                            continue;
 
                         if (Section::where('department_id', $deptId)->where('name', $name)->exists()) {
                             $errors[] = "Row {$rowNumber}, {$header}: Section '{$name}' already exists";
@@ -166,12 +168,14 @@ class SectionController extends Controller
                         $imported++;
                     }
                 }
-            } else {
+            }
+            else {
                 // FORMAT 2: Single column 'name' or 'section'
                 foreach ($allRows as $line) {
                     $rowNumber++;
-                    $name = isset($line[$nameKey]) ? trim((string) $line[$nameKey]) : null;
-                    if (empty($name)) continue;
+                    $name = isset($line[$nameKey]) ? trim((string)$line[$nameKey]) : null;
+                    if (empty($name))
+                        continue;
 
                     // Extract program code: usually looks like "1 BSCS-A" -> "BSCS"
                     // Match letters after the first number + space
@@ -181,7 +185,7 @@ class SectionController extends Controller
                         $program = strtoupper(trim($matches[1]));
                         // Look up mapped department code
                         $mappedCode = $programMapping[$program] ?? null;
-                        
+
                         if ($mappedCode && $departmentsByCode->has($mappedCode)) {
                             $deptId = $departmentsByCode->get($mappedCode)->id;
                             $deptCode = $mappedCode;
@@ -202,8 +206,9 @@ class SectionController extends Controller
 
                     Section::create(['name' => $name, 'department_id' => $deptId]);
                     $this->logAction($request->user(), "Imported section {$name} (Format 2)");
-                    
-                    if (!isset($stats[$deptCode])) $stats[$deptCode] = 0;
+
+                    if (!isset($stats[$deptCode]))
+                        $stats[$deptCode] = 0;
                     $stats[$deptCode]++;
                     $imported++;
                 }
@@ -213,7 +218,8 @@ class SectionController extends Controller
 
             $statsMsg = [];
             foreach ($stats as $dept => $count) {
-                if ($count > 0) $statsMsg[] = "{$count} for {$dept}";
+                if ($count > 0)
+                    $statsMsg[] = "{$count} for {$dept}";
             }
             $statsString = !empty($statsMsg) ? " (" . implode(', ', $statsMsg) . ")" : "";
 
@@ -226,7 +232,8 @@ class SectionController extends Controller
                 'message' => $message,
                 'errors' => $errors,
             ]);
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             DB::rollBack();
             return back()->with('flash', [
                 'type' => 'error',
@@ -277,4 +284,3 @@ class SectionController extends Controller
         ]);
     }
 }
-

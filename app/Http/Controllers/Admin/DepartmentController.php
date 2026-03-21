@@ -18,11 +18,11 @@ class DepartmentController extends Controller
     public function index(Request $request)
     {
         $search = $request->string('search')->toString();
-        $perPage = min(max((int) $request->input('per_page', 10), 1), 100);
+        $perPage = min(max((int)$request->input('per_page', 10), 1), 100);
 
         $departments = Department::when($search, function ($query, $term) {
             $query->where('name', 'like', "%{$term}%")
-                  ->orWhere('code', 'like', "%{$term}%");
+                ->orWhere('code', 'like', "%{$term}%");
         })
             ->orderBy('name')
             ->paginate($perPage)
@@ -104,8 +104,8 @@ class DepartmentController extends Controller
 
             foreach ($allRows as $line) {
                 $rowNumber++;
-                $name = isset($line[$nameKey]) ? trim((string) $line[$nameKey]) : null;
-                $code = isset($line[$codeKey]) ? trim((string) $line[$codeKey]) : null;
+                $name = isset($line[$nameKey]) ? trim((string)$line[$nameKey]) : null;
+                $code = isset($line[$codeKey]) ? trim((string)$line[$codeKey]) : null;
 
                 if (empty($name) || empty($code)) {
                     continue;
@@ -133,7 +133,8 @@ class DepartmentController extends Controller
                 'message' => $message,
                 'errors' => $errors,
             ]);
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             DB::rollBack();
             return back()->with('flash', [
                 'type' => 'error',
@@ -163,4 +164,3 @@ class DepartmentController extends Controller
         ]);
     }
 }
-

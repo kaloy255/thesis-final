@@ -26,22 +26,23 @@ class StudentController extends Controller
         $search = $request->string('search')->toString();
         $departmentId = $request->input('department_id');
         $sectionId = $request->input('section_id');
-        $perPage = min(max((int) $request->input('per_page', 10), 1), 100);
+        $perPage = min(max((int)$request->input('per_page', 10), 1), 100);
 
         $students = User::with(['student.section.department'])
             ->where('role', 'student')
             ->when($search, function ($query, $term) {
-                $query->where(function ($q) use ($term) {
+            $query->where(function ($q) use ($term) {
                     $q->where('name', 'like', "%{$term}%")
                         ->orWhere('email', 'like', "%{$term}%");
-                });
+                }
+                );
             })
             ->when($sectionId, function ($query, $id) {
-                $query->whereHas('student', fn ($q) => $q->where('section_id', $id));
-            })
-            ->when($departmentId && ! $sectionId, function ($query, $id) {
-                $query->whereHas('student.section', fn ($q) => $q->where('department_id', $id));
-            })
+            $query->whereHas('student', fn($q) => $q->where('section_id', $id));
+        })
+            ->when($departmentId && !$sectionId, function ($query, $id) {
+            $query->whereHas('student.section', fn($q) => $q->where('department_id', $id));
+        })
             ->orderBy('name')
             ->paginate($perPage)
             ->withQueryString();
@@ -115,8 +116,8 @@ class StudentController extends Controller
         $student->save();
 
         Student::updateOrCreate(
-            ['user_id' => $student->id],
-            ['section_id' => $data['section_id']]
+        ['user_id' => $student->id],
+        ['section_id' => $data['section_id']]
         );
 
         $this->logAction($request->user(), "Updated student {$student->name}");
@@ -193,7 +194,7 @@ class StudentController extends Controller
             }
 
             if (!$hasId || !$hasName) {
-                $foundHeaders = implode(', ', array_map(fn ($h) => '"' . $h . '"', $headers));
+                $foundHeaders = implode(', ', array_map(fn($h) => '"' . $h . '"', $headers));
                 return back()->with('flash', [
                     'type' => 'error',
                     'message' => "Invalid Excel format. Required columns: 'id_number' and 'name'. Accepted ID headers: 'id number', 'id_number', 'student#', 'student #'. Found columns: {$foundHeaders}. Please download the template and follow the correct format.",
@@ -204,7 +205,7 @@ class StudentController extends Controller
             $hashedPassword = Hash::make('chcc@2025');
 
             // Pre-load existing emails (1 query instead of N)
-            $existingEmails = User::pluck('email')->map(fn ($v) => strtolower((string) $v))->flip()->toArray();
+            $existingEmails = User::pluck('email')->map(fn($v) => strtolower((string)$v))->flip()->toArray();
 
             DB::beginTransaction();
 
@@ -214,15 +215,17 @@ class StudentController extends Controller
 
             foreach ($allRows as $line) {
                 $rowNumber++;
-                $idValue = isset($line[$idKey]) ? trim((string) $line[$idKey]) : null;
+                $idValue = isset($line[$idKey]) ? trim((string)$line[$idKey]) : null;
                 if ($idValue === null || $idValue === '') {
                     $email = null;
-                } elseif (str_contains($idValue, '@')) {
+                }
+                elseif (str_contains($idValue, '@')) {
                     $email = strtolower($idValue);
-                } else {
+                }
+                else {
                     $email = strtolower($idValue) . '@chcc.edu.ph';
                 }
-                $name = isset($line[$nameKey]) ? trim((string) $line[$nameKey]) : null;
+                $name = isset($line[$nameKey]) ? trim((string)$line[$nameKey]) : null;
 
                 if (empty($email) && empty($name)) {
                     continue;
@@ -234,7 +237,7 @@ class StudentController extends Controller
                     continue;
                 }
 
-                if (! str_ends_with($email, '@chcc.edu.ph')) {
+                if (!str_ends_with($email, '@chcc.edu.ph')) {
                     $errors[] = "Row {$rowNumber}: Email must end with @chcc.edu.ph ({$email})";
                     $skipped++;
                     continue;
@@ -265,12 +268,12 @@ class StudentController extends Controller
                 if (count($userBatch) >= $chunkSize) {
                     User::insert($userBatch);
                     $firstId = DB::connection()->getPdo()->lastInsertId();
-                    $userIds = range((int) $firstId, (int) $firstId + count($userBatch) - 1);
-                    $studentBatch = array_map(fn ($uid) => [
-                        'user_id' => $uid,
-                        'section_id' => $sectionId,
-                        'created_at' => $now,
-                        'updated_at' => $now,
+                    $userIds = range((int)$firstId, (int)$firstId + count($userBatch) - 1);
+                    $studentBatch = array_map(fn($uid) => [
+                    'user_id' => $uid,
+                    'section_id' => $sectionId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
                     ], $userIds);
                     Student::insert($studentBatch);
                     $imported += count($userBatch);
@@ -278,15 +281,15 @@ class StudentController extends Controller
                 }
             }
 
-            if (! empty($userBatch)) {
+            if (!empty($userBatch)) {
                 User::insert($userBatch);
                 $firstId = DB::connection()->getPdo()->lastInsertId();
-                $userIds = range((int) $firstId, (int) $firstId + count($userBatch) - 1);
-                $studentBatch = array_map(fn ($uid) => [
-                    'user_id' => $uid,
-                    'section_id' => $sectionId,
-                    'created_at' => $now,
-                    'updated_at' => $now,
+                $userIds = range((int)$firstId, (int)$firstId + count($userBatch) - 1);
+                $studentBatch = array_map(fn($uid) => [
+                'user_id' => $uid,
+                'section_id' => $sectionId,
+                'created_at' => $now,
+                'updated_at' => $now,
                 ], $userIds);
                 Student::insert($studentBatch);
                 $imported += count($userBatch);
@@ -319,14 +322,15 @@ class StudentController extends Controller
                 'errors' => count($errors) > 0 ? $errors : null,
             ]);
 
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Import failed:', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return back()->with('flash', [
                 'type' => 'error',
                 'message' => 'Import failed: ' . $e->getMessage(),
@@ -364,5 +368,3 @@ class StudentController extends Controller
         ]);
     }
 }
-
-

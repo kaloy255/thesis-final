@@ -23,19 +23,20 @@ class InstructorController extends Controller
     {
         $search = $request->string('search')->toString();
         $departmentId = $request->input('department_id');
-        $perPage = min(max((int) $request->input('per_page', 10), 1), 100);
+        $perPage = min(max((int)$request->input('per_page', 10), 1), 100);
 
         $instructors = User::with(['professor.department'])
             ->where('role', 'instructor')
             ->when($search, function ($query, $term) {
-                $query->where(function ($q) use ($term) {
+            $query->where(function ($q) use ($term) {
                     $q->where('name', 'like', "%{$term}%")
                         ->orWhere('email', 'like', "%{$term}%");
-                });
+                }
+                );
             })
             ->when($departmentId, function ($query, $id) {
-                $query->whereHas('professor', fn ($q) => $q->where('department_id', $id));
-            })
+            $query->whereHas('professor', fn($q) => $q->where('department_id', $id));
+        })
             ->orderBy('name')
             ->paginate($perPage)
             ->withQueryString();
@@ -107,8 +108,8 @@ class InstructorController extends Controller
         $instructor->save();
 
         Professor::updateOrCreate(
-            ['user_id' => $instructor->id],
-            ['department_id' => $data['department_id']]
+        ['user_id' => $instructor->id],
+        ['department_id' => $data['department_id']]
         );
 
         $this->logAction($request->user(), "Updated instructor {$instructor->name}");
@@ -185,8 +186,8 @@ class InstructorController extends Controller
                 }
             }
 
-            if (! $hasEmail || ! $hasName) {
-                $foundHeaders = implode(', ', array_map(fn ($h) => '"' . $h . '"', $headers));
+            if (!$hasEmail || !$hasName) {
+                $foundHeaders = implode(', ', array_map(fn($h) => '"' . $h . '"', $headers));
                 return back()->with('flash', [
                     'type' => 'error',
                     'message' => "Invalid Excel format. Required columns: 'email' and 'name'. Accepted email headers: 'email', 'email address', 'username'. Found columns: {$foundHeaders}. Please download the template and follow the correct format.",
@@ -197,7 +198,7 @@ class InstructorController extends Controller
             $hashedPassword = Hash::make('chcc@2025');
 
             // Pre-load existing emails (1 query instead of N)
-            $existingEmails = User::pluck('email')->map(fn ($v) => strtolower((string) $v))->flip()->toArray();
+            $existingEmails = User::pluck('email')->map(fn($v) => strtolower((string)$v))->flip()->toArray();
 
             DB::beginTransaction();
 
@@ -207,8 +208,8 @@ class InstructorController extends Controller
 
             foreach ($allRows as $line) {
                 $rowNumber++;
-                $email = isset($line[$emailKey]) ? strtolower(trim((string) $line[$emailKey])) : null;
-                $name = isset($line[$nameKey]) ? trim((string) $line[$nameKey]) : null;
+                $email = isset($line[$emailKey]) ? strtolower(trim((string)$line[$emailKey])) : null;
+                $name = isset($line[$nameKey]) ? trim((string)$line[$nameKey]) : null;
 
                 if (empty($email) && empty($name)) {
                     continue;
@@ -245,12 +246,12 @@ class InstructorController extends Controller
                 if (count($userBatch) >= $chunkSize) {
                     User::insert($userBatch);
                     $firstId = DB::connection()->getPdo()->lastInsertId();
-                    $userIds = range((int) $firstId, (int) $firstId + count($userBatch) - 1);
-                    $professorBatch = array_map(fn ($uid) => [
-                        'user_id' => $uid,
-                        'department_id' => $departmentId,
-                        'created_at' => $now,
-                        'updated_at' => $now,
+                    $userIds = range((int)$firstId, (int)$firstId + count($userBatch) - 1);
+                    $professorBatch = array_map(fn($uid) => [
+                    'user_id' => $uid,
+                    'department_id' => $departmentId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
                     ], $userIds);
                     Professor::insert($professorBatch);
                     $imported += count($userBatch);
@@ -258,15 +259,15 @@ class InstructorController extends Controller
                 }
             }
 
-            if (! empty($userBatch)) {
+            if (!empty($userBatch)) {
                 User::insert($userBatch);
                 $firstId = DB::connection()->getPdo()->lastInsertId();
-                $userIds = range((int) $firstId, (int) $firstId + count($userBatch) - 1);
-                $professorBatch = array_map(fn ($uid) => [
-                    'user_id' => $uid,
-                    'department_id' => $departmentId,
-                    'created_at' => $now,
-                    'updated_at' => $now,
+                $userIds = range((int)$firstId, (int)$firstId + count($userBatch) - 1);
+                $professorBatch = array_map(fn($uid) => [
+                'user_id' => $uid,
+                'department_id' => $departmentId,
+                'created_at' => $now,
+                'updated_at' => $now,
                 ], $userIds);
                 Professor::insert($professorBatch);
                 $imported += count($userBatch);
@@ -299,9 +300,10 @@ class InstructorController extends Controller
                 'errors' => count($errors) > 0 ? $errors : null,
             ]);
 
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             DB::rollBack();
-            
+
             return back()->with('flash', [
                 'type' => 'error',
                 'message' => 'Import failed: ' . $e->getMessage(),
@@ -339,4 +341,3 @@ class InstructorController extends Controller
         ]);
     }
 }
-
