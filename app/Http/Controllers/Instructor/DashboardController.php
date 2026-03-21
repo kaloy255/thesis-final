@@ -29,6 +29,9 @@ class DashboardController extends Controller
                 ->where('status', 'approved')
                 ->distinct('student_id')
                 ->count('student_id'),
+            'total_assessments' => \App\Models\Assessment::whereHas('lesson', function ($query) use ($subjectIds) {
+                $query->whereIn('subject_id', $subjectIds);
+            })->count(),
             'pending_requests' => StudentSubject::whereIn('subject_id', $subjectIds)
                 ->where('status', 'pending')
                 ->count(),
