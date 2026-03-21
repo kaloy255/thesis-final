@@ -301,7 +301,7 @@ const formatDate = (dateString) => {
         <!-- No Results -->
         <div
             v-else
-            class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center"
+            class="bg-white dark:bg-gray-800 min-h-[calc(100vh-330px)] rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center"
         >
             <svg
                 class="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-3"

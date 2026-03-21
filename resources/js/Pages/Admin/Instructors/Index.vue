@@ -380,7 +380,7 @@ const formatDate = (dateString) => {
 
         <!-- Instructors List -->
         <div
-            class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+            class="bg-white dark:bg-gray-800 min-h-[calc(100vh-330px)] flex justify-center items-center rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
         >
             <!-- Empty State -->
             <div v-if="!hasInstructors" class="p-12 text-center">
