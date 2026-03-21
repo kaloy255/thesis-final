@@ -282,9 +282,9 @@ const formatDate = (dateString) => {
         </div>
 
         <!-- Departments List -->
-        <div class="bg-white dark:bg-gray-800 min-h-[calc(100vh-300px)] flex justify-center items-center rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="bg-white dark:bg-gray-800 min-h-[calc(100vh-300px)] relative flex flex-col justify-between  rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
             <!-- Empty State -->
-            <div v-if="!hasDepartments" class="p-12 text-center">
+            <div v-if="!hasDepartments" class="p-12 text-center absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%]" >
                 <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
@@ -307,7 +307,7 @@ const formatDate = (dateString) => {
             </div>
 
             <!-- Departments Table -->
-            <div v-else class="divide-y divide-gray-200 dark:divide-gray-700">
+            <div v-else class="divide-y divide-gray-200 dark:divide-gray-700 border-b border-gray-200 ">
                 <div
                     v-for="department in props.departments.data"
                     :key="department.id"

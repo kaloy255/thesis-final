@@ -301,27 +301,30 @@ const formatDate = (dateString) => {
         <!-- No Results -->
         <div
             v-else
-            class="bg-white dark:bg-gray-800 min-h-[calc(100vh-330px)] rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center"
+            class="bg-white dark:bg-gray-800 min-h-[calc(100vh-330px)] flex justify-center items-center rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center"
         >
-            <svg
-                class="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.5"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-            </svg>
-            <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-1">
-                No subjects found
-            </h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-                {{ subjectFilterId || searchQuery ? "Try adjusting your filters or search query." : "No subjects in database yet." }}
-            </p>
+            <div class="" >
+                <svg
+                    class="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.5"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                </svg>
+                <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                    No subjects found
+                </h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ subjectFilterId || searchQuery ? "Try adjusting your filters or search query." : "No subjects in database yet." }}
+                </p>
+            </div>
+          
         </div>
 
         <!-- Assign Instructor Modal -->

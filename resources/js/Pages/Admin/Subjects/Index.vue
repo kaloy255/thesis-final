@@ -313,10 +313,10 @@ const truncateText = (text, maxLength = 80) => {
 
         <!-- Subjects List -->
         <div
-            class="bg-white dark:bg-gray-800 min-h-[calc(100vh-330px)] flex justify-center items-center rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+            class="bg-white dark:bg-gray-800 min-h-[calc(100vh-330px)] flex flex-col justify-between relative rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
         >
             <!-- Empty State -->
-            <div v-if="!hasSubjects" class="p-12 text-center">
+            <div v-if="!hasSubjects" class="p-12 text-center absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%]" >
                 <svg
                     class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4"
                     fill="none"
@@ -361,7 +361,7 @@ const truncateText = (text, maxLength = 80) => {
             </div>
 
             <!-- Subjects Table -->
-            <div v-else class="divide-y divide-gray-200 dark:divide-gray-700">
+            <div v-else class="divide-y divide-gray-200 border-b border-gray-200 dark:divide-gray-700">
                 <div
                     v-for="subject in props.subjects.data"
                     :key="subject.id"
