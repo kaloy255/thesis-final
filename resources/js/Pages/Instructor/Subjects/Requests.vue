@@ -145,7 +145,7 @@ watch(showRequestsModal, (newValue) => {
                 <div
                     v-for="student in approvedStudents"
                     :key="student.id"
-                    class="border border-border-light dark:border-border-dark rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50"
+                    class="border border-border-light dark:border-border-dark rounded-lg p-4 bg-gray-50 dark:bg-surface-dark-muted/50"
                 >
                     <div class="flex items-center justify-between flex-wrap gap-4">
                         <div class="flex-1 min-w-0">
@@ -205,10 +205,10 @@ watch(showRequestsModal, (newValue) => {
                 <div class="relative inline-block bg-white dark:bg-gray-900 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-3xl sm:w-full border border-gray-100 dark:border-gray-800 flex flex-col max-h-[90vh]">
                     <div class="p-5 sm:p-6 border-b border-gray-100 dark:border-gray-800">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white tracking-tight" id="modal-title">
+                            <h3 class="text-lg font-semibold text-text-primary dark:text-text-inverted tracking-tight" id="modal-title">
                                 Pending Join Requests
                             </h3>
-                            <button @click="showRequestsModal = false" class="text-gray-400 hover:text-gray-500 bg-gray-100 dark:bg-gray-800 p-1.5 rounded-full transition-colors">
+                            <button @click="showRequestsModal = false" class="text-gray-400 hover:text-gray-500 bg-gray-100 dark:bg-surface-dark-muted p-1.5 rounded-full transition-colors">
                                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
@@ -222,7 +222,7 @@ watch(showRequestsModal, (newValue) => {
                             <svg class="mx-auto h-12 w-12 mb-4 opacity-50 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            <h3 class="text-sm font-medium text-gray-900 dark:text-white">No pending requests</h3>
+                            <h3 class="text-sm font-medium text-text-primary dark:text-text-inverted">No pending requests</h3>
                             <p class="mt-1 text-sm text-gray-500">There are no pending join requests for this subject.</p>
                         </div>
 
@@ -231,7 +231,7 @@ watch(showRequestsModal, (newValue) => {
                             <div
                                 v-for="request in requests"
                                 :key="request.id"
-                                class="border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors duration-200 bg-white dark:bg-gray-800 shadow-sm"
+                                class="border border-border-light dark:border-border-dark rounded-xl p-4 hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors duration-200 bg-surface dark:bg-surface-dark-muted shadow-sm"
                                 :class="{ 'opacity-50': isProcessing(request.id) }"
                             >
                                 <div class="flex items-center justify-between flex-wrap gap-4">
@@ -246,10 +246,10 @@ watch(showRequestsModal, (newValue) => {
                                                 </div>
                                             </div>
                                             <div class="min-w-0">
-                                                <h4 class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                                                <h4 class="text-sm font-semibold text-text-primary dark:text-text-inverted truncate">
                                                     {{ request.student_name }}
                                                 </h4>
-                                                <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
+                                                <p class="text-sm text-text-secondary truncate">
                                                     Email: {{ request.student_email }} • Section: {{ request.section_name }}
                                                 </p>
                                                 <p class="text-xs text-gray-400 mt-0.5">
@@ -279,7 +279,7 @@ watch(showRequestsModal, (newValue) => {
                                         <button
                                             @click="declineRequest(request)"
                                             :disabled="isProcessing(request.id)"
-                                            class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                                            class="inline-flex items-center px-4 py-2 bg-surface dark:bg-surface-dark-muted border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                                         >
                                             <svg v-if="isProcessing(request.id)" class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -297,7 +297,7 @@ watch(showRequestsModal, (newValue) => {
                     </div>
                     
                     <div class="px-5 py-4 sm:px-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 flex justify-end">
-                        <button type="button" @click="showRequestsModal = false" class="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-all shadow-sm">
+                        <button type="button" @click="showRequestsModal = false" class="px-5 py-2.5 text-sm font-medium text-text-secondary bg-surface dark:bg-surface-dark-muted border border-border-light dark:border-border-dark hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-all shadow-sm">
                             Close
                         </button>
                     </div>

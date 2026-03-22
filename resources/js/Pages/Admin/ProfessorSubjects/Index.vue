@@ -151,10 +151,10 @@ const formatDate = (dateString) => {
 
         <!-- Header -->
         <div class="mb-8">
-            <h1 class="text-2xl font-semibold text-gray-900 dark:text-white mb-1">
+            <h1 class="text-2xl font-semibold text-text-primary dark:text-text-inverted mb-1">
                 Assignments
             </h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
+            <p class="text-sm text-text-secondary">
                 Manage instructor assignments per subject
             </p>
         </div>
@@ -162,7 +162,7 @@ const formatDate = (dateString) => {
         <!-- Filters -->
         <div class="mb-6 flex flex-col sm:flex-row gap-4">
             <div class="flex-1 min-w-0">
-                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                <label class="block text-xs font-medium text-text-secondary mb-1.5">
                     Search
                 </label>
                 <div class="relative">
@@ -183,12 +183,12 @@ const formatDate = (dateString) => {
                         v-model="searchQuery"
                         type="text"
                         placeholder="Search subjects or instructors..."
-                        class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+                        class="w-full pl-10 pr-4 py-2.5 text-sm border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
                     />
                 </div>
             </div>
             <div class="sm:w-64">
-                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                <label class="block text-xs font-medium text-text-secondary mb-1.5">
                     Filter by subject
                 </label>
                 <SearchableSelect
@@ -207,7 +207,7 @@ const formatDate = (dateString) => {
             <div
                 v-for="subject in filteredSubjects"
                 :key="subject.id"
-                class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col"
+                class="bg-surface dark:bg-surface-dark-muted rounded-xl border border-border-light dark:border-border-dark overflow-hidden flex flex-col"
             >
                 <!-- Card Header -->
                 <div class="px-5 pt-5 pb-4">
@@ -216,11 +216,11 @@ const formatDate = (dateString) => {
                             <span class="text-xs font-mono font-medium text-indigo-600 dark:text-indigo-400">
                                 {{ subject.code }}
                             </span>
-                            <h3 class="text-base font-semibold text-gray-900 dark:text-white mt-0.5 leading-snug">
+                            <h3 class="text-base font-semibold text-text-primary dark:text-text-inverted mt-0.5 leading-snug">
                                 {{ subject.name }}
                             </h3>
                         </div>
-                        <span class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                        <span class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-surface-dark-muted text-text-secondary">
                             {{ subject.assignments.length }} instructor{{ subject.assignments.length !== 1 ? 's' : '' }}
                         </span>
                     </div>
@@ -233,8 +233,8 @@ const formatDate = (dateString) => {
                         v-if="subject.assignments.length === 0"
                         class="py-6 text-center"
                     >
-                        <Icon icon="simple-line-icons:people" class="w-5 h-5 text-gray-400 dark:text-gray-400 mx-auto mb-4" />
-                        <p class="text-xs text-gray-400 dark:text-gray-500">
+                        <Icon icon="simple-line-icons:people" class="w-5 h-5 text-text-secondary mx-auto mb-4" />
+                        <p class="text-xs text-text-secondary">
                             No instructor assigned
                         </p>
                     </div>
@@ -244,17 +244,17 @@ const formatDate = (dateString) => {
                         <div
                             v-for="assignment in subject.assignments"
                             :key="assignment.id"
-                            class="group flex items-center justify-between gap-2 py-2 px-3 -mx-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                            class="group flex items-center justify-between gap-2 py-2 px-3 -mx-1 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                         >
                             <div class="flex items-center gap-3 min-w-0">
                                 <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
                                     {{ assignment.professor_name.charAt(0).toUpperCase() }}
                                 </div>
                                 <div class="min-w-0">
-                                    <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                    <p class="text-sm font-medium text-text-primary dark:text-text-inverted truncate">
                                         {{ assignment.professor_name }}
                                     </p>
-                                    <p class="text-xs text-gray-400 dark:text-gray-500 truncate">
+                                    <p class="text-xs text-text-secondary truncate">
                                         {{ assignment.department_name }}
                                     </p>
                                 </div>
@@ -273,7 +273,7 @@ const formatDate = (dateString) => {
                 </div>
 
                 <!-- Card Footer — Add Button -->
-                <div class="px-5 py-3 border-t border-gray-100 dark:border-gray-700/50">
+                <div class="px-5 py-3 border-t border-gray-100 dark:border-border-dark">
                     <button
                         @click="openAssignModal(subject)"
                         class="w-full flex items-center justify-center gap-1.5 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
@@ -290,7 +290,7 @@ const formatDate = (dateString) => {
         <!-- No Results -->
         <div
             v-else
-            class="bg-white dark:bg-gray-800 min-h-[calc(100vh-330px)] flex justify-center items-center rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center"
+            class="bg-surface dark:bg-surface-dark-muted min-h-[calc(100vh-330px)] flex justify-center items-center rounded-xl border border-border-light dark:border-border-dark p-12 text-center"
         >
             <div class="" >
                 <svg
@@ -306,10 +306,10 @@ const formatDate = (dateString) => {
                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                     />
                 </svg>
-                <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                <h3 class="text-sm font-medium text-text-primary dark:text-text-inverted mb-1">
                     No subjects found
                 </h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-text-secondary">
                     {{ subjectFilterId || searchQuery ? "Try adjusting your filters or search query." : "No subjects in database yet." }}
                 </p>
             </div>
@@ -321,10 +321,10 @@ const formatDate = (dateString) => {
             <div class="p-6">
                 <div class="flex items-center justify-between mb-6">
                     <div>
-                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        <h2 class="text-lg font-semibold text-text-primary dark:text-text-inverted">
                             Assign Instructor
                         </h2>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                        <p class="text-sm text-text-secondary mt-0.5">
                             {{ assignSubjectName }}
                         </p>
                     </div>
@@ -347,7 +347,7 @@ const formatDate = (dateString) => {
                         />
                         <InputError class="mt-2" :message="assignForm.errors.professor_id" />
                     </div>
-                    <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-end gap-3 pt-4 border-t border-border-light dark:border-border-dark">
                         <SecondaryButton type="button" @click="closeAssignModal" class="px-4 py-2">
                             Cancel
                         </SecondaryButton>

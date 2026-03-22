@@ -234,18 +234,18 @@ const truncateText = (text, maxLength = 80) => {
             <div class="flex items-center justify-between">
                 <div>
                     <h1
-                        class="text-2xl font-semibold text-gray-900 dark:text-white mb-1"
+                        class="text-2xl font-semibold text-text-primary dark:text-text-inverted mb-1"
                     >
                         Subjects
                     </h1>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                    <p class="text-sm text-text-secondary">
                         Manage academic subjects
                     </p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button
                         @click="openImportModal"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-surface dark:bg-surface-dark-muted text-text-secondary border border-border-light dark:border-border-dark text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
                     >
                         <svg
                             class="w-5 h-5"
@@ -306,19 +306,19 @@ const truncateText = (text, maxLength = 80) => {
                     v-model="searchQuery"
                     type="text"
                     placeholder="Search by subject code or name..."
-                    class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+                    class="w-full pl-10 pr-4 py-2.5 text-sm border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
                 />
             </div>
         </div>
 
         <!-- Subjects List -->
         <div
-            class="bg-white dark:bg-gray-800 min-h-[calc(100vh-330px)] flex flex-col justify-between relative rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+            class="bg-surface dark:bg-surface-dark-muted min-h-[calc(100vh-330px)] flex flex-col justify-between relative rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden"
         >
             <!-- Empty State -->
             <div v-if="!hasSubjects" class="p-12 text-center absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%]" >
                 <svg
-                    class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4"
+                    class="mx-auto h-12 w-12 text-text-secondary mb-4"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -331,11 +331,11 @@ const truncateText = (text, maxLength = 80) => {
                     />
                 </svg>
                 <h3
-                    class="text-sm font-medium text-gray-900 dark:text-white mb-1"
+                    class="text-sm font-medium text-text-primary dark:text-text-inverted mb-1"
                 >
                     {{ searchQuery ? "No subjects found" : "No subjects" }}
                 </h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                <p class="text-sm text-text-secondary mb-4">
                     {{ searchQuery ? "Try adjusting your search." : "Get started by creating a new subject." }}
                 </p>
                 <button
@@ -361,11 +361,11 @@ const truncateText = (text, maxLength = 80) => {
             </div>
 
             <!-- Subjects Table -->
-            <div v-else class="divide-y divide-gray-200 border-b border-gray-200 dark:divide-gray-700">
+            <div v-else class="divide-y divide-gray-200 border-b border-gray-200 dark:divide-border-dark">
                 <div
                     v-for="(subject, index) in props.subjects.data"
                     :key="subject.id"
-                    class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
+                    class="p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors duration-150"
                 >
                     <div class="flex items-center justify-between gap-4">
                         <!-- Subject Info -->
@@ -374,7 +374,7 @@ const truncateText = (text, maxLength = 80) => {
                                 v-if="editingId !== subject.id"
                                 class="flex items-center gap-4"
                             >
-                                <span class="text-sm font-medium text-gray-400 dark:text-gray-500 w-6 text-right flex-shrink-0">{{ (props.subjects.from || 1) + index }}.</span>
+                                <span class="text-sm font-medium text-text-secondary w-6 text-right flex-shrink-0">{{ (props.subjects.from || 1) + index }}.</span>
                                 <div class="flex-shrink-0">
                                     <div
                                         class="w-12 h-12 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center"
@@ -400,7 +400,7 @@ const truncateText = (text, maxLength = 80) => {
                                     >
                                         
                                         <p
-                                            class="text-base font-medium text-gray-900 dark:text-white"
+                                            class="text-base font-medium text-text-primary dark:text-text-inverted"
                                         >
                                             {{ subject.name }}
                                         </p>
@@ -414,13 +414,13 @@ const truncateText = (text, maxLength = 80) => {
 
                                     <div class="flex-1 text-center flex justify-between items-center">  <p
                                         v-if="subject.description"
-                                        class="text-sm text-gray-600 dark:text-gray-400 flex-1"
+                                        class="text-sm text-text-secondary flex-1"
                                     >
                                         {{ truncateText(subject.description) }}
                                     </p>
                                     <p
                                         v-if="subject.created_at"
-                                        class="text-xs text-gray-500 dark:text-gray-400"
+                                        class="text-xs text-text-secondary"
                                     >
                                         Created
                                         {{ formatDate(subject.created_at) }}
@@ -433,7 +433,7 @@ const truncateText = (text, maxLength = 80) => {
                             <div v-else class="space-y-3">
                                 <div>
                                     <label
-                                        class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+                                        class="block text-xs font-medium text-text-secondary mb-1"
                                     >
                                         Code
                                     </label>
@@ -449,7 +449,7 @@ const truncateText = (text, maxLength = 80) => {
                                                 })).code
                                         "
                                         type="text"
-                                        class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                        class="w-full px-3 py-2 text-base border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                                         placeholder="Subject code (e.g., CS201)"
                                         @keyup.enter="
                                             saveEdit(subject.id, subject)
@@ -467,7 +467,7 @@ const truncateText = (text, maxLength = 80) => {
                                 </div>
                                 <div>
                                     <label
-                                        class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+                                        class="block text-xs font-medium text-text-secondary mb-1"
                                     >
                                         Name
                                     </label>
@@ -483,7 +483,7 @@ const truncateText = (text, maxLength = 80) => {
                                                 })).name
                                         "
                                         type="text"
-                                        class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                        class="w-full px-3 py-2 text-base border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                                         placeholder="Subject name"
                                         @keyup.enter="
                                             saveEdit(subject.id, subject)
@@ -500,7 +500,7 @@ const truncateText = (text, maxLength = 80) => {
                                 </div>
                                 <div>
                                     <label
-                                        class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+                                        class="block text-xs font-medium text-text-secondary mb-1"
                                     >
                                         Description
                                     </label>
@@ -515,7 +515,7 @@ const truncateText = (text, maxLength = 80) => {
                                                         '',
                                                 })).description
                                         "
-                                        class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all min-h-[100px]"
+                                        class="w-full px-3 py-2 text-base border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all min-h-[100px]"
                                         placeholder="Subject description (optional)"
                                         @keyup.esc="cancelEdit(subject.id)"
                                     ></textarea>
@@ -535,7 +535,7 @@ const truncateText = (text, maxLength = 80) => {
                             <template v-if="editingId !== subject.id">
                                 <button
                                     @click="startEdit(subject)"
-                                    class="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors duration-150"
+                                    class="p-2 text-text-secondary hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors duration-150"
                                     title="Edit"
                                 >
                                     <svg
@@ -554,7 +554,7 @@ const truncateText = (text, maxLength = 80) => {
                                 </button>
                                 <button
                                     @click="openDeleteModal(subject.id)"
-                                    class="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-150"
+                                    class="p-2 text-text-secondary hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-150"
                                     title="Delete"
                                 >
                                     <svg
@@ -597,7 +597,7 @@ const truncateText = (text, maxLength = 80) => {
                                 </button>
                                 <button
                                     @click="cancelEdit(subject.id)"
-                                    class="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-150"
+                                    class="p-2 text-text-secondary hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors duration-150"
                                     title="Cancel"
                                 >
                                     <svg
@@ -639,7 +639,7 @@ const truncateText = (text, maxLength = 80) => {
             <div class="p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h2
-                        class="text-xl font-semibold text-gray-900 dark:text-white"
+                        class="text-xl font-semibold text-text-primary dark:text-text-inverted"
                     >
                         Create Subject
                     </h2>
@@ -705,7 +705,7 @@ const truncateText = (text, maxLength = 80) => {
                         <textarea
                             id="create_description"
                             v-model="form.description"
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all min-h-[120px]"
+                            class="w-full px-3 py-2 border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all min-h-[120px]"
                             placeholder="Enter subject description (optional)"
                             rows="4"
                         ></textarea>
@@ -715,7 +715,7 @@ const truncateText = (text, maxLength = 80) => {
                         />
                     </div>
                     <div
-                        class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700"
+                        class="flex justify-end gap-3 pt-4 border-t border-border-light dark:border-border-dark"
                     >
                         <SecondaryButton
                             type="button"
@@ -740,7 +740,7 @@ const truncateText = (text, maxLength = 80) => {
             <div class="p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h2
-                        class="text-xl font-semibold text-gray-900 dark:text-white"
+                        class="text-xl font-semibold text-text-primary dark:text-text-inverted"
                     >
                         Import Subjects
                     </h2>
@@ -811,7 +811,7 @@ const truncateText = (text, maxLength = 80) => {
                         </button>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        <p class="text-sm text-text-secondary mb-3">
                             Upload an Excel or CSV file with <strong>subject_code</strong> and <strong>subject_name</strong> columns. Duplicate codes will be skipped.
                         </p>
                         <InputLabel
@@ -833,11 +833,11 @@ const truncateText = (text, maxLength = 80) => {
                                 class="relative flex justify-center px-6 pt-5 pb-6 rounded-[calc(0.5rem-2px)] transition-colors"
                                 :class="isImportDragging
                                     ? 'bg-indigo-50 dark:bg-indigo-900/20'
-                                    : 'bg-white dark:bg-gray-800'"
+                                    : 'bg-surface dark:bg-surface-dark-muted'"
                             >
                             <div class="space-y-1 text-center">
                                 <svg
-                                    class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
+                                    class="mx-auto h-12 w-12 text-text-secondary"
                                     stroke="currentColor"
                                     fill="none"
                                     viewBox="0 0 48 48"
@@ -850,7 +850,7 @@ const truncateText = (text, maxLength = 80) => {
                                     />
                                 </svg>
                                 <div
-                                    class="flex text-sm text-gray-600 dark:text-gray-400 justify-center"
+                                    class="flex text-sm text-text-secondary justify-center"
                                 >
                                     <label
                                         for="import_file"
@@ -867,12 +867,12 @@ const truncateText = (text, maxLength = 80) => {
                                     </label>
                                     <p class="pl-1">or drag and drop</p>
                                 </div>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                <p class="text-xs text-text-secondary">
                                     XLSX, XLS, CSV up to 2MB
                                 </p>
                                 <p
                                     v-if="importFileName"
-                                    class="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2"
+                                    class="text-sm font-medium text-text-secondary mt-2"
                                 >
                                     Selected: {{ importFileName }}
                                 </p>
@@ -918,7 +918,7 @@ const truncateText = (text, maxLength = 80) => {
                         </ul>
                     </div>
                     <div
-                        class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700"
+                        class="flex justify-end gap-3 pt-4 border-t border-border-light dark:border-border-dark"
                     >
                         <SecondaryButton
                             type="button"

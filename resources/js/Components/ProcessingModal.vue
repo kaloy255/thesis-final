@@ -32,7 +32,7 @@
 
                     <!-- Progress Bar -->
                     <div class="w-full mt-2">
-                        <div class="w-full bg-gray-200 rounded-full h-3 dark:bg-gray-700 overflow-hidden">
+                        <div class="w-full bg-gray-200 rounded-full h-3 dark:bg-surface-dark-muted overflow-hidden">
                             <div
                                 class="h-3 rounded-full transition-all duration-500 ease-out"
                                 :class="progress >= 100 ? 'bg-green-500' : 'bg-blue-600'"
@@ -42,7 +42,7 @@
                     </div>
 
                     <!-- Progress Percentage -->
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center font-medium">
+                    <p class="text-sm text-text-secondary mt-2 text-center font-medium">
                         {{ progress }}%
                     </p>
                 </div>
@@ -50,7 +50,7 @@
                 <!-- Current Stage -->
                 <p
                     v-if="stage && !error"
-                    class="text-sm text-gray-700 dark:text-gray-300 mt-4 text-center"
+                    class="text-sm text-text-secondary mt-4 text-center"
                 >
                     {{ stage }}
                 </p>

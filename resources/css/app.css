@@ -28,20 +28,20 @@
 
     .dark {
         /* Dark mode overrides */
-        --color-surface: 15 23 42;
-        --color-surface-muted: 17 24 39;
-        --color-surface-dark: 15 23 42;
-        --color-surface-dark-muted: 17 24 39;
+        --color-surface: 15 17 23;
+        --color-surface-muted: 23 27 34;
+        --color-surface-dark: 15 17 23;
+        --color-surface-dark-muted: 30 35 48;
 
-        --color-text-primary: 224 224 224;
-        --color-text-secondary: 148 163 184;
+        --color-text-primary: 226 232 240;
+        --color-text-secondary: 139 149 165;
         --color-text-inverted: 241 245 249;
 
-        --color-border-light: 55 65 81;
-        --color-border-dark: 31 41 55;
+        --color-border-light: 42 49 64;
+        --color-border-dark: 28 33 48;
 
-        --color-accent-primary: 99 102 241;
-        --color-accent-muted: 129 140 248;
+        --color-accent-primary: 129 140 248;
+        --color-accent-muted: 165 180 252;
 
         color-scheme: dark;
     }
@@ -49,7 +49,11 @@
 
 @layer components {
     .card {
-        @apply rounded-lg border border-border-light bg-surface shadow-card dark:border-border-dark dark:bg-surface-dark;
+        @apply rounded-lg border border-border-light bg-surface shadow-card dark:border-border-dark dark:bg-surface-muted;
+    }
+
+    .card-elevated {
+        @apply rounded-lg border border-border-light bg-surface shadow-lg dark:border-border-dark dark:bg-surface-dark-muted dark:shadow-card-dark;
     }
 
     .card-muted {
@@ -167,30 +171,55 @@
     border-left-color: #ec4899 !important;
 }
 
-/* PrimeVue DatePicker - make panel + selected day blue */
+/* PrimeVue DatePicker */
 .p-datepicker-panel {
     background: rgb(255, 255, 255) !important;
-    border-color: rgba(0, 0, 0, 0.99) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
     border-width: 1px !important;
     border-radius: 10px !important;
     padding: 10px !important;
-    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1) !important;
-    border-radius: 10px !important;
-    border-width: 1px !important;
-    border-color: rgba(0, 0, 0, 0.99) !important;
-    border-radius: 10px !important;
-    border-width: 1px !important;
-    border-color: rgba(0, 0, 0, 0.99) !important;
-    border-radius: 10px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
 }
 
+.dark .p-datepicker-panel {
+    background: rgb(30, 35, 48) !important;
+    border-color: rgb(42, 49, 64) !important;
+    color: rgb(226, 232, 240) !important;
+    box-shadow: 0 10px 25px -15px rgba(0,0,0,0.5) !important;
+}
+
+.dark .p-datepicker-header {
+    border-bottom: 1px solid rgb(42, 49, 64) !important;
+}
+
+.dark .p-datepicker-title, 
+.dark .p-datepicker-prev, 
+.dark .p-datepicker-next {
+    color: rgb(226, 232, 240) !important;
+}
+
+.dark .p-datepicker-prev:hover, 
+.dark .p-datepicker-next:hover {
+    background-color: rgb(42, 49, 64) !important;
+}
+
+.dark .p-datepicker-calendar th, 
+.dark .p-datepicker-calendar td span {
+    color: rgb(226, 232, 240) !important;
+}
+
+.dark .p-datepicker-calendar td:not(.p-datepicker-day-selected) span:hover {
+    background-color: rgb(42, 49, 64) !important;
+}
 
 .p-datepicker-day-selected,
 .p-datepicker-day-selected-range {
-    background: #3b83f6b3 !important;
+    background: #4f46e5 !important;
     color: #ffffff !important;
 }
 
-
-
-
+.dark .p-datepicker-day-selected,
+.dark .p-datepicker-day-selected-range {
+    background: #818cf8 !important;
+    color: #ffffff !important;
+}

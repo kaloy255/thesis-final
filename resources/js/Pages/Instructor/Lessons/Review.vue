@@ -3,31 +3,31 @@
         <Head title="Review Assessment" />
         <div v-if="loadError" class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <div class="bg-surface dark:bg-surface-dark-muted overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <p class="text-amber-600 dark:text-amber-400">{{ loadError }}</p>
-                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Redirecting to create page...</p>
+                    <p class="mt-2 text-sm text-text-secondary">Redirecting to create page...</p>
                 </div>
             </div>
         </div>
         <div v-else-if="!reviewData" class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <p class="text-gray-500 dark:text-gray-400">Loading...</p>
+                <div class="bg-surface dark:bg-surface-dark-muted overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <p class="text-text-secondary">Loading...</p>
                 </div>
             </div>
         </div>
         <div v-else class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div
-                    class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg"
+                    class="bg-surface dark:bg-surface-dark-muted overflow-hidden shadow-sm sm:rounded-lg"
                 >
                     <div class="p-6">
                         <!-- Header -->
                         <div class="mb-6 border-l-4 border-indigo-500 pl-4">
-                            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+                            <h2 class="text-2xl font-bold text-text-primary dark:text-text-inverted">
                                 Review Assessment Questions
                             </h2>
-                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 flex items-center gap-2">
+                            <p class="text-sm text-text-secondary mt-1 flex items-center gap-2">
                                 <span class="font-medium text-gray-900 dark:text-gray-200">{{ lesson.subject?.name }}</span>
                                 <span class="text-gray-400 dark:text-gray-600">&bull;</span>
                                 <span>{{ lesson.title }}</span>
@@ -90,7 +90,7 @@
                         </div>
 
                         <!-- Section Assignment Panel (Collapsible) -->
-                        <div class="mb-6 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
+                        <div class="mb-6 border border-border-light dark:border-border-dark rounded-xl overflow-hidden shadow-sm">
                             <!-- Toggle Header -->
                             <button
                                 type="button"
@@ -102,8 +102,8 @@
                                         <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                                     </div>
                                     <div class="text-left">
-                                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Assign to Sections</h3>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                        <h3 class="text-sm font-semibold text-text-primary dark:text-text-inverted">Assign to Sections</h3>
+                                        <p class="text-xs text-text-secondary mt-0.5">
                                             <template v-if="selectedSectionIds.length > 0">
                                                 {{ selectedSectionIds.length }} section{{ selectedSectionIds.length > 1 ? 's' : '' }} assigned
                                             </template>
@@ -134,7 +134,7 @@
                             </button>
 
                             <!-- Expandable Content -->
-                            <div v-show="showSectionPanel" class="border-t border-gray-200 dark:border-gray-700">
+                            <div v-show="showSectionPanel" class="border-t border-border-light dark:border-border-dark">
                                 <SectionAssignment
                                     :departments="departments || []"
                                     :sections="sections || []"
@@ -146,10 +146,10 @@
                         </div>
 
                         <!-- Add Question Button -->
-                        <div class="mb-6 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                        <div class="mb-6 flex justify-between items-center bg-gray-50 dark:bg-surface-dark-muted/50 p-4 rounded-xl border border-border-light dark:border-border-dark">
                             <div>
-                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Questions</h3>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">Add or edit questions below</p>
+                                <h3 class="text-sm font-semibold text-text-primary dark:text-text-inverted">Questions</h3>
+                                <p class="text-xs text-text-secondary">Add or edit questions below</p>
                             </div>
                             <button
                                 @click="toggleAddForm"
@@ -169,12 +169,12 @@
                                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
                                 <!-- Modal panel -->
-                                <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-200 dark:border-gray-700">
-                                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
-                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white" id="modal-title">
+                                <div class="inline-block align-bottom bg-surface dark:bg-surface-dark-muted rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-border-light dark:border-border-dark">
+                                    <div class="px-6 py-4 border-b border-border-light dark:border-border-dark flex justify-between items-center bg-gray-50 dark:bg-surface-dark-muted/50">
+                                        <h3 class="text-lg font-semibold text-text-primary dark:text-text-inverted" id="modal-title">
                                             Add New Question
                                         </h3>
-                                        <button @click="cancelAddQuestion" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700">
+                                        <button @click="cancelAddQuestion" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors p-1 rounded-md hover:bg-gray-200 dark:hover:bg-white/5">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                                         </button>
                                     </div>
@@ -183,8 +183,8 @@
                                         <div class="space-y-5">
                                             <!-- Question Type -->
                                             <div>
-                                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Question Type</label>
-                                                <select v-model="newQuestion.type" @change="handleTypeChange" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm">
+                                                <label class="block text-sm font-medium text-text-secondary mb-1">Question Type</label>
+                                                <select v-model="newQuestion.type" @change="handleTypeChange" class="mt-1 block w-full border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm">
                                                     <option value="multiple_choice">Multiple Choice</option>
                                                     <option value="identification">Identification</option>
                                                     <option value="true_or_false">True/False</option>
@@ -193,15 +193,15 @@
 
                                             <!-- Question Text -->
                                             <div>
-                                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Question Text</label>
-                                                <textarea v-model="newQuestion.question" @blur="validateQuestion" @input="errors.question = ''" rows="3" :class="['mt-1 block w-full dark:bg-gray-900 dark:text-gray-300 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm resize-none', errors.question ? 'border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-700 focus:border-indigo-500']" placeholder="Enter your question here..."></textarea>
+                                                <label class="block text-sm font-medium text-text-secondary mb-1">Question Text</label>
+                                                <textarea v-model="newQuestion.question" @blur="validateQuestion" @input="errors.question = ''" rows="3" :class="['mt-1 block w-full dark:bg-gray-900 dark:text-text-secondary focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm resize-none', errors.question ? 'border-red-500 focus:border-red-500' : 'border-border-light dark:border-border-dark focus:border-indigo-500']" placeholder="Enter your question here..."></textarea>
                                                 <InputError class="mt-1" :message="errors.question" />
                                             </div>
 
                                             <!-- Choices (Multiple Choice Only) -->
-                                            <div v-if="newQuestion.type === 'multiple_choice'" class="bg-gray-50 dark:bg-gray-800/80 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                                            <div v-if="newQuestion.type === 'multiple_choice'" class="bg-gray-50 dark:bg-surface-dark-muted/80 p-4 rounded-lg border border-border-light dark:border-border-dark">
                                                 <div class="flex justify-between items-center mb-3">
-                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Choices</label>
+                                                    <label class="block text-sm font-medium text-text-secondary">Choices</label>
                                                     <button v-if="newQuestion.choices.length < 8" @click="addChoice" type="button" class="inline-flex items-center text-xs font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded-md transition-colors">
                                                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> Add Choice
                                                     </button>
@@ -209,7 +209,7 @@
                                                 <div class="space-y-2.5">
                                                     <div v-for="(choice, choiceIndex) in newQuestion.choices" :key="choiceIndex" class="flex items-center gap-2">
                                                         <div class="flex-shrink-0 w-6 flex justify-center text-sm font-medium text-gray-500">{{ String.fromCharCode(65 + choiceIndex) }}.</div>
-                                                        <input v-model="newQuestion.choices[choiceIndex]" @input="validateChoices(); errors.choices = '';" type="text" :class="['flex-1 dark:bg-gray-900 dark:text-gray-300 sm:text-sm rounded-lg shadow-sm', errors.choices ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500']" :placeholder="`Choice ${choiceIndex + 1}`" />
+                                                        <input v-model="newQuestion.choices[choiceIndex]" @input="validateChoices(); errors.choices = '';" type="text" :class="['flex-1 dark:bg-gray-900 dark:text-text-secondary sm:text-sm rounded-lg shadow-sm', errors.choices ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border-light dark:border-border-dark focus:border-indigo-500 focus:ring-indigo-500']" :placeholder="`Choice ${choiceIndex + 1}`" />
                                                         <button v-if="newQuestion.choices.filter(c => c.trim() !== '').length > 4" @click="removeChoice(choiceIndex)" type="button" class="flex-shrink-0 p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors" title="Remove choice">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                                         </button>
@@ -220,27 +220,27 @@
 
                                             <!-- Correct Answer -->
                                             <div>
-                                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correct Answer</label>
+                                                <label class="block text-sm font-medium text-text-secondary mb-1">Correct Answer</label>
                                                 <!-- Dropdown for Multiple Choice -->
-                                                <select v-if="newQuestion.type === 'multiple_choice'" v-model="newQuestion.correct_answer" @change="validateCorrectAnswer" @focus="errors.correct_answer = ''" :class="['mt-1 block w-full dark:bg-gray-900 dark:text-gray-300 sm:text-sm rounded-lg shadow-sm', errors.correct_answer ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500']">
+                                                <select v-if="newQuestion.type === 'multiple_choice'" v-model="newQuestion.correct_answer" @change="validateCorrectAnswer" @focus="errors.correct_answer = ''" :class="['mt-1 block w-full dark:bg-gray-900 dark:text-text-secondary sm:text-sm rounded-lg shadow-sm', errors.correct_answer ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border-light dark:border-border-dark focus:border-indigo-500 focus:ring-indigo-500']">
                                                     <option value="">Select correct answer</option>
                                                     <option v-for="(choice, choiceIdx) in newQuestion.choices.filter(c => c.trim() !== '')" :key="choiceIdx" :value="choice">{{ String.fromCharCode(65 + choiceIdx) }}. {{ choice }}</option>
                                                 </select>
                                                 <!-- Dropdown for True/False -->
-                                                <select v-else-if="newQuestion.type === 'true_or_false'" v-model="newQuestion.correct_answer" @change="validateCorrectAnswer" @focus="errors.correct_answer = ''" :class="['mt-1 block w-full dark:bg-gray-900 dark:text-gray-300 sm:text-sm rounded-lg shadow-sm', errors.correct_answer ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500']">
+                                                <select v-else-if="newQuestion.type === 'true_or_false'" v-model="newQuestion.correct_answer" @change="validateCorrectAnswer" @focus="errors.correct_answer = ''" :class="['mt-1 block w-full dark:bg-gray-900 dark:text-text-secondary sm:text-sm rounded-lg shadow-sm', errors.correct_answer ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border-light dark:border-border-dark focus:border-indigo-500 focus:ring-indigo-500']">
                                                     <option value="">Select answer</option>
                                                     <option value="True">True</option>
                                                     <option value="False">False</option>
                                                 </select>
                                                 <!-- Textarea for Identification -->
-                                                <textarea v-else v-model="newQuestion.correct_answer" @blur="validateCorrectAnswer" @input="errors.correct_answer = ''" rows="1" :class="['mt-1 block w-full dark:bg-gray-900 dark:text-gray-300 sm:text-sm rounded-lg shadow-sm', errors.correct_answer ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 dark:border-gray-700 focus:border-indigo-500 focus:ring-indigo-500']" placeholder="Enter the exact correct answer..."></textarea>
+                                                <textarea v-else v-model="newQuestion.correct_answer" @blur="validateCorrectAnswer" @input="errors.correct_answer = ''" rows="1" :class="['mt-1 block w-full dark:bg-gray-900 dark:text-text-secondary sm:text-sm rounded-lg shadow-sm', errors.correct_answer ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border-light dark:border-border-dark focus:border-indigo-500 focus:ring-indigo-500']" placeholder="Enter the exact correct answer..."></textarea>
                                                 <InputError class="mt-1" :message="errors.correct_answer" />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div class="px-6 py-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3 sm:px-6">
-                                        <button type="button" @click="cancelAddQuestion" class="w-full inline-flex justify-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none sm:w-auto sm:text-sm transition-colors">
+                                    <div class="px-6 py-4 bg-gray-50 dark:bg-gray-900/50 border-t border-border-light dark:border-border-dark flex justify-end gap-3 sm:px-6">
+                                        <button type="button" @click="cancelAddQuestion" class="w-full inline-flex justify-center rounded-lg border border-border-light dark:border-border-dark shadow-sm px-4 py-2 bg-surface dark:bg-surface-dark-muted text-base font-medium text-text-secondary hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none sm:w-auto sm:text-sm transition-colors">
                                             Cancel
                                         </button>
                                         <button type="button" @click="addQuestion" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm transition-colors">
@@ -256,7 +256,7 @@
                             <div
                                 v-for="(item, index) in items"
                                 :key="index"
-                                class="border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800/50 overflow-hidden transition-all duration-200"
+                                class="border border-border-light dark:border-border-dark rounded-xl bg-gray-50 dark:bg-surface-dark-muted/50 overflow-hidden transition-all duration-200"
                                 :class="{ 'ring-2 ring-indigo-500/50 shadow-md': expandedItemId === index }"
                             >
                                 <!-- Compact Header Row -->
@@ -267,7 +267,7 @@
                                     <!-- Drag Handle & Number -->
                                     <div class="flex items-center gap-3 w-16 flex-shrink-0">
                                         <svg class="w-4 h-4 text-gray-400 cursor-move hover:text-gray-600 dark:hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" /></svg>
-                                        <span class="font-bold text-gray-700 dark:text-gray-300">{{ index + 1 }}.</span>
+                                        <span class="font-bold text-text-secondary">{{ index + 1 }}.</span>
                                     </div>
 
                                     <!-- Question Summary & Badges -->
@@ -276,7 +276,7 @@
                                             {{ item.question || 'New Question' }}
                                         </p>
                                         <div class="flex items-center gap-2 flex-shrink-0">
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300 hidden sm:inline-flex">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-200 text-gray-800 dark:bg-surface-dark-muted dark:text-text-secondary hidden sm:inline-flex">
                                                 {{ formatType(item.type) }}
                                             </span>
                                             <span
@@ -308,26 +308,26 @@
                                 <!-- Expanded Editable Form -->
                                 <div
                                     v-show="expandedItemId === index"
-                                    class="px-5 py-5 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                                    class="px-5 py-5 border-t border-border-light dark:border-border-dark bg-white dark:bg-gray-900"
                                 >
                                     <!-- Question Text -->
                                     <div class="mb-4">
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        <label class="block text-sm font-medium text-text-secondary mb-1">
                                             Question Text
                                         </label>
                                         <textarea
                                             v-model="item.question"
                                             rows="3"
-                                            class="mt-1 block w-full resize-none border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
+                                            class="mt-1 block w-full resize-none border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
                                         ></textarea>
                                     </div>
 
                                     <!-- Choices (Multiple Choice Only) -->
                                     <div
                                         v-if="item.type === 'multiple_choice'"
-                                        class="mb-4 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700"
+                                        class="mb-4 bg-gray-50 dark:bg-surface-dark-muted/50 p-4 rounded-xl border border-border-light dark:border-border-dark"
                                     >
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                        <label class="block text-sm font-medium text-text-secondary mb-3">
                                             Choices
                                         </label>
                                         <div class="space-y-2.5">
@@ -340,7 +340,7 @@
                                                 <input
                                                     v-model="item.choices[choiceIndex]"
                                                     type="text"
-                                                    class="flex-1 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
+                                                    class="flex-1 border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
                                                 />
                                             </div>
                                         </div>
@@ -348,14 +348,14 @@
 
                                     <!-- Correct Answer -->
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        <label class="block text-sm font-medium text-text-secondary mb-1">
                                             Correct Answer
                                         </label>
                                         <!-- Dropdown for Multiple Choice -->
                                         <select
                                             v-if="item.type === 'multiple_choice'"
                                             v-model="item.correct_answer"
-                                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
+                                            class="mt-1 block w-full border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
                                         >
                                             <option value="">Select correct answer</option>
                                             <option
@@ -370,7 +370,7 @@
                                         <select
                                             v-else-if="item.type === 'true_or_false'"
                                             v-model="item.correct_answer"
-                                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
+                                            class="mt-1 block w-full border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
                                         >
                                             <option value="">Select answer</option>
                                             <option value="True">True</option>
@@ -381,7 +381,7 @@
                                             v-else
                                             v-model="item.correct_answer"
                                             rows="1"
-                                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
+                                            class="mt-1 block w-full border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
                                         ></textarea>
                                     </div>
                                 </div>
@@ -390,7 +390,7 @@
 
                         <!-- Empty State -->
                         <div v-else-if="!showAddForm && items.length === 0" class="text-center py-12">
-                            <p class="text-gray-500 dark:text-gray-400 mb-4">
+                            <p class="text-text-secondary mb-4">
                                 No questions yet. Click "Add Question" to create one.
                             </p>
                         </div>
@@ -403,7 +403,7 @@
                 <button
                     @click="cancelReview"
                     :disabled="saving || cancelling"
-                    class="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 shadow-sm"
+                    class="px-5 py-2.5 text-sm font-medium text-text-secondary bg-surface dark:bg-surface-dark-muted border border-border-light dark:border-border-dark rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors disabled:opacity-50 shadow-sm"
                 >
                     <span v-if="cancelling">Cancelling...</span>
                     <span v-else>Cancel</span>
@@ -573,7 +573,7 @@ const providerBadgeClass = computed(() => {
         case "gemini":
             return "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300";
         default:
-            return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
+            return "bg-gray-100 text-gray-800 dark:bg-surface-dark-muted dark:text-text-secondary";
     }
 });
 const saving = ref(false);
@@ -591,7 +591,7 @@ const bloomBadgeStyles = {
 };
 
 const getBloomBadgeClass = (level) => {
-    return bloomBadgeStyles[level] || "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
+    return bloomBadgeStyles[level] || "bg-gray-100 text-gray-800 dark:bg-surface-dark-muted dark:text-text-secondary";
 };
 
 const formatBloomLevel = (level) => {

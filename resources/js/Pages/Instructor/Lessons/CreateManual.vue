@@ -3,15 +3,15 @@
         <Head title="Create Manual Assessment" />
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="bg-surface dark:bg-surface-dark-muted overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <!-- Header -->
                         <div class="flex justify-between items-center mb-6">
                             <div class="border-l-4 border-indigo-500 pl-4">
-                                <h2 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+                                <h2 class="text-2xl font-bold text-text-primary dark:text-text-inverted tracking-tight">
                                     Create Manual Assessment
                                 </h2>
-                                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                <p class="text-sm text-text-secondary mt-1">
                                     Manually create assessment questions
                                 </p>
                             </div>
@@ -119,7 +119,7 @@
                 </div>
 
                 <!-- Support File Upload Panel (Collapsible) -->
-                <div class="mb-6 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm bg-white dark:bg-gray-800">
+                <div class="mb-6 border border-border-light dark:border-border-dark rounded-xl overflow-hidden shadow-sm bg-surface dark:bg-surface-dark-muted">
                     <!-- Toggle Header -->
                     <button
                         type="button"
@@ -131,8 +131,8 @@
                                 <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
                             </div>
                             <div class="text-left">
-                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Attach Support File <span class="text-xs font-normal text-gray-500 ml-1">(Optional)</span></h3>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                <h3 class="text-sm font-semibold text-text-primary dark:text-text-inverted">Attach Support File <span class="text-xs font-normal text-gray-500 ml-1">(Optional)</span></h3>
+                                <p class="text-xs text-text-secondary mt-0.5">
                                     <template v-if="fileName">
                                         <span class="text-indigo-600 dark:text-indigo-400 font-medium truncate max-w-[200px] sm:max-w-md inline-block align-bottom">{{ fileName }}</span>
                                     </template>
@@ -150,11 +150,11 @@
                     </button>
 
                     <!-- Expandable Content -->
-                    <div v-show="showFilePanel" class="border-t border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-800">
+                    <div v-show="showFilePanel" class="border-t border-border-light dark:border-border-dark p-5 bg-surface dark:bg-surface-dark-muted">
                         <div
                             class="relative overflow-hidden rounded-xl border-2 border-dashed transition-colors"
                             :class="[
-                                isDragging ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-gray-700 hover:border-indigo-400 dark:hover:border-indigo-600',
+                                isDragging ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-border-light dark:border-border-dark hover:border-indigo-400 dark:hover:border-indigo-600',
                                 fileError || form.errors.file ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : ''
                             ]"
                             @dragover.prevent="isDragging = true"
@@ -166,20 +166,20 @@
                                     <div class="w-12 h-12 mx-auto bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center">
                                         <svg class="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                                     </div>
-                                    <div class="flex text-sm text-gray-600 dark:text-gray-400 justify-center">
-                                        <label for="file_upload" class="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                    <div class="flex text-sm text-text-secondary justify-center">
+                                        <label for="file_upload" class="relative cursor-pointer bg-surface dark:bg-surface-dark-muted rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
                                             <span>Click to upload</span>
                                             <input id="file_upload" type="file" class="sr-only" accept=".docx,.pdf,.pptx,.txt" @change="handleFileSelect" />
                                         </label>
                                         <p class="pl-1">or drag and drop</p>
                                     </div>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">DOCX, PDF, PPTX or TXT (Max 10MB)</p>
+                                    <p class="text-xs text-text-secondary">DOCX, PDF, PPTX or TXT (Max 10MB)</p>
                                 </div>
                                 <div v-else class="flex flex-col items-center gap-3">
                                     <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
                                         <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                     </div>
-                                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ fileName }}</div>
+                                    <div class="text-sm font-medium text-text-primary dark:text-text-inverted">{{ fileName }}</div>
                                     <button type="button" @click="removeFile" class="text-xs font-semibold text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
                                         Remove file
                                     </button>
@@ -191,7 +191,7 @@
                 </div>
 
                 <!-- Section Assignment Panel (Collapsible) -->
-                <div class="mb-6 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
+                <div class="mb-6 border border-border-light dark:border-border-dark rounded-xl overflow-hidden shadow-sm">
                     <!-- Toggle Header -->
                     <button
                         type="button"
@@ -203,8 +203,8 @@
                                 <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                             </div>
                             <div class="text-left">
-                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Assign to Sections</h3>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                <h3 class="text-sm font-semibold text-text-primary dark:text-text-inverted">Assign to Sections</h3>
+                                <p class="text-xs text-text-secondary mt-0.5">
                                     <template v-if="form.section_ids.length > 0">
                                         {{ form.section_ids.length }} section{{ form.section_ids.length > 1 ? 's' : '' }} assigned
                                     </template>
@@ -235,7 +235,7 @@
                     </button>
 
                     <!-- Expandable Content -->
-                    <div v-show="showSectionPanel" class="border-t border-gray-200 dark:border-gray-700">
+                    <div v-show="showSectionPanel" class="border-t border-border-light dark:border-border-dark">
                         <SectionAssignment
                             :departments="departments || []"
                             :sections="sections || []"
@@ -247,10 +247,10 @@
                 </div>
 
                 <!-- Add Question Button Bar -->
-                <div class="mb-6 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                <div class="mb-6 flex justify-between items-center bg-gray-50 dark:bg-surface-dark-muted/50 p-4 rounded-xl border border-border-light dark:border-border-dark">
                     <div>
-                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Questions</h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Add or edit questions below</p>
+                        <h3 class="text-sm font-semibold text-text-primary dark:text-text-inverted">Questions</h3>
+                        <p class="text-xs text-text-secondary">Add or edit questions below</p>
                     </div>
                     <button
                         type="button"
@@ -268,10 +268,10 @@
                         class="text-center py-12"
                     >
                         <div
-                            class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
+                            class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-surface-dark-muted flex items-center justify-center"
                         >
                             <svg
-                                class="w-8 h-8 text-gray-400 dark:text-gray-500"
+                                class="w-8 h-8 text-text-secondary"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -285,12 +285,12 @@
                             </svg>
                         </div>
                         <h3
-                            class="text-lg font-medium text-gray-900 dark:text-white mb-2"
+                            class="text-lg font-medium text-text-primary dark:text-text-inverted mb-2"
                         >
                             No questions yet
                         </h3>
                         <p
-                            class="text-sm text-gray-500 dark:text-gray-400 mb-6"
+                            class="text-sm text-text-secondary mb-6"
                         >
                             Get started by adding your first question
                         </p>
@@ -338,11 +338,11 @@
                             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
                             <div
-                                class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-200 dark:border-gray-700"
+                                class="inline-block align-bottom bg-surface dark:bg-surface-dark-muted rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-border-light dark:border-border-dark"
                             >
                                 <!-- Modal Header -->
-                                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-900/50">
-                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white" id="modal-title">
+                                <div class="px-6 py-4 border-b border-border-light dark:border-border-dark flex items-center justify-between bg-gray-50 dark:bg-gray-900/50">
+                                    <h3 class="text-lg font-semibold text-text-primary dark:text-text-inverted" id="modal-title">
                                         Add New Question
                                     </h3>
                                     <button
@@ -369,7 +369,7 @@
                                             id="new_question_type"
                                             v-model="newQuestion.type"
                                             @change="handleTypeChange"
-                                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-lg shadow-sm"
+                                            class="mt-1 block w-full border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-lg shadow-sm"
                                         >
                                             <option value="multiple_choice">
                                                 Multiple Choice
@@ -396,10 +396,10 @@
                                             @input="errors.question = ''"
                                             rows="3"
                                             :class="[
-                                                'mt-1 block w-full dark:bg-gray-900 dark:text-gray-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-lg shadow-sm',
+                                                'mt-1 block w-full dark:bg-gray-900 dark:text-text-secondary focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-lg shadow-sm',
                                                 errors.question
                                                     ? 'border-red-500 dark:border-red-500 focus:border-red-500 dark:focus:border-red-500'
-                                                    : 'border-gray-300 dark:border-gray-700 focus:border-indigo-500 dark:focus:border-indigo-600',
+                                                    : 'border-border-light dark:border-border-dark focus:border-indigo-500 dark:focus:border-indigo-600',
                                             ]"
                                             placeholder="Enter your question here..."
                                         ></textarea>
@@ -443,10 +443,10 @@
                                                     "
                                                     type="text"
                                                     :class="[
-                                                        'flex-1 text-sm dark:bg-gray-900 dark:text-gray-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-lg shadow-sm',
+                                                        'flex-1 text-sm dark:bg-gray-900 dark:text-text-secondary focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-lg shadow-sm',
                                                         errors.choices
                                                             ? 'border-red-500 dark:border-red-500 focus:border-red-500 dark:focus:border-red-500'
-                                                            : 'border-gray-300 dark:border-gray-700 focus:border-indigo-500 dark:focus:border-indigo-600',
+                                                            : 'border-border-light dark:border-border-dark focus:border-indigo-500 dark:focus:border-indigo-600',
                                                     ]"
                                                     :placeholder="`Choice ${index + 1}`"
                                                 />
@@ -494,10 +494,10 @@
                                             @change="validateCorrectAnswer"
                                             @focus="errors.correct_answer = ''"
                                             :class="[
-                                                'mt-1 block w-full dark:bg-gray-900 dark:text-gray-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-lg shadow-sm',
+                                                'mt-1 block w-full dark:bg-gray-900 dark:text-text-secondary focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-lg shadow-sm',
                                                 errors.correct_answer
                                                     ? 'border-red-500 dark:border-red-500 focus:border-red-500 dark:focus:border-red-500'
-                                                    : 'border-gray-300 dark:border-gray-700 focus:border-indigo-500 dark:focus:border-indigo-600',
+                                                    : 'border-border-light dark:border-border-dark focus:border-indigo-500 dark:focus:border-indigo-600',
                                             ]"
                                         >
                                             <option value="">
@@ -525,10 +525,10 @@
                                             @change="validateCorrectAnswer"
                                             @focus="errors.correct_answer = ''"
                                             :class="[
-                                                'mt-1 block w-full dark:bg-gray-900 dark:text-gray-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-lg shadow-sm',
+                                                'mt-1 block w-full dark:bg-gray-900 dark:text-text-secondary focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-lg shadow-sm',
                                                 errors.correct_answer
                                                     ? 'border-red-500 dark:border-red-500 focus:border-red-500 dark:focus:border-red-500'
-                                                    : 'border-gray-300 dark:border-gray-700 focus:border-indigo-500 dark:focus:border-indigo-600',
+                                                    : 'border-border-light dark:border-border-dark focus:border-indigo-500 dark:focus:border-indigo-600',
                                             ]"
                                         >
                                             <option value="">Select answer</option>
@@ -544,10 +544,10 @@
                                             @input="errors.correct_answer = ''"
                                             rows="1"
                                             :class="[
-                                                'mt-1 block w-full dark:bg-gray-900 dark:text-gray-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-lg shadow-sm',
+                                                'mt-1 block w-full dark:bg-gray-900 dark:text-text-secondary focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-lg shadow-sm',
                                                 errors.correct_answer
                                                     ? 'border-red-500 dark:border-red-500 focus:border-red-500 dark:focus:border-red-500'
-                                                    : 'border-gray-300 dark:border-gray-700 focus:border-indigo-500 dark:focus:border-indigo-600',
+                                                    : 'border-border-light dark:border-border-dark focus:border-indigo-500 dark:focus:border-indigo-600',
                                             ]"
                                             placeholder="Enter the correct answer..."
                                         ></textarea>
@@ -559,7 +559,7 @@
                                 </div>
 
                                 <!-- Modal Footer -->
-                                <div class="px-6 py-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700 sm:flex sm:flex-row-reverse">
+                                <div class="px-6 py-4 bg-gray-50 dark:bg-gray-900/50 border-t border-border-light dark:border-border-dark sm:flex sm:flex-row-reverse">
                                     <button
                                         type="button"
                                         @click="addQuestion"
@@ -570,7 +570,7 @@
                                     <button
                                         type="button"
                                         @click="cancelAddQuestion"
-                                        class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
+                                        class="mt-3 w-full inline-flex justify-center rounded-lg border border-border-light dark:border-border-dark shadow-sm px-4 py-2 bg-surface dark:bg-surface-dark-muted text-base font-medium text-text-secondary hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
                                     >
                                         Cancel
                                     </button>
@@ -584,7 +584,7 @@
                         <div
                             v-for="(item, index) in questions"
                             :key="index"
-                            class="border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800/50 overflow-hidden transition-all duration-200"
+                            class="border border-border-light dark:border-border-dark rounded-xl bg-gray-50 dark:bg-surface-dark-muted/50 overflow-hidden transition-all duration-200"
                             :class="{ 'ring-2 ring-indigo-500/50 shadow-md': expandedQuestionIndex === index }"
                         >
                             <!-- Compact Header Row -->
@@ -595,7 +595,7 @@
                                 <!-- Drag Handle & Number -->
                                 <div class="flex items-center gap-3 w-16 flex-shrink-0">
                                     <svg class="w-4 h-4 text-gray-400 cursor-move hover:text-gray-600 dark:hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" /></svg>
-                                    <span class="font-bold text-gray-700 dark:text-gray-300">{{ index + 1 }}.</span>
+                                    <span class="font-bold text-text-secondary">{{ index + 1 }}.</span>
                                 </div>
 
                                 <!-- Question Summary & Badges -->
@@ -604,7 +604,7 @@
                                         {{ item.question || 'New Question' }}
                                     </p>
                                     <div class="flex items-center gap-2 flex-shrink-0">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300 hidden sm:inline-flex">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-200 text-gray-800 dark:bg-surface-dark-muted dark:text-text-secondary hidden sm:inline-flex">
                                             {{ formatType(item.type) }}
                                         </span>
                                     </div>
@@ -629,26 +629,26 @@
                             <!-- Expanded Editable Form -->
                             <div
                                 v-show="expandedQuestionIndex === index"
-                                class="px-5 py-5 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                                class="px-5 py-5 border-t border-border-light dark:border-border-dark bg-white dark:bg-gray-900"
                             >
                                 <!-- Question Text -->
                                 <div class="mb-4">
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    <label class="block text-sm font-medium text-text-secondary mb-1">
                                         Question Text
                                     </label>
                                     <textarea
                                         v-model="item.question"
                                         rows="3"
-                                        class="mt-1 block w-full resize-none border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
+                                        class="mt-1 block w-full resize-none border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
                                     ></textarea>
                                 </div>
 
                                 <!-- Choices (Multiple Choice Only) -->
                                 <div
                                     v-if="item.type === 'multiple_choice'"
-                                    class="mb-4 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700"
+                                    class="mb-4 bg-gray-50 dark:bg-surface-dark-muted/50 p-4 rounded-xl border border-border-light dark:border-border-dark"
                                 >
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                    <label class="block text-sm font-medium text-text-secondary mb-3">
                                         Choices
                                     </label>
                                     <div class="space-y-2.5">
@@ -661,7 +661,7 @@
                                             <input
                                                 v-model="item.choices[choiceIndex]"
                                                 type="text"
-                                                class="flex-1 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
+                                                class="flex-1 border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
                                             />
                                         </div>
                                     </div>
@@ -669,14 +669,14 @@
 
                                 <!-- Correct Answer -->
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    <label class="block text-sm font-medium text-text-secondary mb-1">
                                         Correct Answer
                                     </label>
                                     <!-- Dropdown for Multiple Choice -->
                                     <select
                                         v-if="item.type === 'multiple_choice'"
                                         v-model="item.correct_answer"
-                                        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
+                                        class="mt-1 block w-full border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
                                     >
                                         <option value="">Select correct answer</option>
                                         <option
@@ -691,7 +691,7 @@
                                     <select
                                         v-else-if="item.type === 'true_or_false'"
                                         v-model="item.correct_answer"
-                                        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
+                                        class="mt-1 block w-full border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
                                     >
                                         <option value="">Select answer</option>
                                         <option value="True">True</option>
@@ -702,7 +702,7 @@
                                         v-else
                                         v-model="item.correct_answer"
                                         rows="1"
-                                        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
+                                        class="mt-1 block w-full border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
                                     ></textarea>
                                 </div>
                             </div>
@@ -717,7 +717,7 @@
             >
                 <Link
                     :href="route('instructor.lessons.index')"
-                    class="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
+                    class="px-5 py-2.5 text-sm font-medium text-text-secondary bg-surface dark:bg-surface-dark-muted border border-border-light dark:border-border-dark rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors shadow-sm"
                 >
                     Cancel
                 </Link>

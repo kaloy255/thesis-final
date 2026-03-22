@@ -227,17 +227,17 @@ const formatDate = (dateString) => {
         <div class="mb-8">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-semibold text-gray-900 dark:text-white mb-1">
+                    <h1 class="text-2xl font-semibold text-text-primary dark:text-text-inverted mb-1">
                         Departments
                     </h1>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                    <p class="text-sm text-text-secondary">
                         Manage academic departments
                     </p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button
                         @click="openImportModal"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-surface dark:bg-surface-dark-muted text-text-secondary border border-border-light dark:border-border-dark text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
                     >
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -278,22 +278,22 @@ const formatDate = (dateString) => {
                     v-model="searchQuery"
                     type="text"
                     placeholder="Search departments by name..."
-                    class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+                    class="w-full pl-10 pr-4 py-2.5 text-sm border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
                 />
             </div>
         </div>
 
         <!-- Departments List -->
-        <div class="bg-white dark:bg-gray-800 min-h-[calc(100vh-300px)] relative flex flex-col justify-between  rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="bg-surface dark:bg-surface-dark-muted min-h-[calc(100vh-300px)] relative flex flex-col justify-between  rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden">
             <!-- Empty State -->
             <div v-if="!hasDepartments" class="p-12 text-center absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%]" >
-                <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="mx-auto h-12 w-12 text-text-secondary mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
-                <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                <h3 class="text-sm font-medium text-text-primary dark:text-text-inverted mb-1">
                     {{ searchQuery ? "No departments found" : "No departments" }}
                 </h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                <p class="text-sm text-text-secondary mb-4">
                     {{ searchQuery ? "Try adjusting your search." : "Get started by creating a new department." }}
                 </p>
                 <button
@@ -309,17 +309,17 @@ const formatDate = (dateString) => {
             </div>
 
             <!-- Departments Table -->
-            <div v-else class="divide-y divide-gray-200 dark:divide-gray-700 border-b border-gray-200 ">
+            <div v-else class="divide-y divide-gray-200 dark:divide-border-dark border-b border-gray-200 ">
                 <div
                     v-for="(department, index) in props.departments.data"
                     :key="department.id"
-                    class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
+                    class="p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors duration-150"
                 >
                     <div class="flex items-center justify-between gap-4">
                         <!-- Department Name -->
                         <div class="flex-1 min-w-0">
                             <div v-if="editingId !== department.id" class="flex items-center gap-3">
-                                <span class="text-sm font-medium text-gray-400 dark:text-gray-500 w-6 text-right flex-shrink-0">{{ (props.departments.from || 1) + index }}.</span>
+                                <span class="text-sm font-medium text-text-secondary w-6 text-right flex-shrink-0">{{ (props.departments.from || 1) + index }}.</span>
                                 <div class="flex-shrink-0">
                                     <div class="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
                                         <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -328,13 +328,13 @@ const formatDate = (dateString) => {
                                     </div>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-base font-medium text-gray-900 dark:text-white truncate">
+                                    <p class="text-base font-medium text-text-primary dark:text-text-inverted truncate">
                                         {{ department.name }}
-                                        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-surface-dark-muted dark:text-text-secondary">
                                             {{ department.code.toUpperCase() }}
                                         </span>
                                     </p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                    <p class="text-xs text-text-secondary mt-0.5">
                                         Created {{ formatDate(department.created_at) }}
                                     </p>
                                 </div>
@@ -347,7 +347,7 @@ const formatDate = (dateString) => {
                                         <input
                                             v-model="(updateForms[department.id] ||= useForm({ name: department.name, code: department.code })).name"
                                             type="text"
-                                            class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                            class="w-full px-3 py-2 text-base border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                                             placeholder="Department name"
                                             @keyup.enter="saveEdit(department.id, department)"
                                             @keyup.esc="cancelEdit(department.id)"
@@ -362,7 +362,7 @@ const formatDate = (dateString) => {
                                         <input
                                             v-model="(updateForms[department.id] ||= useForm({ name: department.name, code: department.code })).code"
                                             type="text"
-                                            class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all uppercase"
+                                            class="w-full px-3 py-2 text-base border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all uppercase"
                                             placeholder="Code"
                                             @keyup.enter="saveEdit(department.id, department)"
                                             @keyup.esc="cancelEdit(department.id)"
@@ -381,7 +381,7 @@ const formatDate = (dateString) => {
                             <template v-if="editingId !== department.id">
                                 <button
                                     @click="startEdit(department)"
-                                    class="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors duration-150"
+                                    class="p-2 text-text-secondary hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors duration-150"
                                     title="Edit"
                                 >
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -390,7 +390,7 @@ const formatDate = (dateString) => {
                                 </button>
                                 <button
                                     @click="openDeleteModal(department.id)"
-                                    class="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-150"
+                                    class="p-2 text-text-secondary hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-150"
                                     title="Delete"
                                 >
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -411,7 +411,7 @@ const formatDate = (dateString) => {
                                 </button>
                                 <button
                                     @click="cancelEdit(department.id)"
-                                    class="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-150"
+                                    class="p-2 text-text-secondary hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors duration-150"
                                     title="Cancel"
                                 >
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -442,7 +442,7 @@ const formatDate = (dateString) => {
         <Modal :show="showImportModal" @close="closeImportModal">
             <div class="p-6">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                    <h2 class="text-xl font-semibold text-text-primary dark:text-text-inverted">
                         Import Departments
                     </h2>
                     <button
@@ -480,7 +480,7 @@ const formatDate = (dateString) => {
                         </button>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        <p class="text-sm text-text-secondary mb-3">
                             Upload an Excel or CSV file with <strong>name</strong> and <strong>code</strong> columns. Duplicate names or codes will be skipped.
                         </p>
                         <InputLabel for="import_file" value="Select File" class="mb-2" />
@@ -498,11 +498,11 @@ const formatDate = (dateString) => {
                                 class="relative flex justify-center px-6 pt-5 pb-6 rounded-[calc(0.5rem-2px)] transition-colors"
                                 :class="isImportDragging
                                     ? 'bg-indigo-50 dark:bg-indigo-900/20'
-                                    : 'bg-white dark:bg-gray-800'"
+                                    : 'bg-surface dark:bg-surface-dark-muted'"
                             >
                             <div class="space-y-1 text-center">
                                 <svg
-                                    class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
+                                    class="mx-auto h-12 w-12 text-text-secondary"
                                     stroke="currentColor"
                                     fill="none"
                                     viewBox="0 0 48 48"
@@ -514,7 +514,7 @@ const formatDate = (dateString) => {
                                         stroke-linejoin="round"
                                     />
                                 </svg>
-                                <div class="flex text-sm text-gray-600 dark:text-gray-400 justify-center">
+                                <div class="flex text-sm text-text-secondary justify-center">
                                     <label
                                         for="import_file"
                                         class="relative cursor-pointer rounded-md font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
@@ -530,12 +530,12 @@ const formatDate = (dateString) => {
                                     </label>
                                     <p class="pl-1">or drag and drop</p>
                                 </div>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                <p class="text-xs text-text-secondary">
                                     XLSX, XLS, CSV up to 2MB
                                 </p>
                                 <p
                                     v-if="importFileName"
-                                    class="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2"
+                                    class="text-sm font-medium text-text-secondary mt-2"
                                 >
                                     Selected: {{ importFileName }}
                                 </p>
@@ -558,7 +558,7 @@ const formatDate = (dateString) => {
                             <li v-if="importErrors.length > 10" class="text-amber-600 dark:text-amber-500">... and {{ importErrors.length - 10 }} more</li>
                         </ul>
                     </div>
-                    <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-end gap-3 pt-4 border-t border-border-light dark:border-border-dark">
                         <SecondaryButton type="button" @click="closeImportModal" class="px-4 py-2">
                             Cancel
                         </SecondaryButton>
@@ -578,7 +578,7 @@ const formatDate = (dateString) => {
         <Modal :show="showCreateModal" @close="closeCreateModal">
             <div class="p-6">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                    <h2 class="text-xl font-semibold text-text-primary dark:text-text-inverted">
                         Create Department
                     </h2>
                     <button
@@ -618,7 +618,7 @@ const formatDate = (dateString) => {
                             <InputError class="mt-2" :message="form.errors.code" />
                         </div>
                     </div>
-                    <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-end gap-3 pt-4 border-t border-border-light dark:border-border-dark">
                         <SecondaryButton
                             type="button"
                             @click="closeCreateModal"
