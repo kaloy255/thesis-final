@@ -145,7 +145,7 @@ class GeminiProvider implements AIServiceInterface
                     ],
                     'generationConfig' => [
                         'temperature' => 0.7,
-                        'maxOutputTokens' => 4096,
+                        'maxOutputTokens' => config('ai_models.providers.gemini.limits.max_output_tokens', 65536),
                     ],
                 ]);
 

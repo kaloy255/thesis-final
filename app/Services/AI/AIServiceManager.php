@@ -170,11 +170,101 @@ class AIServiceManager
         $safeLimit = $this->getPrimarySafeLimit();
         $contentTokens = $this->tokenCalculator->estimateTokens($content);
 
-        if ($this->tokenCalculator->fitsInModel($contentTokens, $safeLimit)) {
-            return $this->processSingleRequest($content, $config);
+        // Calculate total questions requested
+        $totalQuestions = 0;
+        if (isset($config['question_distribution'])) {
+            foreach ($config['question_distribution'] as $levelCounts) {
+                $totalQuestions += ($levelCounts['mcq'] ?? 0)
+                    + ($levelCounts['identification'] ?? 0)
+                    + ($levelCounts['tf'] ?? 0);
+            }
         }
 
-        return $this->processChunks($content, $config, $safeLimit);
+        $maxQuestionsPerCall = 35; // Force chunking if > 35 questions to preserve quality
+        $numChunksByQuestions = $totalQuestions > 0 ? (int) ceil($totalQuestions / $maxQuestionsPerCall) : 1;
+
+        if ($numChunksByQuestions > 1 || !$this->tokenCalculator->fitsInModel($contentTokens, $safeLimit)) {
+            if ($numChunksByQuestions > 1) {
+                $bufferTokens = config('ai_models.chunking.buffer_tokens', 10000);
+                // Lower the effective safe limit to naturally induce chunking
+                // e.g., if 30,000 tokens and 3 chunks, effective limit = 10,000 + buffer
+                $calculatedLimit = (int) ceil($contentTokens / $numChunksByQuestions) + $bufferTokens;
+                $safeLimit = min($safeLimit, $calculatedLimit);
+            }
+            $result = $this->processChunks($content, $config, $safeLimit);
+        } else {
+            $result = $this->processSingleRequest($content, $config);
+        }
+
+        // Apply strict slicer to trim overgeneration
+        if (isset($result['data']) && isset($config['question_distribution'])) {
+            $result['data'] = $this->sliceToExactCounts($result['data'], $config['question_distribution']);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Post-processes generated AI output to trim down excess elements.
+     */
+    protected function sliceToExactCounts(array $data, array $distribution): array
+    {
+        if (empty($distribution)) {
+            return $data;
+        }
+
+        $grouped = [
+            'multiple_choice' => [],
+            'identification' => [],
+            'true_or_false' => [],
+        ];
+
+        foreach (['multiple_choice', 'identification', 'true_or_false'] as $type) {
+            if (isset($data[$type])) {
+                foreach ($data[$type] as $item) {
+                    $level = $item['bloom_level'] ?? 'untagged';
+                    if (!isset($grouped[$type][$level])) {
+                        $grouped[$type][$level] = [];
+                    }
+                    $grouped[$type][$level][] = $item;
+                }
+            }
+        }
+
+        $finalData = [
+            'multiple_choice' => [],
+            'identification' => [],
+            'true_or_false' => [],
+        ];
+
+        foreach ($distribution as $level => $counts) {
+            $mcqTarget = $counts['mcq'] ?? 0;
+            $idTarget = $counts['identification'] ?? 0;
+            $tfTarget = $counts['tf'] ?? 0;
+
+            if ($mcqTarget > 0 && isset($grouped['multiple_choice'][$level])) {
+                $finalData['multiple_choice'] = array_merge(
+                    $finalData['multiple_choice'], 
+                    array_slice($grouped['multiple_choice'][$level], 0, $mcqTarget)
+                );
+            }
+
+            if ($idTarget > 0 && isset($grouped['identification'][$level])) {
+                $finalData['identification'] = array_merge(
+                    $finalData['identification'], 
+                    array_slice($grouped['identification'][$level], 0, $idTarget)
+                );
+            }
+
+            if ($tfTarget > 0 && isset($grouped['true_or_false'][$level])) {
+                $finalData['true_or_false'] = array_merge(
+                    $finalData['true_or_false'], 
+                    array_slice($grouped['true_or_false'][$level], 0, $tfTarget)
+                );
+            }
+        }
+
+        return $finalData;
     }
 
     /**
