@@ -159,11 +159,27 @@ class StudentController extends Controller
         ini_set('memory_limit', '256M');
 
         $file = $request->file('file');
-        $sectionId = $request->input('section_id');
+        $fallbackSectionId = $request->input('section_id');
         $imported = 0;
         $errors = [];
         $skipped = 0;
         $rowNumber = 1;
+
+        $programMapping = [
+            'BEED' => 'STE',
+            'BSEDENG' => 'STE',
+            'BSEDFIL' => 'STE',
+            'BSEDMATH' => 'STE',
+            'BSEDSOCSCI' => 'STE',
+            'BSEDE' => 'STE',
+            'BSHM' => 'SHM',
+            'BSA' => 'SBAA',
+            'BSBAFM' => 'SBAA',
+            'BSCRIM' => 'SCJE',
+            'BSISM' => 'SCJE',
+            'BSCS' => 'SCS',
+            'BSN' => 'SN',
+        ];
 
         try {
             $allRows = (new FastExcel)->import($file);
@@ -175,21 +191,29 @@ class StudentController extends Controller
             }
 
             $firstRow = $allRows->first();
-            $headers = array_keys($firstRow);
+            $headers = is_array($firstRow) ? array_keys($firstRow) : array_keys((array) $firstRow);
             $hasId = false;
             $hasName = false;
             $idKey = null;
             $nameKey = null;
+            $emailKey = null;
+            $sectionKey = null;
+            $courseKey = null;
 
             foreach ($headers as $header) {
                 $normalizedHeader = strtolower(trim($header));
                 if (in_array($normalizedHeader, ['id number', 'id_number', 'student#', 'student #'], true)) {
                     $hasId = true;
                     $idKey = $header;
-                }
-                if ($normalizedHeader === 'name') {
+                } elseif (in_array($normalizedHeader, ['name', 'full name', 'names'], true)) {
                     $hasName = true;
                     $nameKey = $header;
+                } elseif (in_array($normalizedHeader, ['email', 'emails', 'email address'], true)) {
+                    $emailKey = $header;
+                } elseif (in_array($normalizedHeader, ['section'], true)) {
+                    $sectionKey = $header;
+                } elseif (in_array($normalizedHeader, ['course', 'program'], true)) {
+                    $courseKey = $header;
                 }
             }
 
@@ -201,6 +225,10 @@ class StudentController extends Controller
                 ]);
             }
 
+            // Reference Data
+            $departmentsByCode = Department::all()->keyBy(fn($d) => strtoupper(trim($d->code)));
+            $existingSections = Section::all()->keyBy(fn($s) => strtoupper(trim($s->name)));
+
             // Hash password once (reused for all rows)
             $hashedPassword = Hash::make('chcc@2025');
 
@@ -211,49 +239,104 @@ class StudentController extends Controller
 
             $chunkSize = 50;
             $userBatch = [];
+            $sectionBatchMap = []; // Map the section for each user in the batch array
             $now = now();
 
             foreach ($allRows as $line) {
                 $rowNumber++;
-                $idValue = isset($line[$idKey]) ? trim((string)$line[$idKey]) : null;
+                
+                $lineArr = (array) $line;
+
+                $idValue = isset($lineArr[$idKey]) ? trim((string)$lineArr[$idKey]) : null;
+                $name = isset($lineArr[$nameKey]) ? trim((string)$lineArr[$nameKey]) : null;
+                $emailStr = $emailKey !== null && isset($lineArr[$emailKey]) ? trim((string)$lineArr[$emailKey]) : null;
+                $sectionStr = $sectionKey !== null && isset($lineArr[$sectionKey]) ? trim((string)$lineArr[$sectionKey]) : null;
+                $courseStr = $courseKey !== null && isset($lineArr[$courseKey]) ? trim((string)$lineArr[$courseKey]) : null;
+
+                if (empty($idValue) && empty($name)) {
+                    continue; // skip empty rows
+                }
+
                 if ($idValue === null || $idValue === '') {
                     $email = null;
-                }
-                elseif (str_contains($idValue, '@')) {
-                    $email = strtolower($idValue);
-                }
-                else {
-                    $email = strtolower($idValue) . '@chcc.edu.ph';
-                }
-                $name = isset($line[$nameKey]) ? trim((string)$line[$nameKey]) : null;
-
-                if (empty($email) && empty($name)) {
-                    continue;
+                } else {
+                    if (!empty($emailStr) && str_contains($emailStr, '@')) {
+                        $email = strtolower($emailStr);
+                    } elseif (str_contains($idValue, '@')) {
+                        $email = strtolower($idValue);
+                    } else {
+                        $email = strtolower($idValue) . '@chcc.edu.ph';
+                    }
                 }
 
                 if (empty($email)) {
-                    $errors[] = "Row {$rowNumber}: ID is required";
+                    $errors[] = "Row {$rowNumber}: ID or Email is required";
                     $skipped++;
                     continue;
                 }
-
                 if (!str_ends_with($email, '@chcc.edu.ph')) {
                     $errors[] = "Row {$rowNumber}: Email must end with @chcc.edu.ph ({$email})";
                     $skipped++;
                     continue;
                 }
-
                 if (empty($name)) {
                     $errors[] = "Row {$rowNumber}: Name is required (Email: {$email})";
                     $skipped++;
                     continue;
                 }
-
                 if (isset($existingEmails[$email])) {
                     $errors[] = "Row {$rowNumber}: Email '{$email}' already exists";
                     $skipped++;
                     continue;
                 }
+
+                // Resolve Section ID dynamically
+                $resolvedSectionId = $fallbackSectionId;
+                if (!empty($sectionStr)) {
+                    $sectionUpper = strtoupper($sectionStr);
+                    
+                    if ($existingSections->has($sectionUpper)) {
+                        $resolvedSectionId = $existingSections->get($sectionUpper)->id;
+                    } else {
+                        // Attempt autocreation
+                        $programCode = null;
+                        if (!empty($courseStr)) {
+                            $programCode = strtoupper($courseStr);
+                        } elseif (preg_match('/^\d+\s*([A-Za-z]+)/', $sectionUpper, $matches)) {
+                            $programCode = strtoupper($matches[1]);
+                        }
+
+                        $deptId = null;
+                        if ($programCode) {
+                            $mappedDeptCode = $programMapping[$programCode] ?? $programCode;
+                            if ($departmentsByCode->has($mappedDeptCode)) {
+                                $deptId = $departmentsByCode->get($mappedDeptCode)->id;
+                            }
+                        }
+
+                        if ($deptId) {
+                            $newSection = Section::create([
+                                'name' => $sectionUpper,
+                                'department_id' => $deptId
+                            ]);
+                            $existingSections->put($sectionUpper, $newSection);
+                            $resolvedSectionId = $newSection->id;
+                        } else {
+                            if (!$fallbackSectionId) {
+                                $errors[] = "Row {$rowNumber}: Section '{$sectionUpper}' is unrecognized and its Department could not be determined to be autocreated.";
+                                $skipped++;
+                                continue;
+                            }
+                        }
+                    }
+                }
+
+                if (!$resolvedSectionId) {
+                    $errors[] = "Row {$rowNumber}: Could not determine section for '{$name}' - Provide a Section in the file or select a Fallback Section in the UI.";
+                    $skipped++;
+                    continue;
+                }
+
                 $existingEmails[$email] = true;
 
                 $userBatch[] = [
@@ -265,32 +348,44 @@ class StudentController extends Controller
                     'updated_at' => $now,
                 ];
 
+                $sectionBatchMap[] = $resolvedSectionId;
+
                 if (count($userBatch) >= $chunkSize) {
                     User::insert($userBatch);
                     $firstId = DB::connection()->getPdo()->lastInsertId();
-                    $userIds = range((int)$firstId, (int)$firstId + count($userBatch) - 1);
-                    $studentBatch = array_map(fn($uid) => [
-                    'user_id' => $uid,
-                    'section_id' => $sectionId,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                    ], $userIds);
+                    
+                    $studentBatch = [];
+                    foreach ($userBatch as $index => $u) {
+                        $uid = (int)$firstId + $index;
+                        $studentBatch[] = [
+                            'user_id' => $uid,
+                            'section_id' => $sectionBatchMap[$index],
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+                    }
                     Student::insert($studentBatch);
                     $imported += count($userBatch);
+                    
                     $userBatch = [];
+                    $sectionBatchMap = [];
                 }
             }
 
             if (!empty($userBatch)) {
                 User::insert($userBatch);
                 $firstId = DB::connection()->getPdo()->lastInsertId();
-                $userIds = range((int)$firstId, (int)$firstId + count($userBatch) - 1);
-                $studentBatch = array_map(fn($uid) => [
-                'user_id' => $uid,
-                'section_id' => $sectionId,
-                'created_at' => $now,
-                'updated_at' => $now,
-                ], $userIds);
+                
+                $studentBatch = [];
+                foreach ($userBatch as $index => $u) {
+                    $uid = (int)$firstId + $index;
+                    $studentBatch[] = [
+                        'user_id' => $uid,
+                        'section_id' => $sectionBatchMap[$index],
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
                 Student::insert($studentBatch);
                 $imported += count($userBatch);
             }
@@ -310,7 +405,6 @@ class StudentController extends Controller
                 ]);
             }
 
-            // If some students were imported, always show success
             $message = "Successfully imported {$imported} student(s)";
             if ($skipped > 0) {
                 $message .= " ({$skipped} skipped)";

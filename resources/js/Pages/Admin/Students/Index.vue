@@ -888,22 +888,23 @@ const formatDate = (dateString) => {
 
                     <!-- Section Selection -->
                     <div>
-                        <InputLabel value="Section *" class="mb-2" />
+                        <InputLabel value="Fallback Section (Optional)" class="mb-2" />
                         <SearchableSelect
                             v-model="importForm.section_id"
                             :options="sectionOptions"
-                            placeholder="Search and select section..."
+                            placeholder="Select a fallback section if file lacks it..."
                         />
                         <InputError class="mt-2" :message="importForm.errors.section_id" />
                         <p class="mt-1 text-xs text-text-secondary">
-                            All students in the file will be assigned to this section
+                            Used if a student's row has no 'Section' column specified.
                         </p>
                     </div>
 
                     <!-- Drag-and-drop file upload -->
                     <div>
                         <p class="text-sm text-text-secondary mb-3">
-                            Upload an Excel or CSV file with <strong>id_number</strong> / <strong>id number</strong> / <strong>student#</strong> (1st column) and <strong>name</strong> (2nd column). The system will generate the student email as <strong>{id}@chcc.edu.ph</strong>. Default password: <strong>chcc@2025</strong>. Large imports may take a moment—please wait.
+                            Upload an Excel or CSV file. The system checks for <strong>id_number</strong> and <strong>name</strong>. <br><br>
+                            If a <strong>section</strong> column exists, the system will use it. (If a section isn't in the system, it will be automatically created mapped to the correct department). Generates <strong>{id}@chcc.edu.ph</strong> for emails if an <strong>emails</strong> column isn't found. Default password: <strong>chcc@2025</strong>. 
                         </p>
                         <InputLabel for="import_file" value="Select File" class="mb-2" />
                         <div
@@ -989,7 +990,7 @@ const formatDate = (dateString) => {
                         </SecondaryButton>
                         <PrimaryButton
                             type="submit"
-                            :disabled="!importForm.file || !importForm.section_id || importForm.processing"
+                            :disabled="!importForm.file || importForm.processing"
                             class="px-4 py-2"
                         >
                             {{ importForm.processing ? "Importing..." : "Import Students" }}

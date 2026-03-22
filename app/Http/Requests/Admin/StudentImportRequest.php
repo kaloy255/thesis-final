@@ -15,7 +15,7 @@ class StudentImportRequest extends FormRequest
     {
         return [
             'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:2048'], // Max 2MB
-            'section_id' => ['required', 'exists:sections,id'],
+            'section_id' => ['nullable', 'exists:sections,id'],
         ];
     }
 
@@ -25,8 +25,7 @@ class StudentImportRequest extends FormRequest
             'file.required' => 'Please select a file to import.',
             'file.mimes' => 'File must be an Excel file (xlsx, xls, or csv).',
             'file.max' => 'File size must not exceed 2MB.',
-            'section_id.required' => 'Please select a section.',
-            'section_id.exists' => 'Selected section does not exist.',
+            'section_id.exists' => 'Selected fallback section does not exist.',
         ];
     }
 }
