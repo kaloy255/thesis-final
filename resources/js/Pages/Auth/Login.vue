@@ -258,11 +258,7 @@ onUnmounted(() => {
                 class="relative z-10 flex flex-col justify-center items-center w-full text-white"
             >
                 <div>
-                    <img
-                        src="/images/white-logo.svg"
-                        alt="Logo"
-                        class="w-24 h-24 mx-auto mb-4"
-                    />
+                    <ApplicationLogo class="w-36 h-36 mx-auto" />
                 </div>
                 <h1 class="text-4xl font-bold mb-2 text-center">
                     Concepcion Holy Cross College Inc.
@@ -307,7 +303,7 @@ onUnmounted(() => {
 
             <!-- Mobile Logo -->
             <div class="lg:hidden mb-8 relative z-10">
-                <ApplicationLogo class="w-16 h-16 mx-auto" />
+                <ApplicationLogo class="w-24 h-24 mx-auto" />
                 <h2
                     class="text-2xl font-bold text-center mt-4 text-text-primary dark:text-text-inverted"
                 >

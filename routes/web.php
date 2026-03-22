@@ -68,6 +68,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->as('admin.')->group(funct
     Route::get('assignments', [ProfessorSubjectController::class, 'index'])->name('assignments.index');
     Route::post('assignments', [ProfessorSubjectController::class, 'store'])->name('assignments.store');
     Route::delete('assignments/{assignment}', [ProfessorSubjectController::class, 'destroy'])->name('assignments.destroy');
+    Route::post('assignments/import', [ProfessorSubjectController::class, 'import'])->name('assignments.import');
+    Route::get('assignments/template/download', [ProfessorSubjectController::class, 'downloadTemplate'])->name('assignments.template');
 
     Route::get('logs', [LogController::class, 'index'])->name('logs.index');
 

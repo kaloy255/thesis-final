@@ -570,23 +570,23 @@ const formatDate = (dateString) => {
 
                     <!-- Department Selection -->
                     <div>
-                        <InputLabel value="Department *" class="mb-2" />
+                        <InputLabel value="Fallback Department (Optional)" class="mb-2" />
                         <SearchableSelect
                             v-model="importForm.department_id"
                             :options="departmentOptions"
-                            placeholder="Search and select department..."
+                            placeholder="Select a fallback department..."
                            
                         />
                         <InputError class="mt-2"  :message="importForm.errors.department_id" />
                         <p class="mt-1 text-xs text-text-secondary">
-                            All instructors in the file will be assigned to this department
+                            Used only if a row in your Excel file is missing a department.
                         </p>
                     </div>
 
                     <!-- Drag-and-drop file upload -->
                     <div>
                         <p class="text-sm text-text-secondary mb-3">
-                            Upload an Excel or CSV file with <strong>email</strong> / <strong>email address</strong> / <strong>username</strong> (1st column) and <strong>name</strong> (2nd column). Default password: <strong>chcc@2025</strong>. Large imports may take a moment—please wait.
+                            Upload an Excel or CSV file. Recommended columns: <strong>email</strong>, <strong>name</strong>, and <strong>department</strong>. Default password: <strong>chcc@2025</strong>. Large imports may take a moment—please wait.
                         </p>
                         <InputLabel for="import_file" value="Select File" class="mb-2" />
                         <div
@@ -674,7 +674,7 @@ const formatDate = (dateString) => {
                         </SecondaryButton>
                         <PrimaryButton
                             type="submit"
-                            :disabled="!importForm.file || !importForm.department_id || importForm.processing"
+                            :disabled="!importForm.file || importForm.processing"
                             class="px-4 py-2"
                         >
                             {{ importForm.processing ? "Importing..." : "Import Instructors" }}

@@ -64,6 +64,90 @@ const assignForm = useForm({
     subject_id: "",
 });
 
+// Import modal
+const showImportModal = ref(false);
+const importErrors = ref([]);
+const importErrorMessage = ref("");
+const isImportDragging = ref(false);
+const importFileName = ref("");
+
+const importForm = useForm({
+    file: null,
+});
+
+const openImportModal = () => {
+    showImportModal.value = true;
+    importErrors.value = [];
+};
+
+const closeImportModal = () => {
+    showImportModal.value = false;
+    importForm.reset();
+    importForm.clearErrors();
+    importErrors.value = [];
+    importErrorMessage.value = "";
+    importFileName.value = "";
+};
+
+const handleImportFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        importForm.file = file;
+        importFileName.value = file.name;
+    }
+};
+
+const handleImportDrop = (event) => {
+    isImportDragging.value = false;
+    event.preventDefault();
+    const file = event.dataTransfer?.files?.[0];
+    if (file && /\.(xlsx|xls|csv)$/i.test(file.name)) {
+        importForm.file = file;
+        importFileName.value = file.name;
+    }
+};
+
+const downloadTemplate = () => {
+    window.location.href = route("admin.assignments.template");
+};
+
+const getImportErrorMessage = (errors) => {
+    if (!errors) return null;
+    const first = (field) => {
+        const v = errors[field];
+        return Array.isArray(v) ? v[0] : typeof v === "string" ? v : null;
+    };
+    return first("file") || first("error") || "Failed to import. Please check your file.";
+};
+
+const submitImport = () => {
+    importErrorMessage.value = "";
+    importForm.post(route("admin.assignments.import"), {
+        preserveScroll: true,
+        onSuccess: (response) => {
+            const flash = response.props.flash;
+            if (flash?.type === "error") {
+                importErrorMessage.value = flash.message || "Import failed. Please try again.";
+                if (flash.errors) importErrors.value = flash.errors;
+                error(flash.message);
+                return;
+            }
+            if (flash?.errors?.length > 0) {
+                importErrors.value = flash.errors;
+            }
+            closeImportModal();
+            if (flash?.type === "success") success(flash.message);
+            else if (flash?.type === "warning") warning(flash.message);
+            else success("Assignments imported successfully");
+        },
+        onError: (errors) => {
+            const msg = getImportErrorMessage(errors);
+            importErrorMessage.value = msg;
+            error(msg);
+        },
+    });
+};
+
 // Options for the SearchableSelect
 const professorOptions = computed(() =>
     props.professors.map((p) => ({
@@ -151,12 +235,27 @@ const formatDate = (dateString) => {
 
         <!-- Header -->
         <div class="mb-8">
-            <h1 class="text-2xl font-semibold text-text-primary dark:text-text-inverted mb-1">
-                Assignments
-            </h1>
-            <p class="text-sm text-text-secondary">
-                Manage instructor assignments per subject
-            </p>
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-semibold text-text-primary dark:text-text-inverted mb-1">
+                        Assignments
+                    </h1>
+                    <p class="text-sm text-text-secondary">
+                        Manage instructor assignments per subject
+                    </p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button
+                        @click="openImportModal"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-surface dark:bg-surface-dark-muted text-text-secondary border border-border-light dark:border-border-dark text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        Import Assigned
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Filters -->
@@ -370,5 +469,185 @@ const formatDate = (dateString) => {
             @close="closeDeleteModal"
             @confirm="confirmDelete"
         />
+
+        <!-- Import Assignments Modal -->
+        <Modal :show="showImportModal" @close="closeImportModal">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-semibold text-text-primary dark:text-text-inverted">
+                        Import Assignments
+                    </h2>
+                    <button
+                        @click="closeImportModal"
+                        class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                    >
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <form @submit.prevent="submitImport" class="space-y-6">
+                    <!-- Error message banner -->
+                    <div
+                        v-if="importErrorMessage"
+                        class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3"
+                    >
+                        <svg class="w-5 h-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-red-800 dark:text-red-200">
+                                {{ importErrorMessage }}
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            @click="importErrorMessage = ''"
+                            class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 shrink-0"
+                            aria-label="Dismiss"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div>
+                        <p class="text-sm text-text-secondary mb-4">
+                            Upload a spreadsheet. The file must contain <strong>Subject Code</strong> (or <strong>CODE</strong>) and an Instructor <strong>Email</strong>.
+                        </p>
+                        <InputLabel for="import_file" value="Select File" class="mb-2" />
+                        <div
+                            class="mt-1 relative overflow-hidden rounded-lg p-[2px]"
+                            @dragover.prevent="isImportDragging = true"
+                            @dragleave.prevent="isImportDragging = false"
+                            @drop.prevent="handleImportDrop"
+                        >
+                            <div
+                                class="drop-zone-beam"
+                                :class="{ 'drop-zone-beam--full': importForm.file }"
+                            />
+                            <div
+                                class="relative flex justify-center px-6 pt-5 pb-6 rounded-[calc(0.5rem-2px)] transition-colors"
+                                :class="isImportDragging
+                                    ? 'bg-indigo-50 dark:bg-indigo-900/20'
+                                    : 'bg-surface dark:bg-surface-dark-muted'"
+                            >
+                            <div class="space-y-1 text-center">
+                                <svg
+                                    class="mx-auto h-12 w-12 text-text-secondary"
+                                    stroke="currentColor"
+                                    fill="none"
+                                    viewBox="0 0 48 48"
+                                >
+                                    <path
+                                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    />
+                                </svg>
+                                <div class="flex text-sm text-text-secondary justify-center">
+                                    <label
+                                        for="import_file"
+                                        class="relative cursor-pointer rounded-md font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
+                                    >
+                                        <span>Upload a file</span>
+                                        <input
+                                            id="import_file"
+                                            type="file"
+                                            class="sr-only"
+                                            accept=".xlsx,.xls,.csv"
+                                            @change="handleImportFileChange"
+                                        />
+                                    </label>
+                                    <p class="pl-1">or drag and drop</p>
+                                </div>
+                                <p class="text-xs text-text-secondary">
+                                    XLSX, XLS, CSV up to 2MB
+                                </p>
+                                <p
+                                    v-if="importFileName"
+                                    class="text-sm font-medium text-text-secondary mt-2"
+                                >
+                                    Selected: {{ importFileName }}
+                                </p>
+                            </div>
+                            </div>
+                        </div>
+                        <InputError class="mt-2" :message="importForm.errors.file" />
+                        <button
+                            type="button"
+                            @click="downloadTemplate"
+                            class="mt-2 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
+                        >
+                            Download template
+                        </button>
+                    </div>
+                    <div v-if="importErrors.length > 0" class="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg max-h-32 overflow-y-auto">
+                        <p class="text-xs font-medium text-amber-800 dark:text-amber-300 mb-2">Skipped rows:</p>
+                        <ul class="text-xs text-amber-700 dark:text-amber-400 space-y-1">
+                            <li v-for="(err, idx) in importErrors.slice(0, 10)" :key="idx">{{ err }}</li>
+                            <li v-if="importErrors.length > 10" class="text-amber-600 dark:text-amber-500">... and {{ importErrors.length - 10 }} more</li>
+                        </ul>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-4 border-t border-border-light dark:border-border-dark">
+                        <SecondaryButton type="button" @click="closeImportModal" class="px-4 py-2">
+                            Cancel
+                        </SecondaryButton>
+                        <PrimaryButton
+                            type="submit"
+                            :disabled="!importForm.file || importForm.processing"
+                            class="px-4 py-2"
+                        >
+                            {{ importForm.processing ? "Importing..." : "Import" }}
+                        </PrimaryButton>
+                    </div>
+                </form>
+            </div>
+        </Modal>
     </AdminLayout>
 </template>
+
+<style scoped>
+.drop-zone-beam {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200vmax;
+    height: 200vmax;
+    margin-left: -100vmax;
+    margin-top: -100vmax;
+    background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        #3238a8 20deg,
+        #00c8ff 40deg,
+        transparent 60deg,
+        transparent 60deg 150deg,
+        transparent 150deg,
+        #3238a8 170deg,
+        #00c8ff 190deg,
+        transparent 210deg,
+        transparent 210deg 360deg
+    );
+    animation: border-beam-rotate 3s linear infinite;
+    will-change: transform;
+    border-radius: 50%;
+}
+
+.drop-zone-beam--full {
+    background: conic-gradient(
+        from 0deg,
+        #3238a8,
+        #00c8ff,
+        #3238a8,
+        #00c8ff,
+        #3238a8
+    );
+}
+
+@keyframes border-beam-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+</style>

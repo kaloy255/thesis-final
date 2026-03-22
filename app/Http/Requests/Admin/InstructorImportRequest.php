@@ -15,7 +15,7 @@ class InstructorImportRequest extends FormRequest
     {
         return [
             'file' => ['required', 'file', 'max:2048', 'mimes:xlsx,xls,csv'], // Max 2MB
-            'department_id' => ['required', 'exists:departments,id'],
+            'department_id' => ['nullable', 'exists:departments,id'],
         ];
     }
 
@@ -26,8 +26,7 @@ class InstructorImportRequest extends FormRequest
             'file.file' => 'The uploaded file is not valid.',
             'file.max' => 'The Excel file must not exceed 2MB.',
             'file.mimes' => 'The file must be an Excel spreadsheet (.xlsx, .xls) or a CSV file.',
-            'department_id.required' => 'Please select a department for the instructors.',
-            'department_id.exists' => 'The selected department is invalid.',
+            'department_id.exists' => 'The selected fallback department is invalid.',
         ];
     }
 }

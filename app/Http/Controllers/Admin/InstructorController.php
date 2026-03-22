@@ -151,11 +151,20 @@ class InstructorController extends Controller
         ini_set('memory_limit', '256M');
 
         $file = $request->file('file');
-        $departmentId = $request->input('department_id');
+        $fallbackDepartmentId = $request->input('department_id');
         $imported = 0;
         $errors = [];
         $skipped = 0;
         $rowNumber = 1;
+
+        // Hardcoded mapping for department mismatches in the Excel file
+        $facultyMapping = [
+            'LIBERAL ARTS' => 'STE', // Map LIBERAL ARTS to STE based on context, adjust if needed
+        ];
+
+        // Fetch lookups
+        $departmentsByCode = Department::all()->keyBy(fn($d) => strtoupper(trim($d->code)));
+        $departmentsByName = Department::all()->keyBy(fn($d) => strtoupper(trim($d->name)));
 
         try {
             $allRows = (new FastExcel)->import($file);
@@ -173,6 +182,7 @@ class InstructorController extends Controller
             $hasName = false;
             $emailKey = null;
             $nameKey = null;
+            $deptKey = null;
 
             foreach ($headers as $header) {
                 $normalizedHeader = strtolower(trim($header));
@@ -180,9 +190,12 @@ class InstructorController extends Controller
                     $hasEmail = true;
                     $emailKey = $header;
                 }
-                if ($normalizedHeader === 'name') {
+                if (in_array($normalizedHeader, ['name', 'full name', 'fullname'], true)) {
                     $hasName = true;
                     $nameKey = $header;
+                }
+                if (in_array($normalizedHeader, ['department', 'dept', 'faculty dept', 'faculty'], true)) {
+                    $deptKey = $header;
                 }
             }
 
@@ -190,7 +203,7 @@ class InstructorController extends Controller
                 $foundHeaders = implode(', ', array_map(fn($h) => '"' . $h . '"', $headers));
                 return back()->with('flash', [
                     'type' => 'error',
-                    'message' => "Invalid Excel format. Required columns: 'email' and 'name'. Accepted email headers: 'email', 'email address', 'username'. Found columns: {$foundHeaders}. Please download the template and follow the correct format.",
+                    'message' => "Invalid Excel format. Required columns: email/faculty and name/full name. Recommended column: department/faculty dept. Found columns: {$foundHeaders}. Please download the template and follow the correct format.",
                 ]);
             }
 
@@ -208,8 +221,10 @@ class InstructorController extends Controller
 
             foreach ($allRows as $line) {
                 $rowNumber++;
-                $email = isset($line[$emailKey]) ? strtolower(trim((string)$line[$emailKey])) : null;
-                $name = isset($line[$nameKey]) ? trim((string)$line[$nameKey]) : null;
+                $lineArr = (array)$line;
+                $email = isset($lineArr[$emailKey]) ? strtolower(trim((string)$lineArr[$emailKey])) : null;
+                $name = isset($lineArr[$nameKey]) ? trim((string)$lineArr[$nameKey]) : null;
+                $deptStr = $deptKey !== null && isset($lineArr[$deptKey]) ? trim((string)$lineArr[$deptKey]) : null;
 
                 if (empty($email) && empty($name)) {
                     continue;
@@ -232,6 +247,27 @@ class InstructorController extends Controller
                     $skipped++;
                     continue;
                 }
+
+                // Resolve Department
+                $resolvedDeptId = $fallbackDepartmentId;
+                if (!empty($deptStr)) {
+                    $deptUpper = strtoupper($deptStr);
+                    $mappedDept = $facultyMapping[$deptUpper] ?? $deptUpper;
+
+                    if ($departmentsByCode->has($mappedDept)) {
+                        $resolvedDeptId = $departmentsByCode->get($mappedDept)->id;
+                    }
+                    elseif ($departmentsByName->has($mappedDept)) {
+                        $resolvedDeptId = $departmentsByName->get($mappedDept)->id;
+                    }
+                }
+
+                if (!$resolvedDeptId) {
+                    $errors[] = "Row {$rowNumber}: Could not determine department for '{$name}' - Provide a valid Department in file or select a fallback in the UI.";
+                    $skipped++;
+                    continue;
+                }
+
                 $existingEmails[$email] = true;
 
                 $userBatch[] = [
@@ -243,32 +279,45 @@ class InstructorController extends Controller
                     'updated_at' => $now,
                 ];
 
+                // Track department for this user index so we can insert the professor record correctly
+                $departmentBatchMap[] = $resolvedDeptId;
+
                 if (count($userBatch) >= $chunkSize) {
                     User::insert($userBatch);
                     $firstId = DB::connection()->getPdo()->lastInsertId();
-                    $userIds = range((int)$firstId, (int)$firstId + count($userBatch) - 1);
-                    $professorBatch = array_map(fn($uid) => [
-                    'user_id' => $uid,
-                    'department_id' => $departmentId,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                    ], $userIds);
+
+                    $professorBatch = [];
+                    foreach ($userBatch as $index => $u) {
+                        $uid = (int)$firstId + $index;
+                        $professorBatch[] = [
+                            'user_id' => $uid,
+                            'department_id' => $departmentBatchMap[$index],
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+                    }
+
                     Professor::insert($professorBatch);
-                    $imported += count($userBatch);
                     $userBatch = [];
+                    $departmentBatchMap = [];
                 }
             }
 
             if (!empty($userBatch)) {
                 User::insert($userBatch);
                 $firstId = DB::connection()->getPdo()->lastInsertId();
-                $userIds = range((int)$firstId, (int)$firstId + count($userBatch) - 1);
-                $professorBatch = array_map(fn($uid) => [
-                'user_id' => $uid,
-                'department_id' => $departmentId,
-                'created_at' => $now,
-                'updated_at' => $now,
-                ], $userIds);
+
+                $professorBatch = [];
+                foreach ($userBatch as $index => $u) {
+                    $uid = (int)$firstId + $index;
+                    $professorBatch[] = [
+                        'user_id' => $uid,
+                        'department_id' => $departmentBatchMap[$index],
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+
                 Professor::insert($professorBatch);
                 $imported += count($userBatch);
             }
@@ -317,14 +366,17 @@ class InstructorController extends Controller
             [
                 'Email Address' => 'juandelacruz@chcc.edu.ph',
                 'name' => 'Prof. Juan Dela Cruz',
+                'Department' => 'STE',
             ],
             [
                 'Email Address' => 'mariasantos@chcc.edu.ph',
                 'name' => 'Prof. Maria Santos',
+                'Department' => 'SCS',
             ],
             [
                 'Email Address' => 'joserizal@chcc.edu.ph',
                 'name' => 'Prof. Jose Rizal',
+                'Department' => 'SHM',
             ],
         ];
 
