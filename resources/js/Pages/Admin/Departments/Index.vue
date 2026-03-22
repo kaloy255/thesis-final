@@ -225,8 +225,8 @@ const formatDate = (dateString) => {
         
         <!-- Header Section -->
         <div class="mb-8">
-            <div class="flex items-center justify-between">
-                <div>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="w-full sm:w-auto">
                     <h1 class="text-2xl font-semibold text-text-primary dark:text-text-inverted mb-1">
                         Departments
                     </h1>
@@ -234,7 +234,7 @@ const formatDate = (dateString) => {
                         Manage academic departments
                     </p>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                     <button
                         @click="openImportModal"
                         class="inline-flex items-center gap-2 px-4 py-2 bg-surface dark:bg-surface-dark-muted text-text-secondary border border-border-light dark:border-border-dark text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
@@ -342,7 +342,7 @@ const formatDate = (dateString) => {
                             
                             <!-- Edit Mode -->
                             <div v-else class="space-y-2">
-                                <div class="flex gap-2">
+                                <div class="flex flex-col sm:flex-row gap-2">
                                     <div class="flex-1">
                                         <input
                                             v-model="(updateForms[department.id] ||= useForm({ name: department.name, code: department.code })).name"
@@ -358,7 +358,7 @@ const formatDate = (dateString) => {
                                             :message="updateForms[department.id]?.errors?.name"
                                         />
                                     </div>
-                                    <div class="w-1/3">
+                                    <div class="w-full sm:w-1/3">
                                         <input
                                             v-model="(updateForms[department.id] ||= useForm({ name: department.name, code: department.code })).code"
                                             type="text"

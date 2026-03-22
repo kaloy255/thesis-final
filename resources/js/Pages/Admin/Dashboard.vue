@@ -416,14 +416,14 @@ const onApplyRange = async () => {
             </Link>
         </div>
         <div class="card p-4 mb-6">
-            <div class="flex items-start justify-between gap-4 mb-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
                 <div>
                     <h2 class="text-lg font-semibold">AI Token Usage (Daily)</h2>
                     <div class="text-xs text-text-secondary mt-1">
                         Daily total tokens by fallback provider
                     </div>
                 </div>
-                <div class="flex flex-wrap items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                     <DatePicker
                         class="border p-2 rounded-lg min-w-[15rem] flex justify-center"
                         ref="datePickerRef"

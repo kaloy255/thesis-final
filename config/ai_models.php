@@ -3,19 +3,19 @@
 return [
 
     /*
-    |--------------------------------------------------------------------------
-    | AI Provider Configurations
-    |--------------------------------------------------------------------------
-    |
-    | Configure the AI providers for assessment generation.
-    | Each provider has a single model with specific token limits.
-    |
-    */
+     |--------------------------------------------------------------------------
+     | AI Provider Configurations
+     |--------------------------------------------------------------------------
+     |
+     | Configure the AI providers for assessment generation.
+     | Each provider has a single model with specific token limits.
+     |
+     */
 
     'providers' => [
         'openai' => [
             'api_key' => env('OPENAI_API_KEY'),
-            'model' => 'gpt-3.5-turbo',
+            'model' => 'gpt-4o-mini',
             'limits' => [
                 'max_input_tokens' => 16385,
                 'max_output_tokens' => 4096,
@@ -43,13 +43,13 @@ return [
     ],
 
     /*
-    |--------------------------------------------------------------------------
-    | Chunking Settings
-    |--------------------------------------------------------------------------
-    |
-    | Configure how content is chunked when it exceeds model token limits.
-    |
-    */
+     |--------------------------------------------------------------------------
+     | Chunking Settings
+     |--------------------------------------------------------------------------
+     |
+     | Configure how content is chunked when it exceeds model token limits.
+     |
+     */
 
     'chunking' => [
         'buffer_tokens' => 10000,
@@ -58,25 +58,25 @@ return [
     ],
 
     /*
-    |--------------------------------------------------------------------------
-    | Primary Provider
-    |--------------------------------------------------------------------------
-    |
-    | The primary provider to use for AI generation.
-    | This will be tried first before falling back to other providers.
-    |
-    */
+     |--------------------------------------------------------------------------
+     | Primary Provider
+     |--------------------------------------------------------------------------
+     |
+     | The primary provider to use for AI generation.
+     | This will be tried first before falling back to other providers.
+     |
+     */
 
     'primary_provider' => 'openai',
 
     /*
-    |--------------------------------------------------------------------------
-    | Fallback Order
-    |--------------------------------------------------------------------------
-    |
-    | The order in which providers will be tried if the primary fails.
-    |
-    */
+     |--------------------------------------------------------------------------
+     | Fallback Order
+     |--------------------------------------------------------------------------
+     |
+     | The order in which providers will be tried if the primary fails.
+     |
+     */
 
     'fallback_order' => [
         'openai',
@@ -85,13 +85,13 @@ return [
     ],
 
     /*
-    |--------------------------------------------------------------------------
-    | Request Timeout
-    |--------------------------------------------------------------------------
-    |
-    | Maximum time (in seconds) to wait for an AI provider response.
-    |
-    */
+     |--------------------------------------------------------------------------
+     | Request Timeout
+     |--------------------------------------------------------------------------
+     |
+     | Maximum time (in seconds) to wait for an AI provider response.
+     |
+     */
 
     'timeout' => 120,
 
