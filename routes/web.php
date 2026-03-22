@@ -135,6 +135,7 @@ Route::middleware(['auth', 'instructor'])->prefix('instructor')->as('instructor.
     // Assessment History
     Route::get('assessments/{assessment}/history', [AssessmentHistoryController::class, 'show'])->name('assessments.history');
     Route::get('assessments/{assessment}/history/students/{student}', [AssessmentHistoryController::class, 'showStudent'])->name('assessments.history.student');
+    Route::get('assessments/{assessment}/history/students/{student}/attempts/{attempt}/results', [AssessmentHistoryController::class, 'showAttemptResults'])->name('assessments.history.student.results');
 
     // Notifications
     Route::get('notifications/unread', [InstructorNotificationController::class, 'index'])->name('notifications.unread');

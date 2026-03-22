@@ -2,6 +2,7 @@
 import StudentLayout from "@/Layouts/StudentLayout.vue";
 import { Head, Link } from "@inertiajs/vue3";
 import { ref } from "vue";
+import AdaptiveTree from "@/Components/AdaptiveTree.vue";
 
 const props = defineProps({
     assessment: Object,
@@ -26,6 +27,14 @@ const isAccordionOpen = (attemptId) => expandedAttemptIds.value.has(attemptId);
 const hasAdaptives = (attempt) => {
     const list = attempt.adaptive_assessments || [];
     return Array.isArray(list) && list.length > 0;
+};
+
+// Also calculate total inner adaptives recursively for the counter badge
+const countTotalAdaptives = (adaptives) => {
+    if (!adaptives || !Array.isArray(adaptives)) return 0;
+    return adaptives.reduce((total, adaptive) => {
+        return total + 1 + countTotalAdaptives(adaptive.children || []);
+    }, 0);
 };
 
 const formatDate = (dateString) => {
@@ -237,7 +246,7 @@ const isLatestAttempt = (index) => {
                                     >
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                     </svg>
-                                    Adaptive assessments from this attempt ({{ attempt.adaptive_assessments.length }})
+                                    Adaptive assessments from this attempt ({{ countTotalAdaptives(attempt.adaptive_assessments) }})
                                 </span>
                                 <svg
                                     class="w-5 h-5 text-accent-primary transition-transform"
@@ -251,32 +260,12 @@ const isLatestAttempt = (index) => {
                             </button>
                             <div
                                 v-show="isAccordionOpen(attempt.id)"
-                                class="mt-2 pl-4 space-y-2 border-l-2 border-accent-primary/30"
+                                class="mt-2 px-4 py-2 bg-surface dark:bg-surface-dark rounded-lg border border-border-light dark:border-border-dark"
                             >
-                                <div
-                                    v-for="adaptive in attempt.adaptive_assessments"
-                                    :key="adaptive.id"
-                                    class="py-2"
-                                >
-                                    <div class="text-sm text-text-secondary mb-1">
-                                        {{ adaptive.title }}
-                                    </div>
-                                    <div class="flex items-center gap-2 text-xs text-text-secondary mb-2">
-                                        {{ formatDate(adaptive.created_at) }}
-                                    </div>
-                                    <Link
-                                        :href="route('student.assessments.show', adaptive.id)"
-                                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-accent-primary text-white hover:bg-accent-muted"
-                                    >
-                                        Take Assessment
-                                    </Link>
-                                    <Link
-                                        :href="route('student.assessments.history', adaptive.id)"
-                                        class="inline-flex items-center px-3 py-1.5 ml-2 text-xs font-medium rounded-lg border border-border-light dark:border-border-dark text-text-primary dark:text-text-inverted hover:bg-surface-muted dark:hover:bg-surface-dark-muted"
-                                    >
-                                        View History
-                                    </Link>
-                                </div>
+                                <AdaptiveTree
+                                    :adaptives="attempt.adaptive_assessments"
+                                    :formatDate="formatDate"
+                                />
                             </div>
                         </div>
                     </div>

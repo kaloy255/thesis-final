@@ -1,8 +1,9 @@
 <script setup>
 import InstructorLayout from "@/Layouts/InstructorLayout.vue";
 import Modal from "@/Components/Modal.vue";
-import { Head } from "@inertiajs/vue3";
+import { Head, Link } from "@inertiajs/vue3";
 import { ref } from "vue";
+import AdaptiveTree from "@/Components/AdaptiveTree.vue";
 
 const showCheatingDialog = ref(false);
 const openCheatingDialog = () => { showCheatingDialog.value = true; };
@@ -36,6 +37,14 @@ const isAccordionOpen = (attemptId) => expandedAttemptIds.value.has(attemptId);
 const hasAdaptives = (attempt) => {
     const list = attempt.adaptive_assessments || [];
     return Array.isArray(list) && list.length > 0;
+};
+
+// Also calculate total inner adaptives recursively for the counter badge
+const countTotalAdaptives = (adaptives) => {
+    if (!adaptives || !Array.isArray(adaptives)) return 0;
+    return adaptives.reduce((total, adaptive) => {
+        return total + 1 + countTotalAdaptives(adaptive.children || []);
+    }, 0);
 };
 
 const formatDate = (dateString) => {
@@ -304,6 +313,22 @@ const getEventLabel = (eventType) => {
                         </div>
                     </div>
 
+                    <!-- View Results Button -->
+                    <div class="mt-4 flex">
+                        <Link
+                            :href="
+                                route('instructor.assessments.history.student.results', {
+                                    assessment: assessment.id,
+                                    student: student.id,
+                                    attempt: attempt.id,
+                                })
+                            "
+                            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-accent-primary rounded-lg hover:bg-accent-muted transition-colors duration-150"
+                        >
+                            View Results
+                        </Link>
+                    </div>
+
                     <!-- Accordion: Adaptive assessments from this attempt -->
                     <div
                         v-if="hasAdaptives(attempt)"
@@ -329,7 +354,7 @@ const getEventLabel = (eventType) => {
                                     />
                                 </svg>
                                 Adaptive assessments from this attempt ({{
-                                    attempt.adaptive_assessments.length
+                                    countTotalAdaptives(attempt.adaptive_assessments)
                                 }})
                             </span>
                             <svg
@@ -351,22 +376,16 @@ const getEventLabel = (eventType) => {
                         </button>
                         <div
                             v-show="isAccordionOpen(attempt.id)"
-                            class="mt-2 pl-4 space-y-2 border-l-2 border-accent-primary/30"
+                            class="mt-2 px-4 py-2 bg-surface dark:bg-surface-dark rounded-lg border border-border-light dark:border-border-dark"
                         >
-                            <div
-                                v-for="adaptive in attempt.adaptive_assessments"
-                                :key="adaptive.id"
-                                class="py-2"
-                            >
-                                <div class="text-sm text-text-secondary mb-1">
-                                    {{ adaptive.title }}
-                                </div>
-                                <div
-                                    class="flex items-center gap-2 text-xs text-text-secondary"
-                                >
-                                    {{ formatDate(adaptive.created_at) }}
-                                </div>
-                            </div>
+                            <AdaptiveTree
+                                :adaptives="attempt.adaptive_assessments"
+                                :formatDate="formatDate"
+                                :showActions="false"
+                                role="instructor"
+                                :studentId="student.id"
+                                :assessmentId="assessment.id"
+                            />
                         </div>
                     </div>
                 </div>
