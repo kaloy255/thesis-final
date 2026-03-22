@@ -9,19 +9,6 @@ const props = defineProps({
 
 const showPasswordForm = ref(false);
 
-// Profile Information Form
-const profileForm = useForm({
-    email: props.user.email,
-});
-
-const updateProfile = () => {
-    profileForm.put(route("instructor.settings.update"), {
-        preserveScroll: true,
-        onSuccess: () => {
-            profileForm.reset();
-        },
-    });
-};
 
 // Password Form
 const passwordForm = useForm({
@@ -60,7 +47,7 @@ const updatePassword = () => {
                 <h2 class="text-lg font-semibold text-text-primary dark:text-text-inverted mb-4">
                     Profile Information
                 </h2>
-                <form @submit.prevent="updateProfile" class="space-y-4">
+                <div class="space-y-4">
                     <div>
                         <label
                             for="name"
@@ -90,29 +77,17 @@ const updatePassword = () => {
                         </label>
                         <input
                             id="email"
-                            v-model="profileForm.email"
+                            :value="user.email"
                             type="email"
-                            class="input w-full"
-                            required
+                            class="input w-full bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
+                            disabled
+                            readonly
                         />
-                        <div
-                            v-if="profileForm.errors.email"
-                            class="mt-1 text-sm text-red-600 dark:text-red-400"
-                        >
-                            {{ profileForm.errors.email }}
-                        </div>
+                        <p class="mt-1 text-xs text-text-secondary">
+                            Your email cannot be changed. Please contact the administrator.
+                        </p>
                     </div>
-
-                    <div class="flex justify-end">
-                        <button
-                            type="submit"
-                            class="btn-primary"
-                            :disabled="profileForm.processing"
-                        >
-                            {{ profileForm.processing ? "Saving..." : "Save Changes" }}
-                        </button>
-                    </div>
-                </form>
+                </div>
             </div>
 
             <!-- Change Password -->

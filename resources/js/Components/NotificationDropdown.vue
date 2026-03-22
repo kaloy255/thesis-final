@@ -161,14 +161,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="relative">
+    <div class="relative inline-flex items-center">
         <!-- Bell Icon Button -->
         <button
             @click="isOpen = !isOpen"
-            class="relative p-2 rounded-lg hover:bg-surface-muted dark:hover:bg-surface-dark-muted transition-colors"
+            class="relative flex items-center justify-center p-2 rounded-lg hover:bg-surface-muted dark:hover:bg-surface-dark-muted transition-colors"
         >
             <svg
-                class="w-6 h-6 text-text-secondary hover:text-text-primary dark:hover:text-text-inverted"
+                class="w-5 h-5 lg:w-6 lg:h-6 text-text-secondary hover:text-text-primary dark:hover:text-text-inverted"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -184,7 +184,7 @@ onUnmounted(() => {
             <!-- Unread Badge -->
             <span
                 v-if="unreadCount > 0"
-                class="absolute top-0 right-0 block h-5 w-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center"
+                class="absolute -top-0.5 -right-0.5 min-w-[1.25rem] h-5 px-1 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center"
             >
                 {{ unreadCount > 9 ? "9+" : unreadCount }}
             </span>
@@ -208,7 +208,7 @@ onUnmounted(() => {
         >
             <div
                 v-if="isOpen"
-                class="absolute top-full mt-2 right-0 w-80 bg-white dark:bg-surface-dark rounded-lg shadow-lg border border-border-light dark:border-border-dark z-50 max-h-[28rem] overflow-hidden flex flex-col"
+                class="absolute top-full mt-2 right-0 left-auto w-80 max-w-[calc(100vw-2rem)] bg-white dark:bg-surface-dark rounded-lg shadow-lg border border-border-light dark:border-border-dark z-50 max-h-[28rem] overflow-hidden flex flex-col origin-top-right"
                 @click.stop
             >
                 <!-- Header -->

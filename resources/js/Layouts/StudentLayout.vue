@@ -82,7 +82,7 @@ onUnmounted(() => {
             </div>
 
             <!-- Mobile right section -->
-            <div class="flex items-center gap-2">
+            <div class="flex items-center justify-end gap-2">
                 <NotificationDropdown role="student" />
                 <button
                     @click="toggleTheme"
