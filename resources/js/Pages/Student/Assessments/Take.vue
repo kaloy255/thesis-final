@@ -110,6 +110,8 @@ watch(currentQuestionIndex, async () => {
     }
 }, { immediate: true });
 
+const isSubmittingAssessment = ref(false);
+
 const submitForm = () => {
     if (
         unansweredQuestions.value > 0 &&
@@ -120,8 +122,12 @@ const submitForm = () => {
         return;
     }
 
+    isSubmittingAssessment.value = true;
     form.post(route("student.assessments.store", props.assessment.id), {
         preserveScroll: true,
+        onFinish: () => {
+            isSubmittingAssessment.value = false;
+        },
     });
 };
 
@@ -158,6 +164,9 @@ const handleWindowBlur = () => {
 };
 
 const handleBeforeUnload = (e) => {
+    // Don't log as cheating when user is legitimately submitting the assessment
+    if (isSubmittingAssessment.value) return;
+
     logCheatingEvent('page_leave');
     e.preventDefault();
     e.returnValue = '';
