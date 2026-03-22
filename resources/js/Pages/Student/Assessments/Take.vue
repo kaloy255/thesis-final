@@ -1,7 +1,7 @@
 <script setup>
 import StudentLayout from "@/Layouts/StudentLayout.vue";
 import { Head, useForm } from "@inertiajs/vue3";
-import { computed, ref, onMounted, onUnmounted } from "vue";
+import { computed, ref, watch, nextTick, onMounted, onUnmounted } from "vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
 import InputError from "@/Components/InputError.vue";
 import axios from "axios";
@@ -92,6 +92,23 @@ const goToQuestion = (index) => {
         currentQuestionIndex.value = index;
     }
 };
+
+// Refs for pagination scroll-into-view
+const paginationButtonRefs = ref([]);
+const setPaginationButtonRef = (el, index) => {
+    if (el) {
+        paginationButtonRefs.value[index] = el;
+    }
+};
+
+// Keep current question button visible when navigating
+watch(currentQuestionIndex, async () => {
+    await nextTick();
+    const btn = paginationButtonRefs.value[currentQuestionIndex.value];
+    if (btn) {
+        btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+}, { immediate: true });
 
 const submitForm = () => {
     if (
@@ -301,38 +318,67 @@ onUnmounted(() => {
 
                 <!-- Navigation Buttons -->
                 <div
-                    class="flex items-center justify-between pt-6 border-t border-border-light dark:border-border-dark">
-                    <button type="button" @click="previousQuestion" :disabled="isFirstQuestion" :class="[
-                        'px-4 py-2 rounded-lg font-medium transition-colors',
-                        isFirstQuestion
-                            ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                            : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600',
-                    ]">
+                    class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-6 border-t border-border-light dark:border-border-dark">
+                    <button
+                        type="button"
+                        @click="previousQuestion"
+                        :disabled="isFirstQuestion"
+                        :class="[
+                            'flex-shrink-0 w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2.5 sm:py-2 rounded-lg font-medium transition-colors',
+                            isFirstQuestion
+                                ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                                : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600',
+                        ]"
+                    >
                         ← Previous
                     </button>
 
-                    <div class="flex gap-2">
-                        <button v-for="(item, index) in items" :key="item.id" type="button" @click="goToQuestion(index)"
-                            :class="[
-                                'w-8 h-8 rounded-full text-sm font-medium transition-colors',
-                                index === currentQuestionIndex
-                                    ? 'bg-accent-primary text-white'
-                                    : form.answers[item.id]?.answer
-                                        ? 'bg-green-500 text-white hover:bg-green-600'
-                                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600',
-                            ]" :title="`Question ${index + 1}`">
-                            {{ index + 1 }}
-                        </button>
+                    <!-- Pagination: horizontally scrollable when many questions to prevent overflow -->
+                    <div
+                        class="min-w-0 flex-1 overflow-x-auto overflow-y-hidden py-2 -mx-1 px-1 scroll-smooth"
+                    >
+                        <div class="flex gap-2 justify-start flex-nowrap">
+                            <button
+                                v-for="(item, index) in items"
+                                :key="item.id"
+                                type="button"
+                                :ref="(el) => setPaginationButtonRef(el, index)"
+                                @click="goToQuestion(index)"
+                                :class="[
+                                    'flex-shrink-0 w-8 h-8 rounded-full text-sm font-medium transition-colors',
+                                    index === currentQuestionIndex
+                                        ? 'bg-accent-primary text-white'
+                                        : form.answers[item.id]?.answer
+                                            ? 'bg-green-500 text-white hover:bg-green-600'
+                                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600',
+                                ]" :title="`Question ${index + 1}`">
+                                {{ index + 1 }}
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="flex gap-3">
-                        <PrimaryButton v-if="isLastQuestion" type="submit"
-                            :class="{ 'opacity-50 cursor-not-allowed': form.processing }" :disabled="form.processing">
+                    <div class="flex flex-shrink-0 gap-3 justify-end sm:justify-start w-full sm:w-auto min-w-0">
+                        <PrimaryButton
+                            v-if="isLastQuestion"
+                            type="submit"
+                            :class="[
+                                'w-full sm:w-auto min-h-[44px] sm:min-h-0 justify-center',
+                                { 'opacity-50 cursor-not-allowed': form.processing },
+                            ]"
+                            :disabled="form.processing"
+                        >
                             <span v-if="form.processing">Submitting...</span>
-                            <span v-else>Submit Assessment</span>
+                            <template v-else>
+                                <span class="sm:hidden">Submit</span>
+                                <span class="hidden sm:inline">Submit Assessment</span>
+                            </template>
                         </PrimaryButton>
-                        <button v-else type="button" @click="nextQuestion"
-                            class="px-4 py-2 bg-accent-primary text-white rounded-lg font-medium hover:bg-accent-muted transition-colors">
+                        <button
+                            v-else
+                            type="button"
+                            @click="nextQuestion"
+                            class="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2.5 sm:py-2 bg-accent-primary text-white rounded-lg font-medium hover:bg-accent-muted transition-colors"
+                        >
                             Next →
                         </button>
                     </div>

@@ -1,7 +1,7 @@
 <script setup>
 import StudentLayout from "@/Layouts/StudentLayout.vue";
 import { Head, Link, router, usePage, useForm } from "@inertiajs/vue3";
-import { computed, ref, onMounted } from "vue";
+import { computed, ref, watch, nextTick, onMounted } from "vue";
 import ProcessingModal from "@/Components/ProcessingModal.vue";
 
 const props = defineProps({
@@ -189,6 +189,23 @@ const goToQuestion = (index) => {
         currentQuestionIndex.value = index;
     }
 };
+
+// Refs for pagination scroll-into-view
+const paginationButtonRefs = ref([]);
+const setPaginationButtonRef = (el, index) => {
+    if (el) {
+        paginationButtonRefs.value[index] = el;
+    }
+};
+
+// Keep current question button visible when navigating
+watch(currentQuestionIndex, async () => {
+    await nextTick();
+    const btn = paginationButtonRefs.value[currentQuestionIndex.value];
+    if (btn) {
+        btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+}, { immediate: true });
 </script>
 
 <template>
@@ -571,13 +588,15 @@ const goToQuestion = (index) => {
                 </div>
 
                 <!-- Navigation Buttons -->
-                <div class="flex items-center justify-between pt-6 border-t border-border-light dark:border-border-dark">
+                <div
+                    class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-6 border-t border-border-light dark:border-border-dark"
+                >
                     <button
                         type="button"
                         @click="previousQuestion"
                         :disabled="isFirstQuestion"
                         :class="[
-                            'px-4 py-2 rounded-lg font-medium transition-colors',
+                            'flex-shrink-0 px-4 py-2 rounded-lg font-medium transition-colors',
                             isFirstQuestion
                                 ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
                                 : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600',
@@ -586,24 +605,30 @@ const goToQuestion = (index) => {
                         ← Previous
                     </button>
 
-                    <div class="flex gap-2 flex-wrap justify-center max-w-md">
-                        <button
-                            v-for="(item, index) in items"
-                            :key="item.id"
-                            type="button"
-                            @click="goToQuestion(index)"
-                            :class="[
-                                'w-8 h-8 rounded-full text-sm font-medium transition-colors',
-                                index === currentQuestionIndex
-                                    ? 'bg-accent-primary text-white'
-                                    : item.is_correct
-                                    ? 'bg-green-500 text-white hover:bg-green-600'
-                                    : 'bg-red-500 text-white hover:bg-red-600',
-                            ]"
-                            :title="`Question ${index + 1}`"
-                        >
-                            {{ index + 1 }}
-                        </button>
+                    <!-- Pagination: horizontally scrollable when many questions to prevent overflow -->
+                    <div
+                        class="min-w-0 flex-1 overflow-x-auto overflow-y-hidden py-2 -mx-1 px-1 scroll-smooth"
+                    >
+                        <div class="flex gap-2 justify-start flex-nowrap">
+                            <button
+                                v-for="(item, index) in items"
+                                :key="item.id"
+                                type="button"
+                                :ref="(el) => setPaginationButtonRef(el, index)"
+                                @click="goToQuestion(index)"
+                                :class="[
+                                    'flex-shrink-0 w-8 h-8 rounded-full text-sm font-medium transition-colors',
+                                    index === currentQuestionIndex
+                                        ? 'bg-accent-primary text-white'
+                                        : item.is_correct
+                                        ? 'bg-green-500 text-white hover:bg-green-600'
+                                        : 'bg-red-500 text-white hover:bg-red-600',
+                                ]"
+                                :title="`Question ${index + 1}`"
+                            >
+                                {{ index + 1 }}
+                            </button>
+                        </div>
                     </div>
 
                     <button
@@ -611,7 +636,7 @@ const goToQuestion = (index) => {
                         @click="nextQuestion"
                         :disabled="isLastQuestion"
                         :class="[
-                            'px-4 py-2 rounded-lg font-medium transition-colors',
+                            'flex-shrink-0 px-4 py-2 rounded-lg font-medium transition-colors',
                             isLastQuestion
                                 ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
                                 : 'bg-accent-primary text-white hover:bg-accent-muted',
