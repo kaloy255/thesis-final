@@ -394,38 +394,24 @@ const truncateText = (text, maxLength = 80) => {
                                         </svg>
                                     </div>
                                 </div>
-                                <div class="flex-1 min-w-0 flex justify-between">
-                                    <div
-                                        class="flex flex-col items-center flex-wrap"
-                                    >
-                                        
-                                        <p
-                                            class="text-base font-medium text-text-primary dark:text-text-inverted"
-                                        >
+                                <div class="flex-1 min-w-0 space-y-1">
+                                    <div class="flex items-center gap-3 flex-wrap">
+                                        <p class="text-base font-medium text-text-primary dark:text-text-inverted truncate">
                                             {{ subject.name }}
                                         </p>
-
-                                        <span
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
-                                        >
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
                                             {{ subject.code }}
                                         </span>
                                     </div>
 
-                                    <div class="flex-1 text-center flex justify-between items-center">  <p
-                                        v-if="subject.description"
-                                        class="text-sm text-text-secondary flex-1"
-                                    >
-                                        {{ truncateText(subject.description) }}
-                                    </p>
-                                    <p
-                                        v-if="subject.created_at"
-                                        class="text-xs text-text-secondary"
-                                    >
-                                        Created
-                                        {{ formatDate(subject.created_at) }}
-                                    </p></div>
-                                  
+                                    <div class="flex items-center gap-4">
+                                        <p v-if="subject.description" class="text-sm text-text-secondary truncate flex-1">
+                                            {{ subject.description }}
+                                        </p>
+                                        <p v-if="subject.created_at" class="text-xs text-text-secondary flex-shrink-0 hidden sm:block">
+                                            Created {{ formatDate(subject.created_at) }}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
 
