@@ -34,11 +34,7 @@ const userSubItems = [
 const profileName = computed(() => page.props.auth?.user?.name || "Admin");
 const profileInitials = computed(() => {
     const name = profileName.value;
-    const parts = name.split(" ").filter(Boolean);
-    if (parts.length >= 2) {
-        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
+    return name ? name.charAt(0).toUpperCase() : "?";
 });
 
 // Check if current route is a users sub-route

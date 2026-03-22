@@ -31,11 +31,7 @@ const isActive = (routeName) => {
 const userName = computed(() => page.props.auth?.user?.name || "Student");
 const userInitials = computed(() => {
     const name = userName.value;
-    const parts = name.split(" ").filter(Boolean);
-    if (parts.length >= 2) {
-        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
+    return name ? name.charAt(0).toUpperCase() : "?";
 });
 
 // Close profile dropdown when clicking outside
