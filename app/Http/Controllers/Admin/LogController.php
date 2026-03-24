@@ -15,13 +15,15 @@ class LogController extends Controller
 
         $logs = Log::with('user')
             ->when($search, function ($query, $term) {
-                $query->where(function ($q) use ($term) {
+            $query->where(function ($q) use ($term) {
                     $q->where('description', 'like', "%{$term}%")
                         ->orWhereHas('user', function ($userQuery) use ($term) {
-                            $userQuery->where('name', 'like', "%{$term}%");
-                        });
-                });
-            })
+                    $userQuery->where('name', 'like', "%{$term}%");
+                }
+                );
+            }
+            );
+        })
             ->orderByDesc('created_at')
             ->paginate(7)
             ->withQueryString();
@@ -34,4 +36,3 @@ class LogController extends Controller
         ]);
     }
 }
-

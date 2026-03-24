@@ -22,7 +22,7 @@ class ProfileController extends Controller
     public function update(Request $request)
     {
         $validated = $request->validate([
-            'id_number' => ['required', 'integer', 'unique:users,id_number,' . auth()->id()],
+            'email' => ['required', 'string', 'lowercase', 'email', 'unique:users,email,' . auth()->id()],
         ]);
 
         $request->user()->update($validated);

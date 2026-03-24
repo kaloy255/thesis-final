@@ -15,6 +15,10 @@ const actionLabel = computed(() =>
     hasAttempts.value ? "Retake Assessment" : "Take Assessment"
 );
 
+const mobileActionLabel = computed(() =>
+    hasAttempts.value ? "Retake" : "Take"
+);
+
 const formattedLastAttempt = computed(() => {
     if (!props.assessment.last_attempt_at) return null;
 
@@ -92,19 +96,27 @@ const headerImageStyle = computed(() => {
                 <span v-else>No attempts yet</span>
             </div>
 
-            <div class="mt-4 flex items-center justify-end gap-2">
+            <div :class="[
+                'mt-4 gap-2',
+                hasAttempts ? 'grid grid-cols-2 sm:flex sm:items-center sm:justify-end' : 'flex'
+            ]">
                 <Link
                     v-if="hasAttempts"
                     :href="route('student.assessments.history', assessment.id)"
-                    class="inline-flex items-center justify-center px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                    class="w-full inline-flex items-center justify-center px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 whitespace-nowrap"
                 >
-                    View History
+                    <span class="sm:hidden">History</span>
+                    <span class="hidden sm:inline">View History</span>
                 </Link>
                 <Link
                     :href="route('student.assessments.show', assessment.id)"
-                    class="inline-flex items-center justify-center px-3 py-2 bg-accent-primary text-white text-sm font-medium rounded-lg hover:bg-accent-muted transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2"
+                    :class="[
+                        'inline-flex items-center justify-center px-3 py-2 bg-accent-primary text-white text-sm font-medium rounded-lg hover:bg-accent-muted transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 whitespace-nowrap',
+                        hasAttempts ? 'w-full' : 'w-full sm:w-auto sm:ml-auto'
+                    ]"
                 >
-                    {{ actionLabel }}
+                    <span class="sm:hidden">{{ mobileActionLabel }}</span>
+                    <span class="hidden sm:inline">{{ actionLabel }}</span>
                 </Link>
             </div>
         </div>

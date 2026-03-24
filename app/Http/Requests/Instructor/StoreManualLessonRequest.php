@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Instructor;
 
+use App\Rules\NoMediaFilesRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreManualLessonRequest extends FormRequest
@@ -44,6 +45,13 @@ class StoreManualLessonRequest extends FormRequest
             'questions.*.question' => 'required|string',
             'questions.*.choices' => 'required_if:questions.*.type,multiple_choice|nullable|array|min:4',
             'questions.*.correct_answer' => 'required|string',
+            'file' => [
+                'nullable',
+                'file',
+                'mimes:docx,pdf,pptx,txt',
+                'max:10240', // 10MB in KB
+                new NoMediaFilesRule(),
+            ],
         ];
     }
 
@@ -69,6 +77,8 @@ class StoreManualLessonRequest extends FormRequest
             'questions.*.choices.required_if' => 'Multiple choice questions must have at least 4 choices.',
             'questions.*.choices.min' => 'Multiple choice questions must have at least 4 choices.',
             'questions.*.correct_answer.required' => 'Correct answer is required.',
+            'file.mimes' => 'File must be in DOCX, PDF, PPTX, or TXT format.',
+            'file.max' => 'File size must not exceed 10MB.',
         ];
     }
 }

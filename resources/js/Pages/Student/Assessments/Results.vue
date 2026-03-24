@@ -1,7 +1,7 @@
 <script setup>
 import StudentLayout from "@/Layouts/StudentLayout.vue";
-import { Head, Link, router, usePage, useForm } from "@inertiajs/vue3";
-import { computed, ref, onMounted } from "vue";
+import { Head, Link, usePage, useForm } from "@inertiajs/vue3";
+import { computed, ref, watch, nextTick, onMounted } from "vue";
 import ProcessingModal from "@/Components/ProcessingModal.vue";
 
 const props = defineProps({
@@ -47,9 +47,9 @@ const closeAdaptiveModal = () => {
 };
 
 const totalRequestedCounts = computed(() => {
-    return (adaptiveForm.multiple_choice_count || 0) + 
-           (adaptiveForm.identification_count || 0) + 
-           (adaptiveForm.true_or_false_count || 0);
+    return (adaptiveForm.multiple_choice_count || 0) +
+        (adaptiveForm.identification_count || 0) +
+        (adaptiveForm.true_or_false_count || 0);
 });
 
 const isValidAdaptiveRequest = computed(() => {
@@ -64,8 +64,7 @@ const generateAdaptive = () => {
 
     adaptiveError.value = null;
     showAdaptiveModal.value = false;
-    
-    // Show Processing Modal immediately
+
     showProcessingModal.value = true;
     uploadProgress.value = 10;
     currentStage.value = "Analyzing mistakes and content...";
@@ -132,11 +131,10 @@ const isFirstQuestion = computed(() => currentQuestionIndex.value === 0);
 
 const isLastQuestion = computed(() => currentQuestionIndex.value === totalQuestions.value - 1);
 
-// Helper to get choices as array
 const getChoices = (item) => {
     if (!item.choices) return [];
     if (Array.isArray(item.choices)) return item.choices;
-    if (typeof item.choices === 'string') {
+    if (typeof item.choices === "string") {
         try {
             return JSON.parse(item.choices);
         } catch (e) {
@@ -160,16 +158,16 @@ const formatDate = (dateString) => {
 
 const scoreColor = computed(() => {
     const score = props.results.score;
-    if (score >= 75) return 'text-green-600 dark:text-green-400';
-    if (score >= 50) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-red-600 dark:text-red-400';
+    if (score >= 75) return "text-emerald-600 dark:text-emerald-400";
+    if (score >= 50) return "text-amber-600 dark:text-amber-400";
+    return "text-rose-600 dark:text-rose-400";
 });
 
-const scoreBgColor = computed(() => {
+const scoreAccentBorder = computed(() => {
     const score = props.results.score;
-    if (score >= 75) return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
-    if (score >= 50) return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
-    return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
+    if (score >= 75) return "border-l-[3px] border-l-emerald-500 dark:border-l-emerald-400";
+    if (score >= 50) return "border-l-[3px] border-l-amber-500 dark:border-l-amber-400";
+    return "border-l-[3px] border-l-rose-500 dark:border-l-rose-400";
 });
 
 const nextQuestion = () => {
@@ -189,124 +187,133 @@ const goToQuestion = (index) => {
         currentQuestionIndex.value = index;
     }
 };
+
+const paginationButtonRefs = ref([]);
+const setPaginationButtonRef = (el, index) => {
+    if (el) {
+        paginationButtonRefs.value[index] = el;
+    }
+};
+
+watch(currentQuestionIndex, async () => {
+    await nextTick();
+    const btn = paginationButtonRefs.value[currentQuestionIndex.value];
+    if (btn) {
+        btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+}, { immediate: true });
+
+const questionStatusAccent = (item) => {
+    if (item.is_correct) return "border-l-[3px] border-l-emerald-500 dark:border-l-emerald-400";
+    if (item.student_answer !== null && item.student_answer !== "") {
+        return "border-l-[3px] border-l-rose-500 dark:border-l-rose-400";
+    }
+    return "border-l-[3px] border-l-amber-500/80 dark:border-l-amber-400/80";
+};
 </script>
 
 <template>
     <StudentLayout>
-        <Head :title="`Results - ${assessment.title}`" />
+        <Head :title="`Results — ${assessment.title}`" />
 
-        <div class="max-w-4xl mx-auto">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-36 sm:pb-12 pt-4 sm:pt-6">
             <!-- Header -->
-            <div class="mb-6">
-                <div class="flex items-center justify-end mb-4">
+            <header class="mb-10 sm:mb-12">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+                    <div>
+                        <p
+                            class="text-[11px] sm:text-xs font-medium uppercase tracking-[0.14em] text-text-secondary mb-3"
+                        >
+                            Results
+                        </p>
+                        <h1
+                            class="text-[clamp(1.375rem,4vw,1.875rem)] font-semibold tracking-tight text-text-primary dark:text-text-inverted leading-tight"
+                        >
+                            {{ assessment.title }}
+                        </h1>
+                        <p class="mt-3 text-sm text-text-secondary leading-relaxed max-w-prose">
+                            <span>{{ assessment.subject.name }} ({{ assessment.subject.code }})</span>
+                            <span class="mx-2 text-border-light dark:text-border-dark" aria-hidden="true">·</span>
+                            <span>{{ assessment.lesson.title }}</span>
+                        </p>
+                        <p class="mt-2 text-sm text-text-secondary">
+                            Attempt <span class="font-medium text-text-primary dark:text-text-inverted tabular-nums">#{{ attempt.attempt_no }}</span>
+                            <span class="mx-1.5 text-border-light dark:text-border-dark" aria-hidden="true">·</span>
+                            <time :datetime="attempt.created_at">{{ formatDate(attempt.created_at) }}</time>
+                        </p>
+                    </div>
                     <Link
                         :href="route('student.assessments.history', assessment.id)"
-                        class="inline-flex items-center justify-center px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        class="inline-flex shrink-0 items-center justify-center min-h-[44px] px-5 rounded-full text-sm font-medium border border-border-light dark:border-border-dark text-text-primary dark:text-text-inverted hover:bg-surface-muted dark:hover:bg-surface-dark-muted transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-surface-dark"
                     >
-                        View All Attempts
+                        All attempts
                     </Link>
                 </div>
+            </header>
 
-                <div class="card p-6">
-                    <h1
-                        class="text-2xl font-bold text-text-primary dark:text-text-inverted mb-2"
-                    >
-                        Assessment Results
-                    </h1>
-                    <div class="text-sm text-text-secondary space-y-1">
-                        <p>
-                            <span class="font-medium">Assessment:</span>
-                            {{ assessment.title }}
-                        </p>
-                        <p>
-                            <span class="font-medium">Subject:</span>
-                            {{ assessment.subject.name }}
-                            ({{ assessment.subject.code }})
-                        </p>
-                        <p>
-                            <span class="font-medium">Lesson:</span>
-                            {{ assessment.lesson.title }}
-                        </p>
-                        <p>
-                            <span class="font-medium">Attempt:</span>
-                            #{{ attempt.attempt_no }} - {{ formatDate(attempt.created_at) }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Score Summary -->
-            <div
-                class="mb-6 card p-6"
-                :class="scoreBgColor"
+            <!-- Score summary -->
+            <section
+                class="mb-10 sm:mb-12 rounded-2xl border border-border-light dark:border-border-dark bg-surface dark:bg-surface-dark-muted overflow-hidden"
+                :class="scoreAccentBorder"
+                aria-label="Score summary"
             >
-                <div class="text-center">
-                    <div class="text-sm text-text-secondary mb-2">Your Score</div>
-                    <div
-                        class="text-5xl font-bold mb-2"
-                        :class="scoreColor"
-                    >
-                        {{ results.score }}%
-                    </div>
-                    <div class="text-sm text-text-secondary">
-                        {{ results.correct_answers }} out of
-                        {{ results.total_questions }} correct
-                    </div>
-                    <div class="mt-4 pt-4 border-t border-border-light dark:border-border-dark">
-                        <div class="grid grid-cols-4 gap-4 text-sm">
-                            <div>
-                                <div class="text-text-secondary">Total Questions</div>
-                                <div
-                                    class="text-lg font-semibold text-text-primary dark:text-text-inverted"
-                                >
-                                    {{ results.total_questions }}
-                                </div>
-                            </div>
-                            <div>
-                                <div class="text-green-600 dark:text-green-400">Correct</div>
-                                <div
-                                    class="text-lg font-semibold text-green-600 dark:text-green-400"
-                                >
-                                    {{ results.correct_answers }}
-                                </div>
-                            </div>
-                            <div>
-                                <div class="text-red-600 dark:text-red-400">Incorrect</div>
-                                <div
-                                    class="text-lg font-semibold text-red-600 dark:text-red-400"
-                                >
-                                    {{ results.wrong_answers }}
-                                </div>
-                            </div>
-                            <div>
-                                <div class="text-gray-600 dark:text-gray-400">No Answer</div>
-                                <div
-                                    class="text-lg font-semibold text-gray-600 dark:text-gray-400"
-                                >
-                                    {{ results.no_answer }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Adaptive Assessment Button -->
-            <div
-                v-if="showAdaptiveButton"
-                class="mb-6 card p-6 border-2 border-dashed border-accent-primary bg-accent-primary/5 dark:bg-accent-primary/10"
-            >
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="w-12 h-12 rounded-full bg-accent-primary/20 dark:bg-accent-primary/30 flex items-center justify-center"
+                <div class="px-5 sm:px-8 py-8 sm:py-10 text-center sm:text-left sm:flex sm:items-end sm:justify-between sm:gap-8">
+                    <div>
+                        <p class="text-[11px] font-medium uppercase tracking-[0.12em] text-text-secondary">
+                            Your score
+                        </p>
+                        <p
+                            class="mt-2 text-5xl sm:text-6xl font-semibold tabular-nums tracking-tight leading-none"
+                            :class="scoreColor"
                         >
-                            <svg
-                                class="w-6 h-6 text-accent-primary"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
+                            {{ results.score }}%
+                        </p>
+                        <p class="mt-3 text-sm text-text-secondary">
+                            {{ results.correct_answers }} of {{ results.total_questions }} correct
+                        </p>
+                    </div>
+                    <dl
+                        class="mt-8 sm:mt-0 flex flex-wrap justify-center sm:justify-end gap-x-8 gap-y-4 text-sm border-t border-border-light/80 dark:border-border-dark/80 sm:border-0 sm:pt-0 pt-6"
+                    >
+                        <div>
+                            <dt class="text-text-secondary">Total</dt>
+                            <dd class="mt-0.5 font-semibold tabular-nums text-text-primary dark:text-text-inverted">
+                                {{ results.total_questions }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-emerald-600 dark:text-emerald-400">Correct</dt>
+                            <dd class="mt-0.5 font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                                {{ results.correct_answers }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-rose-600 dark:text-rose-400">Incorrect</dt>
+                            <dd class="mt-0.5 font-semibold tabular-nums text-rose-600 dark:text-rose-400">
+                                {{ results.wrong_answers }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-text-secondary">Unanswered</dt>
+                            <dd class="mt-0.5 font-semibold tabular-nums text-text-primary dark:text-text-inverted">
+                                {{ results.no_answer }}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </section>
+
+            <!-- Adaptive CTA -->
+            <section
+                v-if="showAdaptiveButton"
+                class="mb-10 sm:mb-12 pl-5 sm:pl-6 border-l-2 border-accent-primary/70 py-1"
+            >
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+                    <div class="flex gap-4 min-w-0">
+                        <div
+                            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-primary/12 dark:bg-accent-primary/20 text-accent-primary"
+                        >
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
@@ -315,33 +322,32 @@ const goToQuestion = (index) => {
                                 />
                             </svg>
                         </div>
-                        <div>
-                            <h3 class="font-semibold text-text-primary dark:text-text-inverted">
-                                Practice Wrong Answers
-                            </h3>
-                            <p class="text-sm text-text-secondary">
-                                Generate a custom assessment focused on your learning gaps.
+                        <div class="min-w-0">
+                            <h2 class="text-base font-semibold text-text-primary dark:text-text-inverted">
+                                Practice weak areas
+                            </h2>
+                            <p class="mt-1 text-sm text-text-secondary leading-relaxed">
+                                Generate a short adaptive set based on what you missed.
                             </p>
                         </div>
                     </div>
                     <button
                         type="button"
-                        @click="openAdaptiveModal"
+                        class="inline-flex shrink-0 items-center justify-center min-h-[44px] px-6 rounded-full bg-accent-primary text-white text-sm font-medium hover:bg-accent-muted transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-surface-dark"
                         :disabled="adaptiveForm.processing || showProcessingModal"
-                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-accent-primary text-white font-medium rounded-lg hover:bg-accent-muted transition-colors disabled:opacity-70 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2"
+                        @click="openAdaptiveModal"
                     >
-                        <span>Generate Adaptive Assessment</span>
+                        Customize
                     </button>
                 </div>
                 <p
                     v-if="adaptiveError && !showProcessingModal"
-                    class="mt-4 text-sm text-red-600 dark:text-red-400"
+                    class="mt-4 text-sm text-rose-600 dark:text-rose-400"
                 >
                     {{ adaptiveError }}
                 </p>
-            </div>
+            </section>
 
-            <!-- Processing Modal -->
             <ProcessingModal
                 :show="showProcessingModal"
                 type="adaptive"
@@ -353,274 +359,277 @@ const goToQuestion = (index) => {
                 @retry="retryAdaptiveUpload"
             />
 
-            <!-- Adaptive Generation Settings Modal -->
-            <div v-if="showAdaptiveModal" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-                <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="closeAdaptiveModal"></div>
-                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                    <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                        <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                            <div class="sm:flex sm:items-start">
-                                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                                    <h3 class="text-lg leading-6 font-medium text-text-primary dark:text-text-inverted" id="modal-title">
-                                        Customize Adaptive Practice
-                                    </h3>
-                                    <div class="mt-2 mb-4">
-                                        <p class="text-sm text-text-secondary">
-                                            How many questions do you want to practice? You must select at least <span class="font-bold">{{ results.wrong_answers }}</span> (your mistakes) and at most <span class="font-bold">{{ results.total_questions }}</span> (total parent items).
-                                        </p>
-                                    </div>
+            <!-- Adaptive modal -->
+            <Teleport to="body">
+                <div
+                    v-if="showAdaptiveModal"
+                    class="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-4 sm:p-6"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="adaptive-modal-title"
+                >
+                    <div
+                        class="absolute inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-[2px]"
+                        aria-hidden="true"
+                        @click="closeAdaptiveModal"
+                    />
+                    <div
+                        class="relative w-full max-w-lg rounded-2xl border border-border-light dark:border-border-dark bg-surface dark:bg-surface-dark shadow-xl max-h-[90vh] overflow-y-auto"
+                    >
+                        <div class="p-5 sm:p-6">
+                            <h3
+                                id="adaptive-modal-title"
+                                class="text-lg font-semibold text-text-primary dark:text-text-inverted"
+                            >
+                                Adaptive practice
+                            </h3>
+                            <p class="mt-2 text-sm text-text-secondary leading-relaxed">
+                                Choose how many items per type. Total must be at least
+                                <span class="font-semibold text-text-primary dark:text-text-inverted tabular-nums">{{ results.wrong_answers }}</span>
+                                and at most
+                                <span class="font-semibold text-text-primary dark:text-text-inverted tabular-nums">{{ results.total_questions }}</span>.
+                            </p>
 
-                                    <div class="space-y-4">
-                                        <div>
-                                            <label for="mcq_count" class="block text-sm font-medium text-text-primary dark:text-text-inverted">Multiple Choice</label>
-                                            <input type="number" min="0" id="mcq_count" v-model.number="adaptiveForm.multiple_choice_count" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm focus:ring-accent-primary focus:border-accent-primary sm:text-sm">
-                                        </div>
-                                        <div>
-                                            <label for="identification_count" class="block text-sm font-medium text-text-primary dark:text-text-inverted">Identification</label>
-                                            <input type="number" min="0" id="identification_count" v-model.number="adaptiveForm.identification_count" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm focus:ring-accent-primary focus:border-accent-primary sm:text-sm">
-                                        </div>
-                                        <div>
-                                            <label for="tf_count" class="block text-sm font-medium text-text-primary dark:text-text-inverted">True/False</label>
-                                            <input type="number" min="0" id="tf_count" v-model.number="adaptiveForm.true_or_false_count" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm focus:ring-accent-primary focus:border-accent-primary sm:text-sm">
-                                        </div>
-                                    </div>
-
-                                    <div class="mt-4 p-3 rounded-md" :class="isValidAdaptiveRequest ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'">
-                                        <p class="text-sm font-medium" :class="isValidAdaptiveRequest ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'">
-                                            Total Selected: {{ totalRequestedCounts }} 
-                                            <span v-if="!isValidAdaptiveRequest && totalRequestedCounts < results.wrong_answers">(Requires {{ results.wrong_answers - totalRequestedCounts }} more)</span>
-                                            <span v-if="!isValidAdaptiveRequest && totalRequestedCounts > results.total_questions">(Exceeds by {{ totalRequestedCounts - results.total_questions }})</span>
-                                        </p>
-                                    </div>
+                            <div class="mt-6 space-y-4">
+                                <div>
+                                    <label for="mcq_count" class="block text-xs font-medium uppercase tracking-wide text-text-secondary">Multiple choice</label>
+                                    <input
+                                        id="mcq_count"
+                                        v-model.number="adaptiveForm.multiple_choice_count"
+                                        type="number"
+                                        min="0"
+                                        class="input mt-1.5"
+                                    >
+                                </div>
+                                <div>
+                                    <label for="identification_count" class="block text-xs font-medium uppercase tracking-wide text-text-secondary">Identification</label>
+                                    <input
+                                        id="identification_count"
+                                        v-model.number="adaptiveForm.identification_count"
+                                        type="number"
+                                        min="0"
+                                        class="input mt-1.5"
+                                    >
+                                </div>
+                                <div>
+                                    <label for="tf_count" class="block text-xs font-medium uppercase tracking-wide text-text-secondary">True / false</label>
+                                    <input
+                                        id="tf_count"
+                                        v-model.number="adaptiveForm.true_or_false_count"
+                                        type="number"
+                                        min="0"
+                                        class="input mt-1.5"
+                                    >
                                 </div>
                             </div>
+
+                            <div
+                                class="mt-5 rounded-xl px-3 py-2.5 text-sm"
+                                :class="isValidAdaptiveRequest
+                                    ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
+                                    : 'bg-rose-500/10 text-rose-800 dark:text-rose-200'"
+                            >
+                                <span class="font-medium tabular-nums">Total: {{ totalRequestedCounts }}</span>
+                                <span v-if="!isValidAdaptiveRequest && totalRequestedCounts < results.wrong_answers" class="block mt-1 text-xs opacity-90">
+                                    Add {{ results.wrong_answers - totalRequestedCounts }} more to reach your mistake count.
+                                </span>
+                                <span v-if="!isValidAdaptiveRequest && totalRequestedCounts > results.total_questions" class="block mt-1 text-xs opacity-90">
+                                    Reduce by {{ totalRequestedCounts - results.total_questions }} to stay within the limit.
+                                </span>
+                            </div>
                         </div>
-                        <div class="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                            <button type="button" @click="generateAdaptive" :disabled="!isValidAdaptiveRequest || adaptiveForm.processing" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-accent-primary text-base font-medium text-white hover:bg-accent-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-primary sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                                Generate
-                            </button>
-                            <button type="button" @click="closeAdaptiveModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-5 sm:px-6 py-4 border-t border-border-light dark:border-border-dark bg-surface-muted/40 dark:bg-surface-dark-muted/30">
+                            <button
+                                type="button"
+                                class="inline-flex justify-center min-h-[44px] px-5 rounded-full text-sm font-medium border border-border-light dark:border-border-dark text-text-primary dark:text-text-inverted hover:bg-surface-muted dark:hover:bg-surface-dark-muted transition-colors"
+                                @click="closeAdaptiveModal"
+                            >
                                 Cancel
+                            </button>
+                            <button
+                                type="button"
+                                class="inline-flex justify-center min-h-[44px] px-6 rounded-full text-sm font-medium bg-accent-primary text-white hover:bg-accent-muted disabled:opacity-45 disabled:cursor-not-allowed transition-colors"
+                                :disabled="!isValidAdaptiveRequest || adaptiveForm.processing"
+                                @click="generateAdaptive"
+                            >
+                                Generate
                             </button>
                         </div>
                     </div>
                 </div>
-            </div>
+            </Teleport>
 
-            <!-- Question Results -->
-            <div>
-                <div class="mb-6 card p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                    <div class="flex items-center justify-between text-sm mb-3">
-                        <span class="text-text-primary dark:text-text-inverted font-medium">
-                            Question {{ currentQuestionIndex + 1 }} of {{ totalQuestions }}
+            <!-- Question review -->
+            <section aria-labelledby="review-heading">
+                <h2
+                    id="review-heading"
+                    class="text-lg font-semibold text-text-primary dark:text-text-inverted tracking-tight mb-6 sm:mb-8"
+                >
+                    Question review
+                </h2>
+
+                <div class="mb-8 sm:mb-10">
+                    <div class="flex flex-wrap items-baseline justify-between gap-2 text-xs sm:text-sm text-text-secondary mb-3">
+                        <span class="font-medium text-text-primary dark:text-text-inverted tabular-nums">
+                            {{ currentQuestionIndex + 1 }} / {{ totalQuestions }}
                         </span>
-                        <span class="text-text-secondary">
-                            Reviewing Results
-                        </span>
+                        <span>Review</span>
                     </div>
-                    <!-- Progress Bar -->
-                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div class="h-1 w-full rounded-full bg-border-light/90 dark:bg-border-dark/90 overflow-hidden">
                         <div
-                            class="bg-accent-primary h-2 rounded-full transition-all duration-300"
-                            :style="{ width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%` }"
-                        ></div>
+                            class="h-full bg-accent-primary transition-[width] duration-300 ease-out rounded-full"
+                            :style="{ width: `${totalQuestions ? ((currentQuestionIndex + 1) / totalQuestions) * 100 : 0}%` }"
+                        />
                     </div>
                 </div>
 
                 <div
                     v-if="currentQuestion"
-                    class="card p-6 mb-6"
-                    :class="{
-                        'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10':
-                            currentQuestion.is_correct,
-                        'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10':
-                            !currentQuestion.is_correct && currentQuestion.student_answer !== null,
-                    }"
+                    class="mb-8 rounded-2xl border border-border-light dark:border-border-dark bg-surface dark:bg-surface-dark-muted overflow-hidden"
+                    :class="questionStatusAccent(currentQuestion)"
                 >
-                    <div class="flex items-start gap-4">
-                        <div
-                            class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm"
-                            :class="
-                                currentQuestion.is_correct
-                                    ? 'bg-green-500 text-white'
-                                    : 'bg-red-500 text-white'
-                            "
-                        >
-                            {{ currentQuestionIndex + 1 }}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h3
-                                class="text-lg font-semibold text-text-primary dark:text-text-inverted mb-4"
-                            >
-                                {{ currentQuestion.question }}
-                            </h3>
+                    <div class="p-5 sm:p-7">
+                        <p class="text-[11px] font-medium uppercase tracking-[0.12em] text-text-secondary mb-3">
+                            Question {{ currentQuestionIndex + 1 }}
+                        </p>
+                        <h3 class="text-[clamp(1.0625rem,2.8vw,1.25rem)] font-medium text-text-primary dark:text-text-inverted leading-snug mb-8">
+                            {{ currentQuestion.question }}
+                        </h3>
 
-                            <!-- Multiple Choice Results -->
+                        <!-- Multiple choice -->
+                        <div
+                            v-if="currentQuestion.type === 'multiple_choice'"
+                            class="divide-y divide-border-light dark:divide-border-dark -mx-1"
+                        >
                             <div
-                                v-if="currentQuestion.type === 'multiple_choice'"
-                                class="space-y-2 mb-4"
+                                v-for="(choice, choiceIndex) in getChoices(currentQuestion)"
+                                :key="choiceIndex"
+                                class="flex items-start gap-3 py-3.5 sm:py-4 px-1 first:pt-0"
+                                :class="{
+                                    'bg-emerald-500/[0.06] dark:bg-emerald-500/10': choice === currentQuestion.correct_answer,
+                                    'bg-rose-500/[0.06] dark:bg-rose-500/10':
+                                        choice === currentQuestion.student_answer && !currentQuestion.is_correct,
+                                }"
                             >
-                                <div
-                                    v-for="(choice, choiceIndex) in getChoices(currentQuestion)"
-                                    :key="choiceIndex"
-                                    :class="[
-                                        'flex items-center p-3 rounded-lg border',
-                                        choice === currentQuestion.correct_answer
-                                            ? 'border-green-500 bg-green-100 dark:bg-green-900/30'
-                                            : choice === currentQuestion.student_answer && !currentQuestion.is_correct
-                                            ? 'border-red-500 bg-red-100 dark:bg-red-900/30'
-                                            : 'border-border-light dark:border-border-dark',
-                                    ]"
+                                <span
+                                    class="mt-0.5 w-5 shrink-0 text-center text-sm font-semibold"
+                                    :class="{
+                                        'text-emerald-600 dark:text-emerald-400': choice === currentQuestion.correct_answer,
+                                        'text-rose-600 dark:text-rose-400':
+                                            choice === currentQuestion.student_answer && !currentQuestion.is_correct,
+                                        'text-text-secondary': choice !== currentQuestion.correct_answer
+                                            && !(choice === currentQuestion.student_answer && !currentQuestion.is_correct),
+                                    }"
+                                    aria-hidden="true"
                                 >
-                                    <span
-                                        v-if="choice === currentQuestion.correct_answer"
-                                        class="mr-2 text-green-600 dark:text-green-400 font-bold"
-                                    >
-                                        ✓
-                                    </span>
-                                    <span
-                                        v-else-if="
-                                            choice === currentQuestion.student_answer && !currentQuestion.is_correct
-                                        "
-                                        class="mr-2 text-red-600 dark:text-red-400 font-bold"
-                                    >
-                                        ✗
-                                    </span>
-                                    <span
-                                        class="text-text-primary dark:text-text-inverted flex-1"
-                                    >
+                                    <template v-if="choice === currentQuestion.correct_answer">✓</template>
+                                    <template v-else-if="choice === currentQuestion.student_answer && !currentQuestion.is_correct">✗</template>
+                                    <template v-else>·</template>
+                                </span>
+                                <div class="flex-1 min-w-0 flex flex-wrap items-baseline justify-between gap-2">
+                                    <span class="text-[15px] sm:text-base text-text-primary dark:text-text-inverted leading-relaxed">
                                         {{ choice }}
                                     </span>
                                     <span
                                         v-if="choice === currentQuestion.correct_answer"
-                                        class="text-xs font-medium text-green-600 dark:text-green-400"
+                                        class="text-[11px] font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-400 shrink-0"
                                     >
-                                        Correct Answer
+                                        Correct
                                     </span>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Identification Results -->
-                            <div v-else-if="currentQuestion.type === 'identification'" class="space-y-3 mb-4">
-                                <div>
-                                    <div
-                                        class="text-sm font-medium text-text-secondary mb-1"
-                                    >
-                                        Your Answer:
-                                    </div>
-                                    <div
-                                        class="p-3 rounded-lg border"
-                                        :class="
-                                            currentQuestion.is_correct
-                                                ? 'border-green-500 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100'
-                                                : 'border-red-500 bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100'
-                                        "
-                                    >
-                                        {{ currentQuestion.student_answer || '(No answer)' }}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div
-                                        class="text-sm font-medium text-text-secondary mb-1"
-                                    >
-                                        Correct Answer:
-                                    </div>
-                                    <div
-                                        class="p-3 rounded-lg border border-green-500 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100"
-                                    >
-                                        {{ currentQuestion.correct_answer }}
-                                    </div>
-                                </div>
+                        <!-- Identification -->
+                        <div v-else-if="currentQuestion.type === 'identification'" class="space-y-6">
+                            <div>
+                                <p class="text-xs font-medium uppercase tracking-wide text-text-secondary mb-2">Your answer</p>
+                                <p
+                                    class="text-base border-b border-border-light dark:border-border-dark pb-2"
+                                    :class="currentQuestion.is_correct
+                                        ? 'text-emerald-700 dark:text-emerald-300'
+                                        : 'text-rose-700 dark:text-rose-300'"
+                                >
+                                    {{ currentQuestion.student_answer || "—" }}
+                                </p>
                             </div>
+                            <div>
+                                <p class="text-xs font-medium uppercase tracking-wide text-text-secondary mb-2">Correct answer</p>
+                                <p class="text-base text-emerald-700 dark:text-emerald-300 border-b border-emerald-500/40 pb-2">
+                                    {{ currentQuestion.correct_answer }}
+                                </p>
+                            </div>
+                        </div>
 
-                            <!-- True/False Results -->
-                            <div v-else-if="currentQuestion.type === 'true_or_false'" class="space-y-3 mb-4">
-                                <div>
-                                    <div
-                                        class="text-sm font-medium text-text-secondary mb-1"
-                                    >
-                                        Your Answer:
-                                    </div>
-                                    <div
-                                        class="p-3 rounded-lg border"
-                                        :class="
-                                            currentQuestion.is_correct
-                                                ? 'border-green-500 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100'
-                                                : 'border-red-500 bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100'
-                                        "
-                                    >
-                                        {{ currentQuestion.student_answer || '(No answer)' }}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div
-                                        class="text-sm font-medium text-text-secondary mb-1"
-                                    >
-                                        Correct Answer:
-                                    </div>
-                                    <div
-                                        class="p-3 rounded-lg border border-green-500 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100"
-                                    >
-                                        {{ currentQuestion.correct_answer }}
-                                    </div>
-                                </div>
+                        <!-- True / false -->
+                        <div v-else-if="currentQuestion.type === 'true_or_false'" class="space-y-6">
+                            <div>
+                                <p class="text-xs font-medium uppercase tracking-wide text-text-secondary mb-2">Your answer</p>
+                                <p
+                                    class="text-base border-b border-border-light dark:border-border-dark pb-2"
+                                    :class="currentQuestion.is_correct
+                                        ? 'text-emerald-700 dark:text-emerald-300'
+                                        : 'text-rose-700 dark:text-rose-300'"
+                                >
+                                    {{ currentQuestion.student_answer || "—" }}
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-medium uppercase tracking-wide text-text-secondary mb-2">Correct answer</p>
+                                <p class="text-base text-emerald-700 dark:text-emerald-300 border-b border-emerald-500/40 pb-2">
+                                    {{ currentQuestion.correct_answer }}
+                                </p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Navigation Buttons -->
-                <div class="flex items-center justify-between pt-6 border-t border-border-light dark:border-border-dark">
-                    <button
-                        type="button"
-                        @click="previousQuestion"
-                        :disabled="isFirstQuestion"
-                        :class="[
-                            'px-4 py-2 rounded-lg font-medium transition-colors',
-                            isFirstQuestion
-                                ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                                : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600',
-                        ]"
+                <!-- Nav: sticky on mobile -->
+                <div
+                    class="max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:mt-0 max-sm:border-t max-sm:border-border-light/80 max-sm:dark:border-border-dark/80 max-sm:bg-surface/95 max-sm:dark:bg-surface-dark/95 max-sm:backdrop-blur-md max-sm:px-4 max-sm:pt-3 max-sm:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-sm:shadow-[0_-4px_24px_rgba(0,0,0,0.06)] max-sm:dark:shadow-[0_-4px_24px_rgba(0,0,0,0.25)] sm:mt-10 sm:pt-8 sm:border-t sm:border-border-light sm:dark:border-border-dark"
+                >
+                    <div
+                        class="flex gap-1.5 overflow-x-auto pb-3 sm:pb-2 -mx-1 px-1 scroll-smooth max-sm:[scrollbar-width:none] max-sm:[-ms-overflow-style:none] max-sm:[&::-webkit-scrollbar]:hidden"
                     >
-                        ← Previous
-                    </button>
-
-                    <div class="flex gap-2 flex-wrap justify-center max-w-md">
                         <button
                             v-for="(item, index) in items"
                             :key="item.id"
                             type="button"
-                            @click="goToQuestion(index)"
+                            :ref="(el) => setPaginationButtonRef(el, index)"
+                            class="flex-shrink-0 w-9 h-9 rounded-full text-xs font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-surface-dark"
                             :class="[
-                                'w-8 h-8 rounded-full text-sm font-medium transition-colors',
                                 index === currentQuestionIndex
-                                    ? 'bg-accent-primary text-white'
+                                    ? 'bg-accent-primary text-white shadow-sm'
                                     : item.is_correct
-                                    ? 'bg-green-500 text-white hover:bg-green-600'
-                                    : 'bg-red-500 text-white hover:bg-red-600',
+                                        ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/12 dark:bg-emerald-500/15'
+                                        : 'text-rose-700 dark:text-rose-300 bg-rose-500/12 dark:bg-rose-500/15',
                             ]"
                             :title="`Question ${index + 1}`"
+                            @click="goToQuestion(index)"
                         >
                             {{ index + 1 }}
                         </button>
                     </div>
-
-                    <button
-                        type="button"
-                        @click="nextQuestion"
-                        :disabled="isLastQuestion"
-                        :class="[
-                            'px-4 py-2 rounded-lg font-medium transition-colors',
-                            isLastQuestion
-                                ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                                : 'bg-accent-primary text-white hover:bg-accent-muted',
-                        ]"
-                    >
-                        Next →
-                    </button>
+                    <div class="flex items-center gap-2 sm:gap-4 sm:justify-between sm:pt-2">
+                        <button
+                            type="button"
+                            class="flex-1 sm:flex-none inline-flex items-center justify-center min-h-[48px] sm:min-h-[44px] sm:px-5 rounded-full text-sm font-medium text-text-secondary border border-transparent max-sm:border-border-light max-sm:dark:border-border-dark hover:text-text-primary dark:hover:text-text-inverted active:bg-surface-muted dark:active:bg-surface-dark-muted transition-colors disabled:opacity-35 disabled:pointer-events-none"
+                            :disabled="isFirstQuestion"
+                            @click="previousQuestion"
+                        >
+                            Back
+                        </button>
+                        <button
+                            type="button"
+                            class="flex-1 sm:flex-none inline-flex items-center justify-center min-h-[48px] sm:min-h-[44px] sm:px-8 rounded-full text-sm font-medium bg-accent-primary text-white hover:bg-accent-muted transition-colors disabled:opacity-35 disabled:pointer-events-none"
+                            :disabled="isLastQuestion"
+                            @click="nextQuestion"
+                        >
+                            Next
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </section>
         </div>
     </StudentLayout>
 </template>

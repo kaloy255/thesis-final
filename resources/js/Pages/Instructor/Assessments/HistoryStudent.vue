@@ -1,8 +1,9 @@
 <script setup>
 import InstructorLayout from "@/Layouts/InstructorLayout.vue";
 import Modal from "@/Components/Modal.vue";
-import { Head } from "@inertiajs/vue3";
+import { Head, Link } from "@inertiajs/vue3";
 import { ref } from "vue";
+import AdaptiveTree from "@/Components/AdaptiveTree.vue";
 
 const showCheatingDialog = ref(false);
 const openCheatingDialog = () => { showCheatingDialog.value = true; };
@@ -36,6 +37,14 @@ const isAccordionOpen = (attemptId) => expandedAttemptIds.value.has(attemptId);
 const hasAdaptives = (attempt) => {
     const list = attempt.adaptive_assessments || [];
     return Array.isArray(list) && list.length > 0;
+};
+
+// Also calculate total inner adaptives recursively for the counter badge
+const countTotalAdaptives = (adaptives) => {
+    if (!adaptives || !Array.isArray(adaptives)) return 0;
+    return adaptives.reduce((total, adaptive) => {
+        return total + 1 + countTotalAdaptives(adaptive.children || []);
+    }, 0);
 };
 
 const formatDate = (dateString) => {
@@ -101,96 +110,73 @@ const getEventLabel = (eventType) => {
         <Head :title="`History - ${student.name} - ${assessment.title}`" />
 
         <div class="max-w-4xl mx-auto">
-            <!-- Header -->
-            <div class="mb-6">
-                <div class="card p-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                    <div>
-                        <h1
-                            class="text-2xl font-bold text-text-primary dark:text-text-inverted mb-2"
-                        >
+            <div class="mb-4 sm:mb-5">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div class="min-w-0">
+                        <h1 class="text-lg sm:text-2xl font-semibold text-text-primary dark:text-text-inverted truncate">
                             {{ student.name }} - Attempts
                         </h1>
-                        <div class="text-sm text-text-secondary space-y-1">
-                            <p>
-                                <span class="font-medium">Assessment:</span>
-                                {{ assessment.title }}
-                            </p>
-                            <p>
-                                <span class="font-medium">Subject:</span>
-                                {{ assessment.subject.name }}
-                                ({{ assessment.subject.code }})
-                            </p>
-                            <p>
-                                <span class="font-medium">Lesson:</span>
-                                {{ assessment.lesson.title }}
-                            </p>
+                        <p class="text-sm sm:text-base text-text-primary dark:text-text-inverted truncate mt-0.5">
+                            {{ assessment.title }}
+                        </p>
+                        <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs sm:text-sm text-text-secondary">
+                            <span class="inline-flex items-center px-2 py-1 rounded-md bg-surface-muted dark:bg-surface-dark-muted">
+                                {{ assessment.subject.code }}
+                            </span>
+                            <span class="truncate">{{ assessment.subject.name }}</span>
+                            <span class="hidden sm:inline">-</span>
+                            <span class="truncate">Lesson: {{ assessment.lesson.title }}</span>
                         </div>
                     </div>
-                    <!-- Compact cheating alert trigger -->
                     <button
                         v-if="cheating_logs && cheating_logs.length > 0"
                         type="button"
                         @click="openCheatingDialog"
-                        class="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 text-red-800 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm font-medium shrink-0"
+                        class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-red-200 dark:border-red-800 bg-red-50/70 dark:bg-red-900/20 text-red-700 dark:text-red-300 hover:bg-red-100/80 dark:hover:bg-red-900/30 transition-colors text-xs sm:text-sm font-medium shrink-0"
                         aria-label="View suspicious activity log"
                     >
-                        <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span>Suspicious activity</span>
-                        <span class="px-2 py-0.5 text-xs font-semibold bg-red-500 text-white rounded-full">
+                        <span>Suspicious Activity</span>
+                        <span class="px-1.5 py-0.5 text-[11px] font-semibold bg-red-500 text-white rounded-full">
                             {{ cheating_logs.length }}
                         </span>
                     </button>
                 </div>
             </div>
 
-            <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div class="card p-4">
-                    <div class="text-sm text-text-secondary mb-1">
-                        Total Attempts
+            <div class="mb-5 rounded-lg border border-border-light dark:border-border-dark bg-surface dark:bg-surface-dark p-3 sm:p-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                    <div class="sm:pr-3 sm:border-r sm:border-border-light dark:sm:border-border-dark">
+                        <p class="text-xs sm:text-sm text-text-secondary">Total Attempts</p>
+                        <p class="text-lg sm:text-xl font-semibold text-text-primary dark:text-text-inverted">
+                            {{ summary.total_attempts }}
+                        </p>
                     </div>
-                    <div
-                        class="text-2xl font-bold text-text-primary dark:text-text-inverted"
-                    >
-                        {{ summary.total_attempts }}
+                    <div class="sm:px-3 sm:border-r sm:border-border-light dark:sm:border-border-dark">
+                        <p class="text-xs sm:text-sm text-text-secondary">Best Score</p>
+                        <p class="text-lg sm:text-xl font-semibold" :class="getScoreColor(summary.best_score)">
+                            {{ summary.best_score }}%
+                        </p>
+                        <p v-if="summary.best_attempt_no" class="text-xs text-text-secondary mt-0.5">
+                            Attempt #{{ summary.best_attempt_no }}
+                        </p>
                     </div>
-                </div>
-                <div class="card p-4">
-                    <div class="text-sm text-text-secondary mb-1">
-                        Best Score
-                    </div>
-                    <div
-                        class="text-2xl font-bold"
-                        :class="getScoreColor(summary.best_score)"
-                    >
-                        {{ summary.best_score }}%
-                    </div>
-                    <div
-                        v-if="summary.best_attempt_no"
-                        class="text-xs text-text-secondary mt-1"
-                    >
-                        Attempt #{{ summary.best_attempt_no }}
-                    </div>
-                </div>
-                <div class="card p-4">
-                    <div class="text-sm text-text-secondary mb-1">
-                        Latest Attempt
-                    </div>
-                    <div
-                        class="text-sm font-medium text-text-primary dark:text-text-inverted"
-                    >
-                        {{ formatDate(summary.latest_attempt_date) || "N/A" }}
+                    <div class="sm:pl-3">
+                        <p class="text-xs sm:text-sm text-text-secondary">Latest Attempt</p>
+                        <p class="text-xs sm:text-sm font-medium text-text-primary dark:text-text-inverted">
+                            {{ formatDate(summary.latest_attempt_date) || "N/A" }}
+                        </p>
                     </div>
                 </div>
             </div>
 
             <!-- Attempts List -->
-            <div class="space-y-4">
+            <div class="space-y-3 sm:space-y-4">
                 <h2
-                    class="text-xl font-semibold text-text-primary dark:text-text-inverted mb-4"
+                    class="text-base sm:text-xl font-semibold text-text-primary dark:text-text-inverted mb-2 sm:mb-3"
                 >
                     All Attempts
                 </h2>
@@ -211,112 +197,91 @@ const getEventLabel = (eventType) => {
                 <div
                     v-for="(attempt, index) in attempts"
                     :key="attempt.id"
-                    class="card p-6 hover:shadow-lg transition-all duration-200"
-                    :class="getScoreBgColor(attempt.score)"
+                    class="card p-4 sm:p-5 hover:shadow-md transition-all duration-200 border border-border-light dark:border-border-dark"
                 >
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="flex items-center gap-3">
+                    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+                        <div class="flex items-center gap-3 min-w-0">
                             <div
-                                class="flex-shrink-0 w-10 h-10 rounded-full bg-accent-primary text-white flex items-center justify-center font-bold text-sm"
+                                class="flex-shrink-0 w-9 h-9 rounded-full bg-accent-primary text-white flex items-center justify-center font-bold text-xs"
                             >
                                 #{{ attempt.attempt_no }}
                             </div>
-                            <div>
+                            <div class="min-w-0">
                                 <div class="flex items-center gap-2 mb-1">
                                     <h3
-                                        class="text-lg font-semibold text-text-primary dark:text-text-inverted"
+                                        class="text-sm sm:text-base font-semibold text-text-primary dark:text-text-inverted"
                                     >
                                         Attempt {{ attempt.attempt_no }}
                                     </h3>
                                     <span
                                         v-if="isBestAttempt(attempt.id)"
-                                        class="px-2 py-1 text-xs font-medium bg-yellow-500 text-white rounded"
+                                        class="px-2 py-0.5 text-[11px] font-medium bg-yellow-500 text-white rounded"
                                     >
                                         Best
                                     </span>
                                     <span
                                         v-if="isLatestAttempt(index)"
-                                        class="px-2 py-1 text-xs font-medium bg-blue-500 text-white rounded"
+                                        class="px-2 py-0.5 text-[11px] font-medium bg-blue-500 text-white rounded"
                                     >
                                         Latest
                                     </span>
                                 </div>
-                                <p class="text-sm text-text-secondary">
+                                <p class="text-xs sm:text-sm text-text-secondary truncate">
                                     {{ formatDate(attempt.created_at) }}
                                 </p>
                             </div>
                         </div>
                         <div
-                            class="text-3xl font-bold"
+                            class="text-2xl sm:text-3xl font-semibold sm:font-bold"
                             :class="getScoreColor(attempt.score)"
                         >
                             {{ attempt.score }}%
                         </div>
                     </div>
 
-                    <!-- Stats -->
-                    <div class="grid grid-cols-4 gap-4 mb-4">
-                        <div>
-                            <div class="text-xs text-text-secondary mb-1">
-                                Total
-                            </div>
-                            <div
-                                class="text-sm font-semibold text-text-primary dark:text-text-inverted"
-                            >
-                                {{ attempt.total_questions }}
-                            </div>
-                        </div>
-                        <div>
-                            <div
-                                class="text-xs text-green-600 dark:text-green-400 mb-1"
-                            >
-                                Correct
-                            </div>
-                            <div
-                                class="text-sm font-semibold text-green-600 dark:text-green-400"
-                            >
-                                {{ attempt.correct_answers }}
-                            </div>
-                        </div>
-                        <div>
-                            <div
-                                class="text-xs text-red-600 dark:text-red-400 mb-1"
-                            >
-                                Incorrect
-                            </div>
-                            <div
-                                class="text-sm font-semibold text-red-600 dark:text-red-400"
-                            >
-                                {{ attempt.wrong_answers }}
-                            </div>
-                        </div>
-                        <div>
-                            <div
-                                class="text-xs text-gray-600 dark:text-gray-400 mb-1"
-                            >
-                                No Answer
-                            </div>
-                            <div
-                                class="text-sm font-semibold text-gray-600 dark:text-gray-400"
-                            >
-                                {{ attempt.no_answer }}
-                            </div>
-                        </div>
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs bg-surface-muted dark:bg-surface-dark-muted text-text-secondary">
+                            Total: <span class="ml-1 font-semibold text-text-primary dark:text-text-inverted">{{ attempt.total_questions }}</span>
+                        </span>
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300">
+                            Correct: <span class="ml-1 font-semibold">{{ attempt.correct_answers }}</span>
+                        </span>
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300">
+                            Incorrect: <span class="ml-1 font-semibold">{{ attempt.wrong_answers }}</span>
+                        </span>
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            No Answer: <span class="ml-1 font-semibold">{{ attempt.no_answer }}</span>
+                        </span>
+                    </div>
+
+                    <div class="mt-3 flex">
+                        <Link
+                            :href="
+                                route('instructor.assessments.history.student.results', {
+                                    assessment: assessment.id,
+                                    student: student.id,
+                                    attempt: attempt.id,
+                                })
+                            "
+                            class="inline-flex items-center justify-center px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-accent-primary rounded-lg hover:bg-accent-muted transition-colors duration-150 min-w-[110px]"
+                        >
+                            View Results
+                        </Link>
                     </div>
 
                     <!-- Accordion: Adaptive assessments from this attempt -->
                     <div
                         v-if="hasAdaptives(attempt)"
-                        class="pt-4 border-t border-border-light dark:border-border-dark"
+                        class="pt-3 mt-3 border-t border-border-light dark:border-border-dark"
                     >
                         <button
                             type="button"
                             @click="toggleAccordion(attempt.id)"
-                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg bg-accent-primary/10 dark:bg-accent-primary/20 border border-accent-primary/30 text-left text-sm font-medium text-text-primary dark:text-text-inverted hover:bg-accent-primary/20 dark:hover:bg-accent-primary/30 transition-colors"
+                            class="flex items-center justify-between w-full px-3 py-2 rounded-lg bg-surface-muted dark:bg-surface-dark-muted border border-border-light dark:border-border-dark text-left text-xs sm:text-sm font-medium text-text-primary dark:text-text-inverted hover:bg-surface dark:hover:bg-surface-dark transition-colors"
                         >
                             <span class="flex items-center gap-2">
                                 <svg
-                                    class="w-4 h-4 text-accent-primary"
+                                    class="w-4 h-4 text-text-secondary"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -329,11 +294,11 @@ const getEventLabel = (eventType) => {
                                     />
                                 </svg>
                                 Adaptive assessments from this attempt ({{
-                                    attempt.adaptive_assessments.length
+                                    countTotalAdaptives(attempt.adaptive_assessments)
                                 }})
                             </span>
                             <svg
-                                class="w-5 h-5 text-accent-primary transition-transform"
+                                class="w-5 h-5 text-text-secondary transition-transform"
                                 :class="{
                                     'rotate-180': isAccordionOpen(attempt.id),
                                 }"
@@ -351,22 +316,16 @@ const getEventLabel = (eventType) => {
                         </button>
                         <div
                             v-show="isAccordionOpen(attempt.id)"
-                            class="mt-2 pl-4 space-y-2 border-l-2 border-accent-primary/30"
+                            class="mt-2 px-3 py-2 bg-surface dark:bg-surface-dark rounded-lg border border-border-light dark:border-border-dark"
                         >
-                            <div
-                                v-for="adaptive in attempt.adaptive_assessments"
-                                :key="adaptive.id"
-                                class="py-2"
-                            >
-                                <div class="text-sm text-text-secondary mb-1">
-                                    {{ adaptive.title }}
-                                </div>
-                                <div
-                                    class="flex items-center gap-2 text-xs text-text-secondary"
-                                >
-                                    {{ formatDate(adaptive.created_at) }}
-                                </div>
-                            </div>
+                            <AdaptiveTree
+                                :adaptives="attempt.adaptive_assessments"
+                                :formatDate="formatDate"
+                                :showActions="false"
+                                role="instructor"
+                                :studentId="student.id"
+                                :assessmentId="assessment.id"
+                            />
                         </div>
                     </div>
                 </div>
@@ -383,32 +342,32 @@ const getEventLabel = (eventType) => {
                         <h2 class="text-xl font-semibold text-text-primary dark:text-text-inverted">
                             Suspicious activity – {{ student.name }}
                         </h2>
-                        <span class="px-2.5 py-0.5 text-xs font-semibold bg-red-500 text-white rounded-full">
+                        <span class="px-2 py-0.5 text-xs font-semibold bg-red-500 text-white rounded-full">
                             {{ cheating_logs.length }}
                         </span>
                     </div>
                     <p class="text-sm text-text-secondary mb-4">
                         This student triggered cheating detection alerts during this assessment.
                     </p>
-                    <div class="max-h-[60vh] overflow-y-auto rounded-lg border border-border-light dark:border-border-dark">
+                    <div class="max-h-[60vh] overflow-y-auto rounded-lg border border-border-light dark:border-border-dark bg-surface dark:bg-surface-dark">
                         <div class="divide-y divide-border-light dark:divide-border-dark">
                             <div
                                 v-for="log in cheating_logs"
                                 :key="log.id"
-                                class="flex items-center gap-4 p-4 hover:bg-surface-muted dark:hover:bg-surface-dark-muted transition-colors"
+                                class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 sm:p-4 hover:bg-surface-muted dark:hover:bg-surface-dark-muted transition-colors"
                             >
                                 <span
                                     :class="[
-                                        'px-2.5 py-1 text-xs font-semibold rounded-full whitespace-nowrap shrink-0',
+                                        'px-2 py-0.5 text-xs font-semibold rounded-full whitespace-nowrap shrink-0',
                                         getEventBadgeClass(log.event_type),
                                     ]"
                                 >
                                     {{ getEventLabel(log.event_type) }}
                                 </span>
-                                <p class="flex-1 text-sm text-text-primary dark:text-text-inverted min-w-0">
+                                <p class="flex-1 text-sm text-text-primary dark:text-text-inverted min-w-0 break-words">
                                     {{ log.description }}
                                 </p>
-                                <span class="text-xs text-text-secondary whitespace-nowrap shrink-0">
+                                <span class="text-xs text-text-secondary whitespace-nowrap shrink-0 self-start sm:self-auto">
                                     {{ formatDate(log.created_at) }}
                                 </span>
                             </div>

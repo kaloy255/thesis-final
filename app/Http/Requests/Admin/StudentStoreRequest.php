@@ -14,7 +14,7 @@ class StudentStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_number' => ['required', 'integer', 'unique:users,id_number'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'ends_with:@chcc.edu.ph', 'unique:users,email'],
             'name' => ['required', 'string', 'max:255'],
             'section_id' => ['required', 'exists:sections,id'],
         ];

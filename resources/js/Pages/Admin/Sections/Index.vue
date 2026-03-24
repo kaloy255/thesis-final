@@ -8,7 +8,7 @@ import TextInput from "@/Components/TextInput.vue";
 import Modal from "@/Components/Modal.vue";
 import SearchableSelect from "@/Components/SearchableSelect.vue";
 import { Head, Link, router, useForm } from "@inertiajs/vue3";
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { useToast } from "@/Stores/useToast";
 import ConfirmationModal from "@/Components/ConfirmationModal.vue";
 import Pagination from "@/Components/Pagination.vue";
@@ -37,7 +37,6 @@ const isImportDragging = ref(false);
 const importFileName = ref("");
 
 const importForm = useForm({
-    department_id: "",
     file: null,
 });
 
@@ -49,6 +48,9 @@ const departmentOptions = computed(() =>
 );
 
 const searchQuery = ref(props.filters?.search || "");
+const detailsSectionRef = ref(null);
+const isDetailsStuck = ref(false);
+const STICKY_RELEASE_OFFSET = 8;
 const departmentFilterId = ref(
     props.filters?.department_id != null && props.filters.department_id !== ""
         ? String(props.filters.department_id)
@@ -57,7 +59,10 @@ const departmentFilterId = ref(
 
 const departmentFilterOptions = computed(() => [
     { value: "", label: "All departments" },
-    ...departmentOptions.value.map((o) => ({ value: String(o.value), label: o.label })),
+    ...props.departments.map((d) => ({ 
+        value: String(d.id), 
+        label: d.sections_count !== undefined ? `(${d.sections_count}) ${d.name}` : d.name 
+    })),
 ]);
 
 const applyFilters = () => {
@@ -68,6 +73,7 @@ const applyFilters = () => {
     }, {
         preserveState: true,
         preserveScroll: true,
+        replace: true,
     });
 };
 
@@ -79,12 +85,61 @@ watch(searchQuery, () => {
 
 watch(departmentFilterId, applyFilters);
 
+const updateStickyState = () => {
+    const el = detailsSectionRef.value;
+    if (!el) return;
+    const stickyTop = Number.parseFloat(window.getComputedStyle(el).top || "0") || 0;
+    const rectTop = el.getBoundingClientRect().top;
+
+    if (isDetailsStuck.value) {
+        if (rectTop > stickyTop + STICKY_RELEASE_OFFSET) {
+            isDetailsStuck.value = false;
+        }
+    } else if (rectTop <= stickyTop + 0.5) {
+        isDetailsStuck.value = true;
+    }
+};
+
+onMounted(() => {
+    updateStickyState();
+    window.addEventListener("scroll", updateStickyState, { passive: true });
+    window.addEventListener("resize", updateStickyState);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener("scroll", updateStickyState);
+    window.removeEventListener("resize", updateStickyState);
+});
+
 const hasSections = computed(() => props.sections.data?.length > 0);
 const hasActiveFilters = computed(() => searchQuery.value || departmentFilterId.value);
 
+const getDepartment = (departmentId) => {
+    return props.departments.find((d) => d.id === departmentId) || null;
+};
+
 const getDepartmentName = (departmentId) => {
-    const dept = props.departments.find((d) => d.id === departmentId);
-    return dept ? dept.name : "Unknown";
+    return getDepartment(departmentId)?.name || "Unknown";
+};
+
+const getDepartmentCode = (departmentId) => {
+    const dept = getDepartment(departmentId);
+    if (!dept) return "N/A";
+
+    if (dept.code && String(dept.code).trim().length > 0) {
+        return String(dept.code).trim().toUpperCase();
+    }
+
+    const name = String(dept.name || "").trim();
+    if (!name) return "N/A";
+
+    // Fallback: derive compact code from department name initials.
+    return name
+        .split(/\s+/)
+        .map((part) => part.charAt(0))
+        .join("")
+        .slice(0, 4)
+        .toUpperCase();
 };
 
 const openCreateModal = () => {
@@ -139,7 +194,7 @@ const getImportErrorMessage = (errors) => {
         const v = errors[field];
         return Array.isArray(v) ? v[0] : typeof v === "string" ? v : null;
     };
-    return first("department_id") || first("file") || first("error") || "Failed to import. Please check your file and department selection.";
+    return first("file") || first("error") || "Failed to import. Please check your file.";
 };
 
 const submitImport = () => {
@@ -255,20 +310,20 @@ const formatDate = (dateString) => {
         <Head title="Sections" />
         
         <!-- Header Section -->
-        <div class="mb-8">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-semibold text-gray-900 dark:text-white mb-1">
+        <div class="p-3 sm:p-4 mb-2">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-4">
+                <div class="w-full sm:w-auto">
+                    <h1 class="text-lg sm:text-2xl font-semibold text-text-primary dark:text-text-inverted mb-1">
                         Sections
                     </h1>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                    <p class="text-xs sm:text-sm text-text-secondary">
                         Manage class sections and their departments
                     </p>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                     <button
                         @click="openImportModal"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
+                        class="inline-flex w-full sm:w-auto justify-center items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-surface dark:bg-surface-dark-muted text-text-secondary border border-border-light dark:border-border-dark text-xs sm:text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200 whitespace-nowrap"
                     >
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -277,7 +332,7 @@ const formatDate = (dateString) => {
                     </button>
                     <button
                         @click="openCreateModal"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
+                        class="inline-flex w-full sm:w-auto justify-center items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-indigo-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200 whitespace-nowrap"
                     >
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -286,15 +341,29 @@ const formatDate = (dateString) => {
                     </button>
                 </div>
             </div>
+            <div class="sm:w-64">
+                <label class="block text-xs font-medium text-text-secondary mb-1.5">
+                    Filter by department
+                </label>
+                <SearchableSelect
+                    v-model="departmentFilterId"
+                    :options="departmentFilterOptions"
+                    placeholder="Filter by department..."
+                />
+            </div>
         </div>
 
-        <!-- Search & Filter (same layout as ProfessorSubjects) -->
-        <div class="mb-6 flex flex-col sm:flex-row gap-4">
-            <div class="flex-1 min-w-0">
-                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-                    Search
-                </label>
-                <div class="relative">
+        <!-- Sticky Search -->
+        <div ref="detailsSectionRef" class="sticky top-[64px] z-40 mb-6">
+            <div
+                :class="[
+                    'rounded-lg transition-all duration-200',
+                    isDetailsStuck
+                        ? 'px-3 py-2 sm:px-4 sm:py-3 bg-white/95 dark:bg-slate-900/95 border border-border-light dark:border-slate-700 shadow-md backdrop-blur-sm'
+                        : '',
+                ]"
+            >
+                <div class="relative w-full sm:max-w-md">
                     <svg
                         class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
                         fill="none"
@@ -313,33 +382,23 @@ const formatDate = (dateString) => {
                         v-model="searchQuery"
                         type="text"
                         placeholder="Search sections by name..."
-                        class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+                        class="w-full pl-10 pr-4 py-2 text-sm border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
                     />
                 </div>
-            </div>
-            <div class="sm:w-64">
-                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-                    Filter by department
-                </label>
-                <SearchableSelect
-                    v-model="departmentFilterId"
-                    :options="departmentFilterOptions"
-                    placeholder="Filter by department..."
-                />
             </div>
         </div>
 
         <!-- Sections List -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="bg-surface dark:bg-surface-dark-muted min-h-[calc(100vh-330px)] flex flex-col justify-between relative rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden min-w-0">
             <!-- Empty State -->
-            <div v-if="!hasSections" class="p-12 text-center">
-                <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div v-if="!hasSections" class="p-8 sm:p-12 text-center min-h-[20rem] flex flex-col items-center justify-center">
+                <svg class="mx-auto h-12 w-12 text-text-secondary mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
-                <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                <h3 class="text-sm font-medium text-text-primary dark:text-text-inverted mb-1">
                     {{ hasActiveFilters ? "No sections found" : "No sections" }}
                 </h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                <p class="text-sm text-text-secondary mb-4">
                     {{ hasActiveFilters ? "Try adjusting your search or filters." : "Get started by creating a new section." }}
                 </p>
                 <button
@@ -355,16 +414,17 @@ const formatDate = (dateString) => {
             </div>
 
             <!-- Sections Table -->
-            <div v-else class="divide-y divide-gray-200 dark:divide-gray-700">
+            <div v-else class="divide-y divide-gray-200 border-b border-gray-200 dark:divide-border-dark">
                 <div
-                    v-for="section in props.sections.data"
+                    v-for="(section, index) in props.sections.data"
                     :key="section.id"
-                    class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
+                    class="p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors duration-150"
                 >
-                    <div class="flex items-center justify-between gap-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 min-w-0">
                         <!-- Section Info -->
                         <div class="flex-1 min-w-0">
-                            <div v-if="editingId !== section.id" class="flex items-center gap-4">
+                            <div v-if="editingId !== section.id" class="flex items-start sm:items-center gap-3">
+                                <span class="text-sm font-medium text-text-secondary w-6 text-right flex-shrink-0 mt-2 sm:mt-0">{{ (props.sections.from || 1) + index }}.</span>
                                 <div class="flex-shrink-0">
                                     <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
                                         <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -373,15 +433,23 @@ const formatDate = (dateString) => {
                                     </div>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="flex items-center gap-3">
-                                        <p class="text-base font-medium text-gray-900 dark:text-white truncate">
+                                    <div class="flex flex-wrap items-center gap-2 min-w-0">
+                                        <p class="text-base font-medium text-text-primary dark:text-text-inverted truncate">
                                             {{ section.name }}
                                         </p>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
-                                            {{ getDepartmentName(section.department_id) }}
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
+                                            :title="getDepartmentName(section.department_id)"
+                                        >
+                                            <span class="sm:hidden">
+                                                {{ getDepartmentCode(section.department_id) }}
+                                            </span>
+                                            <span class="hidden sm:inline">
+                                                {{ getDepartmentName(section.department_id) }}
+                                            </span>
                                         </span>
                                     </div>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    <p class="text-xs text-text-secondary mt-1">
                                         Created {{ formatDate(section.created_at) }}
                                     </p>
                                 </div>
@@ -393,7 +461,7 @@ const formatDate = (dateString) => {
                                     <input
                                         v-model="(updateForms[section.id] ||= useForm({ name: section.name, department_id: section.department_id })).name"
                                         type="text"
-                                        class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                        class="w-full px-3 py-2 text-base border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                                         placeholder="Section name"
                                         @keyup.enter="saveEdit(section.id, section)"
                                         @keyup.esc="cancelEdit(section.id)"
@@ -415,15 +483,30 @@ const formatDate = (dateString) => {
                                         :message="updateForms[section.id]?.errors?.department_id"
                                     />
                                 </div>
+                                <div class="flex items-center justify-end gap-2 sm:hidden pt-1">
+                                    <button
+                                        @click="saveEdit(section.id, section)"
+                                        :disabled="updateForms[section.id]?.processing"
+                                        class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Save
+                                    </button>
+                                    <button
+                                        @click="cancelEdit(section.id)"
+                                        class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-text-secondary border border-border-light dark:border-border-dark rounded-lg hover:bg-gray-100 dark:hover:bg-white/5"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Actions -->
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 self-end sm:self-auto">
                             <template v-if="editingId !== section.id">
                                 <button
                                     @click="startEdit(section)"
-                                    class="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors duration-150"
+                                    class="inline-flex items-center justify-center w-10 h-10 sm:w-auto sm:h-auto sm:p-2 text-text-secondary hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors duration-150"
                                     title="Edit"
                                 >
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -432,7 +515,7 @@ const formatDate = (dateString) => {
                                 </button>
                                 <button
                                     @click="openDeleteModal(section.id)"
-                                    class="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-150"
+                                    class="inline-flex items-center justify-center w-10 h-10 sm:w-auto sm:h-auto sm:p-2 text-text-secondary hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-150"
                                     title="Delete"
                                 >
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -444,7 +527,7 @@ const formatDate = (dateString) => {
                                 <button
                                     @click="saveEdit(section.id, section)"
                                     :disabled="updateForms[section.id]?.processing"
-                                    class="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    class="hidden sm:inline-flex items-center justify-center sm:w-auto sm:h-auto sm:p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Save"
                                 >
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -453,7 +536,7 @@ const formatDate = (dateString) => {
                                 </button>
                                 <button
                                     @click="cancelEdit(section.id)"
-                                    class="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-150"
+                                    class="hidden sm:inline-flex items-center justify-center sm:w-auto sm:h-auto sm:p-2 text-text-secondary hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors duration-150"
                                     title="Cancel"
                                 >
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -487,7 +570,7 @@ const formatDate = (dateString) => {
         <Modal :show="showCreateModal" @close="closeCreateModal">
             <div class="p-6">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                    <h2 class="text-xl font-semibold text-text-primary dark:text-text-inverted">
                         Create Section
                     </h2>
                     <button
@@ -525,7 +608,7 @@ const formatDate = (dateString) => {
                         />
                         <InputError class="mt-2" :message="form.errors.name" />
                     </div>
-                    <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-end gap-3 pt-4 border-t border-border-light dark:border-border-dark">
                         <SecondaryButton
                             type="button"
                             @click="closeCreateModal"
@@ -548,7 +631,7 @@ const formatDate = (dateString) => {
         <Modal :show="showImportModal" @close="closeImportModal">
             <div class="p-6">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                    <h2 class="text-xl font-semibold text-text-primary dark:text-text-inverted">
                         Import Sections
                     </h2>
                     <button
@@ -586,21 +669,9 @@ const formatDate = (dateString) => {
                         </button>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                            Upload an Excel or CSV file with section names only (a <strong>name</strong> or <strong>section</strong> column). Duplicates will be skipped.
+                        <p class="text-sm text-text-secondary mb-4">
+                            Upload a spreadsheet. You can use <strong>Format 1</strong> (multiple columns, where headers are department codes) or <strong>Format 2</strong> (single <code>name</code> column, where department is auto-detected from the section name).
                         </p>
-                        <div>
-                        <InputLabel value="Department" class="mb-2" />
-                            <SearchableSelect
-                                v-model="importForm.department_id"
-                                :options="departmentOptions"
-                                placeholder="Select department to import sections into..."
-                            />
-                            <InputError
-                                class="mt-2"
-                                :message="importForm.errors.department_id"
-                            />
-                        </div>
                         <InputLabel for="import_file" value="Select File" class="mb-2" />
                         <div
                             class="mt-1 relative overflow-hidden rounded-lg p-[2px]"
@@ -616,11 +687,11 @@ const formatDate = (dateString) => {
                                 class="relative flex justify-center px-6 pt-5 pb-6 rounded-[calc(0.5rem-2px)] transition-colors"
                                 :class="isImportDragging
                                     ? 'bg-indigo-50 dark:bg-indigo-900/20'
-                                    : 'bg-white dark:bg-gray-800'"
+                                    : 'bg-surface dark:bg-surface-dark-muted'"
                             >
                             <div class="space-y-1 text-center">
                                 <svg
-                                    class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
+                                    class="mx-auto h-12 w-12 text-text-secondary"
                                     stroke="currentColor"
                                     fill="none"
                                     viewBox="0 0 48 48"
@@ -632,7 +703,7 @@ const formatDate = (dateString) => {
                                         stroke-linejoin="round"
                                     />
                                 </svg>
-                                <div class="flex text-sm text-gray-600 dark:text-gray-400 justify-center">
+                                <div class="flex text-sm text-text-secondary justify-center">
                                     <label
                                         for="import_file"
                                         class="relative cursor-pointer rounded-md font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
@@ -648,12 +719,12 @@ const formatDate = (dateString) => {
                                     </label>
                                     <p class="pl-1">or drag and drop</p>
                                 </div>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                <p class="text-xs text-text-secondary">
                                     XLSX, XLS, CSV up to 2MB
                                 </p>
                                 <p
                                     v-if="importFileName"
-                                    class="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2"
+                                    class="text-sm font-medium text-text-secondary mt-2"
                                 >
                                     Selected: {{ importFileName }}
                                 </p>
@@ -676,7 +747,7 @@ const formatDate = (dateString) => {
                             <li v-if="importErrors.length > 10" class="text-amber-600 dark:text-amber-500">... and {{ importErrors.length - 10 }} more</li>
                         </ul>
                     </div>
-                    <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-end gap-3 pt-4 border-t border-border-light dark:border-border-dark">
                         <SecondaryButton type="button" @click="closeImportModal" class="px-4 py-2">
                             Cancel
                         </SecondaryButton>

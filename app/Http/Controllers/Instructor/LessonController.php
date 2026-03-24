@@ -164,17 +164,47 @@ class LessonController extends Controller
     public function storeManual(StoreManualLessonRequest $request)
     {
         $professor = auth()->user()->professor;
+        $path = '';
+        $extractedContent = null;
+
+        // Handle optional file upload for adaptive assessment support
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $path = $file->store('lessons', 'public');
+            $filePath = storage_path("app/public/{$path}");
+
+            try {
+                // Validate file (password protection, media content)
+                $validation = $this->fileValidator->validateAll($file, $filePath);
+                if (!$validation['valid']) {
+                    Storage::disk('public')->delete($path);
+                    return back()->withErrors(['file' => $validation['error']])->withInput();
+                }
+
+                // Extract and clean text
+                $mimeType = $file->getMimeType();
+                $extractor = FileExtractorFactory::make($mimeType);
+                $extractedText = $extractor->extract($filePath);
+                $extractedContent = $this->textCleaner->clean($extractedText);
+            } catch (\Exception $e) {
+                Storage::disk('public')->delete($path);
+                Log::error('Manual lesson file processing failed', [
+                    'error' => $e->getMessage(),
+                ]);
+                return back()->withErrors(['file' => 'Failed to process file: ' . $e->getMessage()])->withInput();
+            }
+        }
 
         DB::beginTransaction();
 
         try {
-            // Create lesson (no file, no extracted_content for manual creation)
+            // Create lesson
             $lesson = Lesson::create([
                 'subject_id' => $request->subject_id,
                 'professor_id' => $professor->id,
                 'title' => $request->title,
-                'path' => '', // Empty string for manual creation (no file)
-                'extracted_content' => null, // No extracted content for manual creation
+                'path' => $path, // Empty string if no file, otherwise file path
+                'extracted_content' => $extractedContent, // Null if no file, otherwise extracted content
             ]);
 
             // Create assessment

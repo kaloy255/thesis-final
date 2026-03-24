@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\AiUsageController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\InstructorController;
 use App\Http\Controllers\Admin\LogController;
@@ -40,6 +41,8 @@ Route::redirect('/', '/login');
 Route::middleware(['auth', 'admin'])->prefix('admin')->as('admin.')->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
+    Route::get('ai-usage/daily', [AiUsageController::class, 'daily'])->name('ai-usage.daily');
+
     // Students
     Route::resource('students', StudentController::class)->except(['show']);
     Route::post('students/{student}/reset-password', [StudentController::class, 'resetPassword'])->name('students.reset-password');
@@ -65,6 +68,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->as('admin.')->group(funct
     Route::get('assignments', [ProfessorSubjectController::class, 'index'])->name('assignments.index');
     Route::post('assignments', [ProfessorSubjectController::class, 'store'])->name('assignments.store');
     Route::delete('assignments/{assignment}', [ProfessorSubjectController::class, 'destroy'])->name('assignments.destroy');
+    Route::post('assignments/import', [ProfessorSubjectController::class, 'import'])->name('assignments.import');
+    Route::get('assignments/template/download', [ProfessorSubjectController::class, 'downloadTemplate'])->name('assignments.template');
 
     Route::get('logs', [LogController::class, 'index'])->name('logs.index');
 
@@ -132,6 +137,7 @@ Route::middleware(['auth', 'instructor'])->prefix('instructor')->as('instructor.
     // Assessment History
     Route::get('assessments/{assessment}/history', [AssessmentHistoryController::class, 'show'])->name('assessments.history');
     Route::get('assessments/{assessment}/history/students/{student}', [AssessmentHistoryController::class, 'showStudent'])->name('assessments.history.student');
+    Route::get('assessments/{assessment}/history/students/{student}/attempts/{attempt}/results', [AssessmentHistoryController::class, 'showAttemptResults'])->name('assessments.history.student.results');
 
     // Notifications
     Route::get('notifications/unread', [InstructorNotificationController::class, 'index'])->name('notifications.unread');

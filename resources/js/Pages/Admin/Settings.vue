@@ -9,7 +9,7 @@ const showPasswordForm = ref(false);
 // Profile Information Form
 const profileForm = useForm({
     name: page.props.auth.user.name,
-    id_number: page.props.auth.user.id_number,
+    email: page.props.auth.user.email,
 });
 
 const updateProfile = () => {
@@ -87,23 +87,23 @@ const updatePassword = () => {
 
                     <div>
                         <label
-                            for="id_number"
+                            for="email"
                             class="block text-sm font-medium text-text-primary dark:text-text-inverted mb-2"
                         >
-                            ID Number
+                            Email
                         </label>
                         <input
-                            id="id_number"
-                            v-model="profileForm.id_number"
-                            type="number"
+                            id="email"
+                            v-model="profileForm.email"
+                            type="email"
                             class="input w-full"
                             required
                         />
                         <div
-                            v-if="profileForm.errors.id_number"
+                            v-if="profileForm.errors.email"
                             class="mt-1 text-sm text-red-600 dark:text-red-400"
                         >
-                            {{ profileForm.errors.id_number }}
+                            {{ profileForm.errors.email }}
                         </div>
                     </div>
 

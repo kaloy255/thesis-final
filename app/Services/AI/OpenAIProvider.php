@@ -9,6 +9,8 @@ class OpenAIProvider implements AIServiceInterface
     protected string $apiKey;
     protected string $model;
     protected int $timeout;
+    protected ?array $lastUsage = null;
+    protected ?string $lastPromptText = null;
 
     public function __construct(array $config)
     {
@@ -20,6 +22,7 @@ class OpenAIProvider implements AIServiceInterface
     public function generateAssessment(string $content, array $options = []): array
     {
         $prompt = $this->buildPrompt($content, '', $options);
+        $this->lastPromptText = ($prompt['system'] ?? '') . "\n\n" . ($prompt['user'] ?? '');
 
         return $this->makeRequest($prompt);
     }
@@ -27,8 +30,24 @@ class OpenAIProvider implements AIServiceInterface
     public function generateChunk(string $chunkContent, string $previousContext, array $options = []): array
     {
         $prompt = $this->buildPrompt($chunkContent, $previousContext, $options);
+        $this->lastPromptText = ($prompt['system'] ?? '') . "\n\n" . ($prompt['user'] ?? '');
 
         return $this->makeRequest($prompt);
+    }
+
+    public function getLastUsage(): ?array
+    {
+        return $this->lastUsage;
+    }
+
+    public function getLastPromptText(): ?string
+    {
+        return $this->lastPromptText;
+    }
+
+    public function getModel(): string
+    {
+        return $this->model;
     }
 
     protected function buildPrompt(string $content, string $previousContext, array $options): array
@@ -151,6 +170,7 @@ class OpenAIProvider implements AIServiceInterface
             }
 
             $data = $response->json();
+            $this->lastUsage = $data['usage'] ?? null;
 
             if (!isset($data['choices'][0]['message']['content'])) {
                 throw new \Exception('Invalid response structure from OpenAI');

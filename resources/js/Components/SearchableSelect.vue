@@ -86,7 +86,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div ref="containerRef" class="relative">
+    <div ref="containerRef" :class="['relative', isOpen ? 'z-[70]' : 'z-10']">
         <!-- Selected display -->
         <div
             v-if="selectedOption"
@@ -158,7 +158,7 @@ onUnmounted(() => {
         >
             <div
                 v-if="isOpen"
-                class="absolute z-20 mt-1 w-full max-h-52 overflow-y-auto bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg"
+                class="absolute left-0 top-full z-[80] mt-1 w-full max-h-[40vh] sm:max-h-52 overflow-y-auto bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg"
             >
                 <button
                     v-for="option in filteredOptions"

@@ -21,6 +21,12 @@ class DepartmentRequest extends FormRequest
                 'max:255',
                 Rule::unique('departments', 'name')->ignore($this->route('department')),
             ],
+            'code' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('departments', 'code')->ignore($this->route('department')),
+            ],
         ];
     }
 }

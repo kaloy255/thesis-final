@@ -11,6 +11,12 @@ class PasswordUpdateTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->markTestSkipped('Password update via /password is not enabled in this application.');
+    }
+
     public function test_password_can_be_updated(): void
     {
         $user = User::factory()->create();

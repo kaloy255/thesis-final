@@ -2,6 +2,7 @@
 
 namespace App\Services\AI;
 
+use App\Models\AiTokenUsage;
 use App\Services\ContentProcessing\ContentChunker;
 use App\Services\ContentProcessing\ContextSummarizer;
 use App\Services\ContentProcessing\TokenCalculator;
@@ -14,6 +15,78 @@ class AIServiceManager
     protected ContextSummarizer $summarizer;
     protected TokenCalculator $tokenCalculator;
     protected BloomsValidator $bloomsValidator;
+
+    protected function recordTokenUsage(
+        string $provider,
+        string $feature,
+        string $inputText,
+        mixed $outputPayload,
+        ?array $providerUsage = null,
+        ?string $model = null,
+        array $meta = []
+    ): void {
+        try {
+            $inputTokens = 0;
+            $outputTokens = 0;
+            $totalTokens = 0;
+            $isEstimated = true;
+
+            // OpenAI/Groq style usage
+            if (is_array($providerUsage)) {
+                $inputTokens = (int) ($providerUsage['prompt_tokens'] ?? $providerUsage['input_tokens'] ?? 0);
+                $outputTokens = (int) ($providerUsage['completion_tokens'] ?? $providerUsage['output_tokens'] ?? 0);
+                $totalTokens = (int) ($providerUsage['total_tokens'] ?? ($inputTokens + $outputTokens));
+                $isEstimated = $totalTokens <= 0;
+            }
+
+            if ($isEstimated) {
+                $inputTokens = $this->tokenCalculator->estimateTokens($inputText);
+
+                $outputText = is_string($outputPayload)
+                    ? $outputPayload
+                    : json_encode($outputPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+                $outputTokens = $this->tokenCalculator->estimateTokens($outputText ?: '');
+                $totalTokens = $inputTokens + $outputTokens;
+                $isEstimated = true;
+            }
+
+            AiTokenUsage::create([
+                'user_id' => auth()->id(),
+                'provider' => $provider,
+                'model' => $model,
+                'feature' => $feature,
+                'input_tokens' => max(0, $inputTokens),
+                'output_tokens' => max(0, $outputTokens),
+                'total_tokens' => max(0, $totalTokens),
+                'is_estimated' => $isEstimated,
+                'meta' => [
+                    ...$meta,
+                    'raw_usage' => $providerUsage,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            // Never fail the user flow due to telemetry/logging
+            Log::warning('AIServiceManager: Failed to record token usage', [
+                'provider' => $provider,
+                'feature' => $feature,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    protected function extractProviderTelemetry(AIServiceInterface $provider): array
+    {
+        $usage = method_exists($provider, 'getLastUsage') ? $provider->getLastUsage() : null;
+        $promptText = method_exists($provider, 'getLastPromptText') ? $provider->getLastPromptText() : null;
+        $model = method_exists($provider, 'getModel') ? $provider->getModel() : null;
+
+        return [
+            'usage' => is_array($usage) ? $usage : null,
+            'promptText' => is_string($promptText) ? $promptText : null,
+            'model' => is_string($model) ? $model : null,
+        ];
+    }
 
     public function __construct(
         ContentChunker $chunker,
@@ -97,11 +170,101 @@ class AIServiceManager
         $safeLimit = $this->getPrimarySafeLimit();
         $contentTokens = $this->tokenCalculator->estimateTokens($content);
 
-        if ($this->tokenCalculator->fitsInModel($contentTokens, $safeLimit)) {
-            return $this->processSingleRequest($content, $config);
+        // Calculate total questions requested
+        $totalQuestions = 0;
+        if (isset($config['question_distribution'])) {
+            foreach ($config['question_distribution'] as $levelCounts) {
+                $totalQuestions += ($levelCounts['mcq'] ?? 0)
+                    + ($levelCounts['identification'] ?? 0)
+                    + ($levelCounts['tf'] ?? 0);
+            }
         }
 
-        return $this->processChunks($content, $config, $safeLimit);
+        $maxQuestionsPerCall = 35; // Force chunking if > 35 questions to preserve quality
+        $numChunksByQuestions = $totalQuestions > 0 ? (int) ceil($totalQuestions / $maxQuestionsPerCall) : 1;
+
+        if ($numChunksByQuestions > 1 || !$this->tokenCalculator->fitsInModel($contentTokens, $safeLimit)) {
+            if ($numChunksByQuestions > 1) {
+                $bufferTokens = config('ai_models.chunking.buffer_tokens', 10000);
+                // Lower the effective safe limit to naturally induce chunking
+                // e.g., if 30,000 tokens and 3 chunks, effective limit = 10,000 + buffer
+                $calculatedLimit = (int) ceil($contentTokens / $numChunksByQuestions) + $bufferTokens;
+                $safeLimit = min($safeLimit, $calculatedLimit);
+            }
+            $result = $this->processChunks($content, $config, $safeLimit);
+        } else {
+            $result = $this->processSingleRequest($content, $config);
+        }
+
+        // Apply strict slicer to trim overgeneration
+        if (isset($result['data']) && isset($config['question_distribution'])) {
+            $result['data'] = $this->sliceToExactCounts($result['data'], $config['question_distribution']);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Post-processes generated AI output to trim down excess elements.
+     */
+    protected function sliceToExactCounts(array $data, array $distribution): array
+    {
+        if (empty($distribution)) {
+            return $data;
+        }
+
+        $grouped = [
+            'multiple_choice' => [],
+            'identification' => [],
+            'true_or_false' => [],
+        ];
+
+        foreach (['multiple_choice', 'identification', 'true_or_false'] as $type) {
+            if (isset($data[$type])) {
+                foreach ($data[$type] as $item) {
+                    $level = $item['bloom_level'] ?? 'untagged';
+                    if (!isset($grouped[$type][$level])) {
+                        $grouped[$type][$level] = [];
+                    }
+                    $grouped[$type][$level][] = $item;
+                }
+            }
+        }
+
+        $finalData = [
+            'multiple_choice' => [],
+            'identification' => [],
+            'true_or_false' => [],
+        ];
+
+        foreach ($distribution as $level => $counts) {
+            $mcqTarget = $counts['mcq'] ?? 0;
+            $idTarget = $counts['identification'] ?? 0;
+            $tfTarget = $counts['tf'] ?? 0;
+
+            if ($mcqTarget > 0 && isset($grouped['multiple_choice'][$level])) {
+                $finalData['multiple_choice'] = array_merge(
+                    $finalData['multiple_choice'], 
+                    array_slice($grouped['multiple_choice'][$level], 0, $mcqTarget)
+                );
+            }
+
+            if ($idTarget > 0 && isset($grouped['identification'][$level])) {
+                $finalData['identification'] = array_merge(
+                    $finalData['identification'], 
+                    array_slice($grouped['identification'][$level], 0, $idTarget)
+                );
+            }
+
+            if ($tfTarget > 0 && isset($grouped['true_or_false'][$level])) {
+                $finalData['true_or_false'] = array_merge(
+                    $finalData['true_or_false'], 
+                    array_slice($grouped['true_or_false'][$level], 0, $tfTarget)
+                );
+            }
+        }
+
+        return $finalData;
     }
 
     /**
@@ -119,6 +282,7 @@ class AIServiceManager
             try {
                 $result = $provider->generateAssessment($content, $config);
                 $usedProvider = $providerName;
+                $telemetry = $this->extractProviderTelemetry($provider);
 
                 Log::info('AIServiceManager: Raw AI result before validation', [
                     'provider' => $providerName,
@@ -142,6 +306,18 @@ class AIServiceManager
                     ]);
                 }
 
+                $this->recordTokenUsage(
+                    provider: $providerName,
+                    feature: ($config['is_adaptive'] ?? false) ? 'assessment_generate_adaptive' : 'assessment_generate',
+                    inputText: $telemetry['promptText'] ?? $content,
+                    outputPayload: $result,
+                    providerUsage: $telemetry['usage'],
+                    model: $telemetry['model'],
+                    meta: [
+                        'chunks_processed' => 1,
+                    ]
+                );
+
                 return [
                     'success' => true,
                     'data' => $result,
@@ -154,6 +330,7 @@ class AIServiceManager
                 try {
                     $result = $provider->generateAssessment($content, $config);
                     $usedProvider = $providerName;
+                    $telemetry = $this->extractProviderTelemetry($provider);
 
                     // Run Bloom's validation on retry result too (if not adaptive)
                     $bloomLevels = $config['bloom_levels'] ?? null;
@@ -162,6 +339,19 @@ class AIServiceManager
                     if ($bloomLevels && !$isAdaptive) {
                         $result = $this->bloomsValidator->validate($result, $bloomLevels);
                     }
+
+                    $this->recordTokenUsage(
+                        provider: $providerName,
+                        feature: ($config['is_adaptive'] ?? false) ? 'assessment_generate_adaptive' : 'assessment_generate',
+                        inputText: $telemetry['promptText'] ?? $content,
+                        outputPayload: $result,
+                        providerUsage: $telemetry['usage'],
+                        model: $telemetry['model'],
+                        meta: [
+                            'chunks_processed' => 1,
+                            'retry_used' => true,
+                        ]
+                    );
 
                     return [
                         'success' => true,
@@ -213,10 +403,11 @@ class AIServiceManager
 
             try {
                 $allResults = $this->processAllChunksWithProvider(
-                    $provider,
-                    $chunks,
-                    $config,
-                    $questionsPerChunk
+                    provider: $provider,
+                    providerName: $providerName,
+                    chunks: $chunks,
+                    config: $config,
+                    questionsPerChunk: $questionsPerChunk
                 );
 
                 $combinedResult = $this->combineChunkResults($allResults);
@@ -250,12 +441,14 @@ class AIServiceManager
      */
     protected function processAllChunksWithProvider(
         AIServiceInterface $provider,
+        string $providerName,
         array $chunks,
         array $config,
         array $questionsPerChunk
     ): array {
         $allResults = [];
         $previousSummaries = [];
+        $resolvedProviderName = $providerName;
 
         foreach ($chunks as $index => $chunk) {
             $chunkNumber = $index + 1;
@@ -270,17 +463,46 @@ class AIServiceManager
 
             try {
                 $result = $provider->generateChunk($chunkContent, $previousContext, $chunkConfig);
+                $telemetry = $this->extractProviderTelemetry($provider);
 
                 $allResults[] = $result;
                 $previousSummaries[] = $this->summarizer->summarizeChunk($chunkContent);
+
+                $this->recordTokenUsage(
+                    provider: $resolvedProviderName,
+                    feature: ($config['is_adaptive'] ?? false) ? 'chunk_generate_adaptive' : 'chunk_generate',
+                    inputText: $telemetry['promptText'] ?? ($previousContext . "\n\n" . $chunkContent),
+                    outputPayload: $result,
+                    providerUsage: $telemetry['usage'],
+                    model: $telemetry['model'],
+                    meta: [
+                        'chunk_number' => $chunkNumber,
+                        'total_chunks' => count($chunks),
+                    ]
+                );
 
             } catch (\Exception $e) {
                 // Retry once
                 try {
                     $result = $provider->generateChunk($chunkContent, $previousContext, $chunkConfig);
+                    $telemetry = $this->extractProviderTelemetry($provider);
 
                     $allResults[] = $result;
                     $previousSummaries[] = $this->summarizer->summarizeChunk($chunkContent);
+
+                    $this->recordTokenUsage(
+                        provider: $resolvedProviderName,
+                        feature: ($config['is_adaptive'] ?? false) ? 'chunk_generate_adaptive' : 'chunk_generate',
+                        inputText: $telemetry['promptText'] ?? ($previousContext . "\n\n" . $chunkContent),
+                        outputPayload: $result,
+                        providerUsage: $telemetry['usage'],
+                        model: $telemetry['model'],
+                        meta: [
+                            'chunk_number' => $chunkNumber,
+                            'total_chunks' => count($chunks),
+                            'retry_used' => true,
+                        ]
+                    );
 
                 } catch (\Exception $retryException) {
                     throw new \Exception("Chunk {$chunkNumber} failed after retry: " . $retryException->getMessage());

@@ -18,14 +18,15 @@ class SubjectController extends Controller
     public function index(Request $request)
     {
         $search = $request->string('search')->toString();
-        $perPage = min(max((int) $request->input('per_page', 10), 1), 100);
+        $perPage = min(max((int)$request->input('per_page', 10), 1), 100);
 
         $subjects = Subject::when($search, function ($query, $term) {
             $query->where(function ($q) use ($term) {
-                $q->where('name', 'like', "%{$term}%")
-                    ->orWhere('code', 'like', "%{$term}%");
-            });
-        })
+                    $q->where('name', 'like', "%{$term}%")
+                        ->orWhere('code', 'like', "%{$term}%");
+                }
+                );
+            })
             ->orderBy('name')
             ->paginate($perPage)
             ->withQueryString();
@@ -113,8 +114,8 @@ class SubjectController extends Controller
 
             foreach ($allRows as $line) {
                 $rowNumber++;
-                $code = isset($line[$codeKey]) ? trim((string) $line[$codeKey]) : null;
-                $name = isset($line[$nameKey]) ? trim((string) $line[$nameKey]) : null;
+                $code = isset($line[$codeKey]) ? trim((string)$line[$codeKey]) : null;
+                $name = isset($line[$nameKey]) ? trim((string)$line[$nameKey]) : null;
 
                 if (empty($code) || empty($name)) {
                     continue;
@@ -146,7 +147,8 @@ class SubjectController extends Controller
                 'message' => $message,
                 'errors' => $errors,
             ]);
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             DB::rollBack();
             return back()->with('flash', [
                 'type' => 'error',
@@ -176,4 +178,3 @@ class SubjectController extends Controller
         ]);
     }
 }
-

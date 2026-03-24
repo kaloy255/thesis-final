@@ -4,29 +4,29 @@
 
         <!-- Header Section -->
         <div class="max-w-7xl mx-auto">
-            <div class="mb-8">
+            <div class="p-2.5 sm:p-4 mb-2">
                 <div
-                    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4"
                 >
                     <div>
                         <h1
-                            class="text-2xl font-semibold text-gray-900 dark:text-white tracking-tight"
+                            class="text-lg sm:text-2xl font-semibold text-text-primary dark:text-text-inverted"
                         >
                             My Assessments
                         </h1>
                         <p
-                            class="mt-1.5 text-sm text-gray-500 dark:text-gray-400"
+                            class="mt-1 text-xs sm:text-sm text-text-secondary"
                         >
                             View and manage your lesson assessments
                         </p>
                     </div>
-                    <div class="flex items-center gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 w-full sm:w-auto">
                         <Link
                             :href="route('instructor.lessons.createManual')"
-                            class="inline-flex items-center justify-center px-5 py-2.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 shadow-sm"
+                            class="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted border border-border-light dark:border-border-dark text-xs sm:text-sm font-medium whitespace-nowrap rounded-lg hover:bg-surface-muted dark:hover:bg-surface-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 shadow-sm"
                         >
                             <svg
-                                class="w-4 h-4 mr-2"
+                                class="w-4 h-4"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -42,10 +42,10 @@
                         </Link>
                         <Link
                             :href="route('instructor.lessons.create')"
-                            class="inline-flex items-center justify-center px-5 py-2.5 bg-accent-primary dark:bg-gray-700 text-white dark:text-white text-sm font-medium rounded-lg hover:bg-accent-muted dark:hover:bg-gray-600 transition-colors duration-200 focus:outline-none focus:ring-1 focus:ring-gray-900 dark:focus:ring-white focus:ring-offset-1 dark:ring-offset-gray-900 shadow-sm"
+                            class="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-accent-primary text-white text-xs sm:text-sm font-medium whitespace-nowrap rounded-lg hover:bg-accent-muted transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 shadow-sm"
                         >
                             <svg
-                                class="w-4 h-4 mr-2"
+                                class="w-4 h-4"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -63,44 +63,12 @@
                 </div>
             </div>
 
-            <!-- Search and Filter Section -->
-            <div class="mb-6 flex flex-col sm:flex-row gap-4">
-                <!-- Search Bar -->
-                <div class="flex-1">
-                    <div class="relative">
-                        <div
-                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-                        >
-                            <svg
-                                class="h-5 w-5 text-gray-400 dark:text-gray-500"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                />
-                            </svg>
-                        </div>
-                        <input
-                            v-model="searchQuery"
-                            @input="handleSearch"
-                            type="text"
-                            placeholder="Search by title or subject..."
-                            class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent text-sm"
-                        />
-                    </div>
-                </div>
-
-                <!-- Status Filter -->
-                <div class="sm:w-48">
+            <div class="mb-3 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <div class="w-full sm:w-48">
                     <select
                         v-model="statusFilter"
                         @change="handleStatusFilter"
-                        class="block w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent text-sm"
+                        class="block w-full px-3 py-2 border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted focus:outline-none focus:ring-2 focus:ring-indigo-500/40 text-sm"
                     >
                         <option value="all">All Status</option>
                         <option value="draft">Draft</option>
@@ -108,12 +76,11 @@
                     </select>
                 </div>
 
-                <!-- Section Filter Dropdown -->
-                <div class="relative">
+                <div class="relative w-full sm:w-auto">
                     <button
                         type="button"
                         @click="sectionDropdownOpen = !sectionDropdownOpen"
-                        class="inline-flex items-center justify-between w-full min-w-[180px] px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent text-sm"
+                        class="inline-flex items-center justify-between w-full sm:min-w-[180px] px-3 py-2 border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted hover:bg-surface-muted dark:hover:bg-surface-dark focus:outline-none focus:ring-2 focus:ring-indigo-500/40 text-sm"
                     >
                         <span class="truncate">
                             {{ sectionFilterLabel }}
@@ -196,6 +163,45 @@
                 </div>
             </div>
 
+            <!-- z-20: below app headers so notification dropdown stacks on top -->
+            <div ref="detailsSectionRef" class="sticky top-16 lg:top-[64px] z-20 mb-6">
+                <div
+                    :class="[
+                        'rounded-lg transition-all duration-200',
+                        isDetailsStuck
+                            ? 'px-3 py-2 sm:px-4 sm:py-3 bg-white/95 dark:bg-slate-900/95 border border-border-light dark:border-slate-700 shadow-md backdrop-blur-sm'
+                            : '',
+                    ]"
+                >
+                    <div class="relative w-full sm:max-w-md">
+                        <div
+                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                        >
+                            <svg
+                                class="h-4 w-4 text-text-secondary"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                />
+                            </svg>
+                        </div>
+                        <input
+                            v-model="searchQuery"
+                            @input="handleSearch"
+                            type="text"
+                            placeholder="Search by title or subject..."
+                            class="block w-full pl-10 pr-3 py-2 border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 text-sm"
+                        />
+                    </div>
+                </div>
+            </div>
+
             <!-- Click outside overlay to close section dropdown -->
             <div
                 v-if="sectionDropdownOpen"
@@ -215,7 +221,7 @@
                     <div
                         v-for="lesson in lessons.data"
                         :key="lesson.id"
-                        class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200"
+                        class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200 flex flex-col"
                     >
                         <div
                             class="h-28 p-4 flex items-start justify-end"
@@ -228,7 +234,7 @@
                             </span>
                         </div>
 
-                        <div class="p-6">
+                        <div class="p-6 flex flex-col flex-grow">
                         <!-- Card Header -->
                         <div class="mb-4">
                             <div class="flex items-center justify-between">
@@ -345,7 +351,7 @@
 
                         <!-- Footer -->
                         <div
-                            class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700/50"
+                            class="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700/50 mt-auto"
                         >
                             <div class="flex items-end gap-2">
                                 <Link
@@ -516,7 +522,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { Link, router, Head } from "@inertiajs/vue3";
 import InstructorLayout from "@/Layouts/InstructorLayout.vue";
 import ConfirmationModal from "@/Components/ConfirmationModal.vue";
@@ -543,6 +549,9 @@ const searchQuery = ref(props.filters?.search || "");
 const statusFilter = ref(props.filters?.status || "all");
 const selectedSectionIds = ref([...(props.filters?.section_ids || [])].map(Number));
 const sectionDropdownOpen = ref(false);
+const detailsSectionRef = ref(null);
+const isDetailsStuck = ref(false);
+const STICKY_RELEASE_OFFSET = 8;
 let searchTimeout = null;
 
 const SECTION_PREVIEW_LIMIT = 4;
@@ -677,4 +686,29 @@ const getMainAssessmentId = (lesson) => {
     const main = assessments.find((a) => !a.parent_assessment_id);
     return (main || assessments[0])?.id ?? null;
 };
+
+const updateStickyState = () => {
+    const el = detailsSectionRef.value;
+    if (!el) return;
+    const stickyTop = Number.parseFloat(window.getComputedStyle(el).top || "0") || 0;
+    const rectTop = el.getBoundingClientRect().top;
+
+    if (isDetailsStuck.value) {
+        if (rectTop > stickyTop + STICKY_RELEASE_OFFSET) {
+            isDetailsStuck.value = false;
+        }
+    } else if (rectTop <= stickyTop + 0.5) {
+        isDetailsStuck.value = true;
+    }
+};
+
+onMounted(() => {
+    updateStickyState();
+    window.addEventListener("scroll", updateStickyState, { passive: true });
+});
+
+onBeforeUnmount(() => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    window.removeEventListener("scroll", updateStickyState);
+});
 </script>

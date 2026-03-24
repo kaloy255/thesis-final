@@ -44,6 +44,7 @@ export default {
             },
             boxShadow: {
                 card: "0 10px 25px -15px rgba(0,0,0,0.25)",
+                "card-dark": "0 10px 25px -15px rgba(0,0,0,0.5)",
             },
         },
     },

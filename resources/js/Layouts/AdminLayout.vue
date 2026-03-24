@@ -17,6 +17,7 @@ const sidebarOpen = ref(false);
 const usersMenuOpen = ref(false);
 const profileMenuOpen = ref(false);
 const profileMenuRef = ref(null);
+const showBackToTop = ref(false);
 
 const navItems = [
     { name: "Dashboard", route: "admin.dashboard" },
@@ -34,11 +35,7 @@ const userSubItems = [
 const profileName = computed(() => page.props.auth?.user?.name || "Admin");
 const profileInitials = computed(() => {
     const name = profileName.value;
-    const parts = name.split(" ").filter(Boolean);
-    if (parts.length >= 2) {
-        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
+    return name ? name.charAt(0).toUpperCase() : "?";
 });
 
 // Check if current route is a users sub-route
@@ -82,8 +79,22 @@ onMounted(() => {
     document.addEventListener("click", handleClickOutside);
 });
 
+const handleScrollVisibility = () => {
+    showBackToTop.value = window.scrollY > 250;
+};
+
+const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+onMounted(() => {
+    handleScrollVisibility();
+    window.addEventListener("scroll", handleScrollVisibility, { passive: true });
+});
+
 onBeforeUnmount(() => {
     document.removeEventListener("click", handleClickOutside);
+    window.removeEventListener("scroll", handleScrollVisibility);
 });
 </script>
 
@@ -92,10 +103,17 @@ onBeforeUnmount(() => {
         class="min-h-screen bg-surface-muted text-text-primary dark:bg-surface-dark dark:text-text-inverted"
     >
         <div class="flex min-h-screen">
+            <!-- Mobile Sidebar Backdrop -->
+            <div
+                v-if="sidebarOpen"
+                class="fixed inset-0 z-[60] bg-black/40 sm:hidden"
+                @click="sidebarOpen = false"
+            />
+
             <!-- Sidebar -->
             <aside
                 :class="[
-                    'w-64 bg-white dark:bg-surface-dark-muted border-r border-border-light dark:border-border-dark fixed inset-y-0 left-0 transform transition-transform duration-200 ease-in-out z-30',
+                    'w-64 bg-white dark:bg-surface-dark-muted border-r border-border-light dark:border-border-dark fixed inset-y-0 left-0 transform transition-transform duration-200 ease-in-out z-[70]',
                     sidebarOpen
                         ? 'translate-x-0'
                         : '-translate-x-full sm:translate-x-0',
@@ -174,9 +192,9 @@ onBeforeUnmount(() => {
             </aside>
 
             <!-- Main -->
-            <div class="flex-1 flex flex-col sm:pl-64 main-content">
+            <div class="flex-1 flex flex-col sm:pl-64 main-content min-w-0">
                 <header
-                    class="h-16 bg-white dark:bg-surface-dark-muted border-b border-border-light dark:border-border-dark flex items-center px-4 sm:px-6 lg:px-8 justify-between"
+                    class="sticky top-0 z-50 h-16 bg-white dark:bg-surface-dark-muted border-b border-border-light dark:border-border-dark flex items-center px-4 sm:px-6 lg:px-8 justify-between"
                 >
                     <div class="flex items-center gap-3">
                         <button
@@ -256,7 +274,7 @@ onBeforeUnmount(() => {
                             >
                                 <div
                                     v-if="profileMenuOpen"
-                                    class="absolute right-0 mt-2 w-56 bg-white dark:bg-surface-dark rounded-lg shadow-lg border border-border-light dark:border-border-dark z-50 overflow-hidden"
+                                    class="absolute right-0 mt-2 w-[min(90vw,14rem)] sm:w-56 bg-white dark:bg-surface-dark rounded-lg shadow-lg border border-border-light dark:border-border-dark z-50 overflow-hidden"
                                 >
                                     <!-- User Info -->
                                     <div class="px-4 py-3 border-b border-border-light dark:border-border-dark">
@@ -307,7 +325,7 @@ onBeforeUnmount(() => {
                     </div>
                 </header>
 
-                <main class="py-6 px-4 sm:px-6 lg:px-8">
+                <main class="py-6 px-4 sm:px-6 lg:px-8 min-w-0">
                     <div
                         v-if="flash?.value?.success"
                         class="mb-4 rounded border border-green-200 bg-green-50 p-3 text-green-800 dark:border-green-900 dark:bg-green-950 dark:text-green-200"
@@ -319,6 +337,18 @@ onBeforeUnmount(() => {
                 </main>
             </div>
         </div>
+        <button
+            v-if="showBackToTop"
+            type="button"
+            class="fixed bottom-24 right-4 sm:right-6 lg:bottom-6 z-[65] inline-flex items-center justify-center w-11 h-11 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            aria-label="Back to top"
+            title="Back to top"
+            @click="scrollToTop"
+        >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+            </svg>
+        </button>
         <Toast />
     </div>
 </template>

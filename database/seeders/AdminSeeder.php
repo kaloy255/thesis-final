@@ -14,7 +14,7 @@ class AdminSeeder extends Seeder
     public function run(): void
     {
         $admin = User::firstOrCreate(
-            ['id_number' => 1001],
+            ['email' => 'admin@chcc.edu.ph'],
             [
                 'name' => 'Administrator',
                 'role' => 'admin',

@@ -194,12 +194,68 @@ class AssessmentHistoryController extends Controller
 
         $totalQuestions = $assessment->items->count();
 
+        // Recursive helper to load the full tree of adaptive assessments
+        $loadAdaptiveTree = function ($assessment) use (&$loadAdaptiveTree, $student) {
+            return $assessment->children()
+                ->where('type', 'adaptive')
+                ->orderBy('created_at')
+                ->get()
+                ->map(function ($child) use (&$loadAdaptiveTree, $student) {
+                    $latestAttempt = $child->attempts()
+                        ->where('student_id', $student->id)
+                        ->latest()
+                        ->first();
+                    
+                    $score = null;
+                    if ($latestAttempt) {
+                        $totalItems = max($child->items()->count(), 1);
+                        $correct = $latestAttempt->answers()->where('correct_answer', true)->count();
+                        $score = round(($correct / $totalItems) * 100, 2);
+                    }
+
+                    return [
+                        'id' => $child->id,
+                        'title' => $child->title,
+                        'created_at' => $child->created_at,
+                        'latest_attempt_id' => $latestAttempt?->id,
+                        'score' => $score,
+                        'children' => $loadAdaptiveTree($child),
+                    ];
+                })
+                ->values()
+                ->all();
+        };
+
         $adaptivesByAttemptId = Assessment::where('parent_assessment_id', $assessment->id)
             ->whereNotNull('source_attempt_id')
             ->where('type', 'adaptive')
             ->orderBy('created_at')
             ->get()
-            ->groupBy('source_attempt_id');
+            ->groupBy('source_attempt_id')
+            ->map(function ($group) use (&$loadAdaptiveTree, $student) {
+                return $group->map(function ($adaptive) use (&$loadAdaptiveTree, $student) {
+                    $latestAttempt = $adaptive->attempts()
+                        ->where('student_id', $student->id)
+                        ->latest()
+                        ->first();
+                    
+                    $score = null;
+                    if ($latestAttempt) {
+                        $totalItems = max($adaptive->items()->count(), 1);
+                        $correct = $latestAttempt->answers()->where('correct_answer', true)->count();
+                        $score = round(($correct / $totalItems) * 100, 2);
+                    }
+
+                    return [
+                        'id' => $adaptive->id,
+                        'title' => $adaptive->title,
+                        'created_at' => $adaptive->created_at,
+                        'latest_attempt_id' => $latestAttempt?->id,
+                        'score' => $score,
+                        'children' => $loadAdaptiveTree($adaptive),
+                    ];
+                })->values()->all();
+            });
 
         $attemptsData = $attempts->map(function ($attempt) use ($totalQuestions, $adaptivesByAttemptId) {
             $correctAnswers = $attempt->answers->where('correct_answer', true)->count();
@@ -207,13 +263,7 @@ class AssessmentHistoryController extends Controller
             $noAnswer = $attempt->answers->whereNull('choices')->count();
             $score = $totalQuestions > 0 ? round(($correctAnswers / $totalQuestions) * 100, 2) : 0;
 
-            $adaptiveList = $adaptivesByAttemptId->get($attempt->id, collect())->map(function ($adaptive) {
-                return [
-                    'id' => $adaptive->id,
-                    'title' => $adaptive->title,
-                    'created_at' => $adaptive->created_at,
-                ];
-            })->values()->all();
+            $adaptiveList = $adaptivesByAttemptId->get($attempt->id, []);
 
             return [
                 'id' => $attempt->id,
@@ -285,6 +335,92 @@ class AssessmentHistoryController extends Controller
             ],
             'attempts' => $attemptsData->values(),
             'cheating_logs' => $cheatingLogs,
+        ]);
+    }
+
+    /**
+     * Display one attempt's results for a student.
+     */
+    public function showAttemptResults(Assessment $assessment, Student $student, AssessmentAttempt $attempt)
+    {
+        $professor = auth()->user()->professor;
+
+        if (!$professor) {
+            abort(403, 'Instructor record not found');
+        }
+
+        $assessment->load(['items', 'lesson.subject']);
+
+        if ($assessment->lesson->professor_id !== $professor->id) {
+            abort(403, 'You do not have access to this assessment');
+        }
+
+        if ($attempt->student_id !== $student->id || $attempt->assessment_id !== $assessment->id) {
+            abort(403, 'Attempt does not belong to this student and assessment');
+        }
+
+        // Load attempt with answers
+        $attempt->load('answers');
+
+        // Prepare results data
+        $totalQuestions = $assessment->items->count();
+        $answeredQuestions = $attempt->answers->whereNotNull('choices')->count();
+        $correctAnswers = $attempt->answers->where('correct_answer', true)->count();
+        $wrongAnswers = $attempt->answers->where('correct_answer', false)->count();
+        $noAnswer = $attempt->answers->whereNull('choices')->count();
+        $score = $totalQuestions > 0 ? round(($correctAnswers / $totalQuestions) * 100, 2) : 0;
+
+        // Prepare items with student answers
+        $items = $assessment->items->map(function ($item) use ($attempt) {
+            $studentAnswer = $attempt->answers->firstWhere('assessment_item_id', $item->id);
+
+            $studentAnswerText = null;
+            if ($studentAnswer && $studentAnswer->choices && !empty($studentAnswer->choices)) {
+                $choices = $studentAnswer->choices;
+                $studentAnswerText = is_array($choices) ? ($choices[0] ?? '') : '';
+            }
+
+            return [
+                'id' => $item->id,
+                'question' => $item->question,
+                'type' => $item->type,
+                'choices' => $item->choices,
+                'correct_answer' => $item->correct_answer,
+                'student_answer' => $studentAnswerText,
+                'is_correct' => $studentAnswer ? $studentAnswer->correct_answer : false,
+            ];
+        });
+
+        return Inertia::render('Instructor/Assessments/AttemptResults', [
+            'assessment' => [
+                'id' => $assessment->id,
+                'title' => $assessment->title,
+                'lesson' => [
+                    'title' => $assessment->lesson->title,
+                ],
+                'subject' => [
+                    'name' => $assessment->lesson->subject->name,
+                    'code' => $assessment->lesson->subject->code,
+                ],
+            ],
+            'student' => [
+                'id' => $student->id,
+                'name' => $student->user->name ?? 'Unknown',
+            ],
+            'attempt' => [
+                'id' => $attempt->id,
+                'attempt_no' => $attempt->attempt_no,
+                'created_at' => $attempt->created_at,
+            ],
+            'results' => [
+                'total_questions' => $totalQuestions,
+                'answered_questions' => $answeredQuestions,
+                'correct_answers' => $correctAnswers,
+                'wrong_answers' => $wrongAnswers,
+                'no_answer' => $noAnswer,
+                'score' => $score,
+            ],
+            'items' => $items,
         ]);
     }
 }

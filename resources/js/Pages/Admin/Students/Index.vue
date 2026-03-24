@@ -10,8 +10,9 @@ import ConfirmationModal from "@/Components/ConfirmationModal.vue";
 import Pagination from "@/Components/Pagination.vue";
 import SearchableSelect from "@/Components/SearchableSelect.vue";
 import { Head, Link, router, useForm } from "@inertiajs/vue3";
-import { ref, watch, computed } from "vue";
+import { ref, watch, computed, onMounted, onBeforeUnmount } from "vue";
 import { useToast } from "@/Stores/useToast";
+import { Icon } from "@iconify/vue";
 
 const props = defineProps({
     students: Object,
@@ -40,6 +41,9 @@ const sectionFilterId = ref(
         ? String(props.filters.section_id)
         : ""
 );
+const detailsSectionRef = ref(null);
+const isDetailsStuck = ref(false);
+const STICKY_RELEASE_OFFSET = 8;
 const importErrors = ref([]);
 const importErrorMessage = ref("");
 const isImportDragging = ref(false);
@@ -60,7 +64,6 @@ const departmentFilterOptions = computed(() => [
     })),
 ]);
 
-// Section options for filter - filtered by selected department (cascading)
 const sectionFilterOptions = computed(() => {
     const base = [{ value: "", label: "All sections" }];
     const sections = props.sections || [];
@@ -70,7 +73,7 @@ const sectionFilterOptions = computed(() => {
         // No department selected: show all sections
         const opts = sections.map((s) => ({
             value: String(s.id),
-            label: s.name,
+            label: s.students_count !== undefined ? `(${s.students_count}) ${s.name}` : s.name,
             sublabel: s.department?.name,
         }));
         return [...base, ...opts];
@@ -81,7 +84,7 @@ const sectionFilterOptions = computed(() => {
         .filter((s) => String(s.department_id) === deptId)
         .map((s) => ({
             value: String(s.id),
-            label: s.name,
+            label: s.students_count !== undefined ? `(${s.students_count}) ${s.name}` : s.name,
         }));
     return [...base, ...filtered];
 });
@@ -123,14 +126,40 @@ watch(searchQuery, () => {
     searchTimeout = setTimeout(applyFilters, 500);
 });
 
+const updateStickyState = () => {
+    const el = detailsSectionRef.value;
+    if (!el) return;
+    const stickyTop = Number.parseFloat(window.getComputedStyle(el).top || "0") || 0;
+    const rectTop = el.getBoundingClientRect().top;
+
+    if (isDetailsStuck.value) {
+        if (rectTop > stickyTop + STICKY_RELEASE_OFFSET) {
+            isDetailsStuck.value = false;
+        }
+    } else if (rectTop <= stickyTop + 0.5) {
+        isDetailsStuck.value = true;
+    }
+};
+
+onMounted(() => {
+    updateStickyState();
+    window.addEventListener("scroll", updateStickyState, { passive: true });
+    window.addEventListener("resize", updateStickyState);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener("scroll", updateStickyState);
+    window.removeEventListener("resize", updateStickyState);
+});
+
 const createForm = useForm({
-    id_number: "",
+    email: "",
     name: "",
     section_id: "",
 });
 
 const editForm = useForm({
-    id_number: "",
+    email: "",
     name: "",
     section_id: "",
 });
@@ -234,7 +263,7 @@ const closeCreateModal = () => {
 
 const openEditModal = (student) => {
     editingStudent.value = student;
-    editForm.id_number = student.id_number;
+    editForm.email = student.email;
     editForm.name = student.name;
     editForm.section_id = student.student?.section_id || "";
     editForm.clearErrors();
@@ -338,68 +367,72 @@ const formatDate = (dateString) => {
         <Head title="Students" />
 
         <!-- Header Section -->
-        <div class="mb-8">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1
-                        class="text-2xl font-semibold text-gray-900 dark:text-white mb-1"
-                    >
+        <div class="p-3 sm:p-4 mb-2">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-4">
+                <div class="w-full sm:w-auto">
+                    <h1 class="text-lg sm:text-2xl font-semibold text-text-primary dark:text-text-inverted mb-1">
                         Students
                     </h1>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                    <p class="text-xs sm:text-sm text-text-secondary">
                         Manage student accounts and information
                     </p>
                 </div>
-                <div class="flex gap-2">
+                <div class="grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                     <button
                         @click="openImportModal"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
+                        class="inline-flex w-full sm:w-auto justify-center items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-surface dark:bg-surface-dark-muted text-text-secondary border border-border-light dark:border-border-dark text-xs sm:text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200 whitespace-nowrap"
                     >
-                        <svg
-                            class="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                            />
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                         </svg>
                         Import Students
                     </button>
                     <button
                         @click="openCreateModal"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
+                        class="inline-flex w-full sm:w-auto justify-center items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-indigo-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200 whitespace-nowrap"
                     >
-                        <svg
-                            class="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M12 4v16m8-8H4"
-                            />
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
                         Add Student
                     </button>
                 </div>
             </div>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <div class="sm:w-64">
+                    <label class="block text-xs font-medium text-text-secondary mb-1.5">
+                        Filter by department
+                    </label>
+                    <SearchableSelect
+                        v-model="departmentFilterId"
+                        :options="departmentFilterOptions"
+                        placeholder="Filter by department..."
+                    />
+                </div>
+                <div class="sm:w-64">
+                    <label class="block text-xs font-medium text-text-secondary mb-1.5">
+                        Filter by section
+                    </label>
+                    <SearchableSelect
+                        v-model="sectionFilterId"
+                        :options="sectionFilterOptions"
+                        placeholder="Filter by section..."
+                    />
+                </div>
+            </div>
         </div>
 
-        <!-- Search & Filters (cascading: Department → Section) -->
-        <div class="mb-6 flex flex-col sm:flex-row gap-4">
-            <div class="flex-1 min-w-0">
-                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-                    Search
-                </label>
-                <div class="relative">
+        <!-- Sticky Search -->
+        <div ref="detailsSectionRef" class="sticky top-[64px] z-40 mb-6">
+            <div
+                :class="[
+                    'rounded-lg transition-all duration-200',
+                    isDetailsStuck
+                        ? 'px-3 py-2 sm:px-4 sm:py-3 bg-white/95 dark:bg-slate-900/95 border border-border-light dark:border-slate-700 shadow-md backdrop-blur-sm'
+                        : '',
+                ]"
+            >
+                <div class="relative w-full sm:max-w-md">
                     <svg
                         class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
                         fill="none"
@@ -417,73 +450,42 @@ const formatDate = (dateString) => {
                         id="search"
                         v-model="searchQuery"
                         type="text"
-                        placeholder="Search by ID number or name..."
-                        class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+                        placeholder="Search by email or name..."
+                        class="w-full pl-10 pr-4 py-2 text-sm border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
                     />
                 </div>
-            </div>
-            <div class="sm:w-64">
-                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-                    Filter by department
-                </label>
-                <SearchableSelect
-                    v-model="departmentFilterId"
-                    :options="departmentFilterOptions"
-                    placeholder="Filter by department..."
-                />
-            </div>
-            <div class="sm:w-64">
-                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-                    Filter by section
-                </label>
-                <SearchableSelect
-                    v-model="sectionFilterId"
-                    :options="sectionFilterOptions"
-                    placeholder="Filter by section..."
-                />
             </div>
         </div>
 
         <!-- Students List -->
         <div
-            class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+            class="bg-surface dark:bg-surface-dark-muted min-h-[calc(100vh-330px)] flex flex-col relative justify-between rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden min-w-0"
         >
             <!-- Empty State -->
-            <div v-if="!hasStudents" class="p-12 text-center">
-                <svg
-                    class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                </svg>
+            <div v-if="!hasStudents" class="p-8 sm:p-12 text-center min-h-[20rem] flex flex-col items-center justify-center">
+                <Icon icon="simple-line-icons:people" class="w-10 h-10 text-green-600 dark:text-green-400 mx-auto mb-4" />
+               
                 <h3
-                    class="text-sm font-medium text-gray-900 dark:text-white mb-1"
+                    class="text-sm font-medium text-text-primary dark:text-text-inverted mb-1"
                 >
                     {{ hasActiveFilters ? "No students found" : "No students" }}
                 </h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                <p class="text-sm text-text-secondary mb-4">
                     {{ hasActiveFilters
                         ? "Try adjusting your search or filters."
                         : "Get started by creating a new student or importing from a file."
                     }}
                 </p>
-                <div class="flex gap-2 justify-center">
+                <div class="flex flex-col sm:flex-row gap-2 justify-center w-full max-w-xs mx-auto">
                     <button
                         @click="openImportModal"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
+                        class="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 dark:bg-surface-dark-muted dark:text-text-secondary text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200 w-full sm:w-auto"
                     >
                         Import Students
                     </button>
                     <button
                         @click="openCreateModal"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
+                        class="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200 w-full sm:w-auto"
                     >
                         Add Student
                     </button>
@@ -491,19 +493,20 @@ const formatDate = (dateString) => {
             </div>
 
             <!-- Students Table -->
-            <div v-else class="divide-y divide-gray-200 dark:divide-gray-700">
+            <div v-else class="divide-y divide-gray-200 border-b border-gray-200 dark:divide-border-dark">
                 <div
-                    v-for="student in props.students.data"
+                    v-for="(student, index) in props.students.data"
                     :key="student.id"
-                    class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
+                    class="p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors duration-150"
                 >
-                    <div class="flex items-center justify-between gap-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 min-w-0">
                         <!-- Student Info -->
                         <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-4">
+                            <div class="flex items-start sm:items-center gap-3">
+                                <span class="text-sm font-medium text-text-secondary w-6 text-right flex-shrink-0 mt-2 sm:mt-0">{{ (props.students.from || 1) + index }}.</span>
                                 <div class="flex-shrink-0">
                                     <div
-                                        class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-semibold text-lg"
+                                        class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-semibold text-lg"
                                     >
                                         {{
                                             student.name.charAt(0).toUpperCase()
@@ -512,27 +515,28 @@ const formatDate = (dateString) => {
                                 </div>
                                 <div class="flex-1 min-w-0 space-y-1">
                                     <div
-                                        class="flex items-center gap-3 flex-wrap"
+                                        class="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0"
                                     >
                                         <p
-                                            class="text-base font-medium text-gray-900 dark:text-white truncate"
+                                            class="text-base font-medium text-text-primary dark:text-text-inverted truncate"
                                         >
                                             {{ student.name }}
                                         </p>
                                         <span
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
+                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 max-w-full sm:max-w-[20rem] truncate"
+                                            :title="student.email"
                                         >
-                                            {{ student.id_number }}
+                                            {{ student.email }}
                                         </span>
                                     </div>
-                                    <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-2 min-w-0">
                                         <span
-                                            class="text-xs font-medium text-gray-500 dark:text-gray-400"
+                                            class="text-xs font-medium text-text-secondary"
                                         >
                                             Section:
                                         </span>
                                         <span
-                                            class="text-sm text-gray-700 dark:text-gray-300"
+                                            class="text-sm text-text-secondary truncate"
                                         >
                                             {{
                                                 student.student?.section
@@ -545,10 +549,10 @@ const formatDate = (dateString) => {
                         </div>
 
                         <!-- Actions -->
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 self-end sm:self-auto">
                             <button
                                 @click="openEditModal(student)"
-                                class="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors duration-150"
+                                class="inline-flex items-center justify-center w-10 h-10 sm:w-auto sm:h-auto sm:p-2 text-text-secondary hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors duration-150"
                                 title="Edit"
                             >
                                 <svg
@@ -567,7 +571,7 @@ const formatDate = (dateString) => {
                             </button>
                             <button
                                 @click="openDeleteModal(student.id)"
-                                class="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-150"
+                                class="inline-flex items-center justify-center w-10 h-10 sm:w-auto sm:h-auto sm:p-2 text-text-secondary hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-150"
                                 title="Delete"
                             >
                                 <svg
@@ -612,7 +616,7 @@ const formatDate = (dateString) => {
             <div class="p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h2
-                        class="text-xl font-semibold text-gray-900 dark:text-white"
+                        class="text-xl font-semibold text-text-primary dark:text-text-inverted"
                     >
                         Create Student
                     </h2>
@@ -638,22 +642,22 @@ const formatDate = (dateString) => {
                 <form @submit.prevent="submitCreate" class="space-y-6">
                     <div>
                         <InputLabel
-                            for="create_id_number"
-                            value="ID Number"
+                            for="create_email"
+                            value="Email"
                             class="mb-2"
                         />
                         <TextInput
-                            id="create_id_number"
-                            v-model="createForm.id_number"
-                            type="text"
+                            id="create_email"
+                            v-model="createForm.email"
+                            type="email"
                             class="block w-full"
-                            placeholder="Enter student ID number"
+                            placeholder="Enter student email (must end with @chcc.edu.ph)"
                             required
                             autofocus
                         />
                         <InputError
                             class="mt-2"
-                            :message="createForm.errors.id_number"
+                            :message="createForm.errors.email"
                         />
                     </div>
                     <div>
@@ -691,18 +695,18 @@ const formatDate = (dateString) => {
                         />
                     </div>
                     <div
-                        class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700"
+                        class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-border-light dark:border-border-dark"
                     >
                         <SecondaryButton
                             type="button"
                             @click="closeCreateModal"
-                            class="px-4 py-2"
+                            class="px-3 sm:px-4 py-2 w-full sm:w-auto"
                         >
                             Cancel
                         </SecondaryButton>
                         <PrimaryButton
                             :disabled="createForm.processing"
-                            class="px-4 py-2"
+                            class="px-3 sm:px-4 py-2 w-full sm:w-auto"
                         >
                             Create Student
                         </PrimaryButton>
@@ -716,7 +720,7 @@ const formatDate = (dateString) => {
             <div class="p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h2
-                        class="text-xl font-semibold text-gray-900 dark:text-white"
+                        class="text-xl font-semibold text-text-primary dark:text-text-inverted"
                     >
                         Edit Student
                     </h2>
@@ -742,21 +746,21 @@ const formatDate = (dateString) => {
                 <form @submit.prevent="submitEdit" class="space-y-6">
                     <div>
                         <InputLabel
-                            for="edit_id_number"
-                            value="ID Number"
+                            for="edit_email"
+                            value="Email"
                             class="mb-2"
                         />
                         <TextInput
-                            id="edit_id_number"
-                            v-model="editForm.id_number"
-                            type="text"
+                            id="edit_email"
+                            v-model="editForm.email"
+                            type="email"
                             class="block w-full"
                             required
                             autofocus
                         />
                         <InputError
                             class="mt-2"
-                            :message="editForm.errors.id_number"
+                            :message="editForm.errors.email"
                         />
                     </div>
                     <div>
@@ -793,19 +797,19 @@ const formatDate = (dateString) => {
                         />
                     </div>
                     <div
-                        class="pt-4 border-t border-gray-200 dark:border-gray-700"
+                        class="pt-4 border-t border-border-light dark:border-border-dark"
                     >
                         <div
-                            class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                            class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-surface-dark-muted rounded-lg"
                         >
                             <div>
                                 <p
-                                    class="text-sm font-medium text-gray-900 dark:text-white"
+                                    class="text-sm font-medium text-text-primary dark:text-text-inverted"
                                 >
                                     Password
                                 </p>
                                 <p
-                                    class="text-xs text-gray-500 dark:text-gray-400 mt-0.5"
+                                    class="text-xs text-text-secondary mt-0.5"
                                 >
                                     Default: chcc@2025
                                 </p>
@@ -820,18 +824,18 @@ const formatDate = (dateString) => {
                         </div>
                     </div>
                     <div
-                        class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700"
+                        class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-border-light dark:border-border-dark"
                     >
                         <SecondaryButton
                             type="button"
                             @click="closeEditModal"
-                            class="px-4 py-2"
+                            class="px-4 py-2 w-full sm:w-auto"
                         >
                             Cancel
                         </SecondaryButton>
                         <PrimaryButton
                             :disabled="editForm.processing"
-                            class="px-4 py-2"
+                            class="px-4 py-2 w-full sm:w-auto"
                         >
                             Save Changes
                         </PrimaryButton>
@@ -868,7 +872,7 @@ const formatDate = (dateString) => {
         <Modal :show="showImportModal" @close="closeImportModal" max-width="lg">
             <div class="p-6">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                    <h2 class="text-xl font-semibold text-text-primary dark:text-text-inverted">
                         Import Students
                     </h2>
                     <button
@@ -908,22 +912,23 @@ const formatDate = (dateString) => {
 
                     <!-- Section Selection -->
                     <div>
-                        <InputLabel value="Section *" class="mb-2" />
+                        <InputLabel value="Fallback Section (Optional)" class="mb-2" />
                         <SearchableSelect
                             v-model="importForm.section_id"
                             :options="sectionOptions"
-                            placeholder="Search and select section..."
+                            placeholder="Select a fallback section if file lacks it..."
                         />
                         <InputError class="mt-2" :message="importForm.errors.section_id" />
-                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            All students in the file will be assigned to this section
+                        <p class="mt-1 text-xs text-text-secondary">
+                            Used if a student's row has no 'Section' column specified.
                         </p>
                     </div>
 
                     <!-- Drag-and-drop file upload -->
                     <div>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                            Upload an Excel or CSV file with <strong>id_number</strong> (1st column) and <strong>name</strong> (2nd column). Default password: <strong>chcc@2025</strong>. Large imports may take a moment—please wait.
+                        <p class="text-sm text-text-secondary mb-3">
+                            Upload an Excel or CSV file. The system checks for <strong>id_number</strong> and <strong>name</strong>. <br><br>
+                            If a <strong>section</strong> column exists, the system will use it. (If a section isn't in the system, it will be automatically created mapped to the correct department). Generates <strong>{id}@chcc.edu.ph</strong> for emails if an <strong>emails</strong> column isn't found. Default password: <strong>chcc@2025</strong>. 
                         </p>
                         <InputLabel for="import_file" value="Select File" class="mb-2" />
                         <div
@@ -940,11 +945,11 @@ const formatDate = (dateString) => {
                                 class="relative flex justify-center px-6 pt-5 pb-6 rounded-[calc(0.5rem-2px)] transition-colors"
                                 :class="isImportDragging
                                     ? 'bg-indigo-50 dark:bg-indigo-900/20'
-                                    : 'bg-white dark:bg-gray-800'"
+                                    : 'bg-surface dark:bg-surface-dark-muted'"
                             >
                             <div class="space-y-1 text-center">
                                 <svg
-                                    class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
+                                    class="mx-auto h-12 w-12 text-text-secondary"
                                     stroke="currentColor"
                                     fill="none"
                                     viewBox="0 0 48 48"
@@ -956,7 +961,7 @@ const formatDate = (dateString) => {
                                         stroke-linejoin="round"
                                     />
                                 </svg>
-                                <div class="flex text-sm text-gray-600 dark:text-gray-400 justify-center">
+                                <div class="flex text-sm text-text-secondary justify-center">
                                     <label
                                         for="import_file"
                                         class="relative cursor-pointer rounded-md font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
@@ -972,10 +977,10 @@ const formatDate = (dateString) => {
                                     </label>
                                     <p class="pl-1">or drag and drop</p>
                                 </div>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                <p class="text-xs text-text-secondary">
                                     XLSX, XLS, CSV up to 2MB
                                 </p>
-                                <p v-if="importFileName" class="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">
+                                <p v-if="importFileName" class="text-sm font-medium text-text-secondary mt-2">
                                     Selected: {{ importFileName }}
                                 </p>
                             </div>
@@ -1003,14 +1008,14 @@ const formatDate = (dateString) => {
                         </ul>
                     </div>
 
-                    <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <SecondaryButton type="button" @click="closeImportModal" class="px-4 py-2">
+                    <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-border-light dark:border-border-dark">
+                        <SecondaryButton type="button" @click="closeImportModal" class="px-4 py-2 w-full sm:w-auto">
                             Cancel
                         </SecondaryButton>
                         <PrimaryButton
                             type="submit"
-                            :disabled="!importForm.file || !importForm.section_id || importForm.processing"
-                            class="px-4 py-2"
+                            :disabled="!importForm.file || importForm.processing"
+                            class="px-4 py-2 w-full sm:w-auto"
                         >
                             {{ importForm.processing ? "Importing..." : "Import Students" }}
                         </PrimaryButton>

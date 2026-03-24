@@ -14,7 +14,7 @@ class InstructorStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_number' => ['required', 'integer', 'unique:users,id_number'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'unique:users,email'],
             'name' => ['required', 'string', 'max:255'],
             'department_id' => ['required', 'exists:departments,id'],
         ];

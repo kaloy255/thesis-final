@@ -1,7 +1,8 @@
 <script setup>
 import StudentLayout from "@/Layouts/StudentLayout.vue";
 import { Head, Link } from "@inertiajs/vue3";
-import { ref } from "vue";
+import { ref, computed } from "vue";
+import AdaptiveTree from "@/Components/AdaptiveTree.vue";
 
 const props = defineProps({
     assessment: Object,
@@ -28,6 +29,13 @@ const hasAdaptives = (attempt) => {
     return Array.isArray(list) && list.length > 0;
 };
 
+const countTotalAdaptives = (adaptives) => {
+    if (!adaptives || !Array.isArray(adaptives)) return 0;
+    return adaptives.reduce((total, adaptive) => {
+        return total + 1 + countTotalAdaptives(adaptive.children || []);
+    }, 0);
+};
+
 const formatDate = (dateString) => {
     if (!dateString) return null;
     const date = new Date(dateString);
@@ -41,247 +49,328 @@ const formatDate = (dateString) => {
 };
 
 const getScoreColor = (score) => {
-    if (score >= 75) return 'text-green-600 dark:text-green-400';
-    if (score >= 50) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-red-600 dark:text-red-400';
+    if (score >= 75) return "text-emerald-600 dark:text-emerald-400";
+    if (score >= 50) return "text-amber-600 dark:text-amber-400";
+    return "text-rose-600 dark:text-rose-400";
 };
 
-const getScoreBgColor = (score) => {
-    if (score >= 75) return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
-    if (score >= 50) return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
-    return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
+const scoreAccentBorder = (score) => {
+    if (score >= 75) return "border-l-emerald-500 dark:border-l-emerald-400";
+    if (score >= 50) return "border-l-amber-500 dark:border-l-amber-400";
+    return "border-l-rose-500 dark:border-l-rose-400";
 };
 
-const isBestAttempt = (attemptNo) => {
-    return attemptNo === props.summary.best_attempt_no;
-};
+const isBestAttempt = (attemptNo) => attemptNo === props.summary.best_attempt_no;
 
-const isLatestAttempt = (index) => {
-    return index === 0;
-};
+const isLatestAttempt = (index) => index === 0;
+
+const hasAttempts = computed(() => (props.attempts?.length || 0) > 0);
 </script>
 
 <template>
     <StudentLayout>
+        <Head :title="`History — ${assessment.title}`" />
 
-        <Head :title="`History - ${assessment.title}`" />
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-12 pt-4 sm:pt-6">
+            <!-- Page header -->
+            <header class="mb-10 sm:mb-12">
+                <p
+                    class="text-[11px] sm:text-xs font-medium uppercase tracking-[0.14em] text-text-secondary mb-3"
+                >
+                    Assessment history
+                </p>
+                <h1
+                    class="text-[clamp(1.375rem,4vw,1.875rem)] font-semibold tracking-tight text-text-primary dark:text-text-inverted leading-tight"
+                >
+                    {{ assessment.title }}
+                </h1>
+                <p
+                    class="mt-3 text-sm text-text-secondary leading-relaxed max-w-prose"
+                >
+                    <span>{{ assessment.subject.name }} ({{ assessment.subject.code }})</span>
+                    <span class="mx-2 text-border-light dark:text-border-dark" aria-hidden="true">·</span>
+                    <span>{{ assessment.lesson.title }}</span>
+                </p>
 
-        <div class="max-w-4xl mx-auto">
-            <!-- Header -->
-            <div class="mb-6">
-                <div class="card p-6">
-                    <h1 class="text-2xl font-bold text-text-primary dark:text-text-inverted mb-2">
-                        Assessment History
-                    </h1>
-                    <div class="text-sm text-text-secondary space-y-1">
-                        <p>
-                            <span class="font-medium">Assessment:</span>
-                            {{ assessment.title }}
+                <div
+                    class="mt-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4"
+                >
+                    <Link
+                        :href="route('student.assessments.show', assessment.id)"
+                        class="inline-flex items-center justify-center min-h-[44px] px-6 rounded-full text-sm font-medium bg-accent-primary text-white hover:bg-accent-muted transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-surface-dark"
+                    >
+                        Take assessment
+                    </Link>
+                    <Link
+                        :href="route('student.assessments.index')"
+                        class="inline-flex items-center justify-center min-h-[44px] px-2 text-sm font-medium text-text-secondary hover:text-text-primary dark:hover:text-text-inverted transition-colors"
+                    >
+                        ← All assessments
+                    </Link>
+                </div>
+            </header>
+
+            <!-- Summary metrics: one band, no card grid -->
+            <section
+                class="mb-12 sm:mb-14 py-6 sm:py-7 border-y border-border-light dark:border-border-dark"
+                aria-label="Summary"
+            >
+                <div
+                    class="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-6 sm:divide-x sm:divide-border-light sm:dark:divide-border-dark"
+                >
+                    <div class="sm:pr-6 sm:first:pl-0">
+                        <p class="text-[11px] font-medium uppercase tracking-[0.12em] text-text-secondary">
+                            Total attempts
                         </p>
-                        <p>
-                            <span class="font-medium">Subject:</span>
-                            {{ assessment.subject.name }}
-                            ({{ assessment.subject.code }})
-                        </p>
-                        <p>
-                            <span class="font-medium">Lesson:</span>
-                            {{ assessment.lesson.title }}
+                        <p
+                            class="mt-2 text-3xl sm:text-4xl font-semibold tabular-nums tracking-tight text-text-primary dark:text-text-inverted"
+                        >
+                            {{ summary.total_attempts }}
                         </p>
                     </div>
-                </div>
-            </div>
-
-            <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div class="card p-4">
-                    <div class="text-sm text-text-secondary mb-1">Total Attempts</div>
-                    <div class="text-2xl font-bold text-text-primary dark:text-text-inverted">
-                        {{ summary.total_attempts }}
+                    <div class="sm:px-6">
+                        <p class="text-[11px] font-medium uppercase tracking-[0.12em] text-text-secondary">
+                            Best score
+                        </p>
+                        <p
+                            class="mt-2 text-3xl sm:text-4xl font-semibold tabular-nums tracking-tight"
+                            :class="getScoreColor(summary.best_score ?? 0)"
+                        >
+                            {{ summary.best_score }}%
+                        </p>
+                        <p
+                            v-if="summary.best_attempt_no"
+                            class="mt-1.5 text-xs text-text-secondary"
+                        >
+                            Attempt {{ summary.best_attempt_no }}
+                        </p>
+                    </div>
+                    <div class="sm:pl-6">
+                        <p class="text-[11px] font-medium uppercase tracking-[0.12em] text-text-secondary">
+                            Last submitted
+                        </p>
+                        <p
+                            class="mt-2 text-base sm:text-lg font-medium text-text-primary dark:text-text-inverted leading-snug"
+                        >
+                            {{ formatDate(summary.latest_attempt_date) || "—" }}
+                        </p>
                     </div>
                 </div>
-                <div class="card p-4">
-                    <div class="text-sm text-text-secondary mb-1">Best Score</div>
-                    <div class="text-2xl font-bold" :class="getScoreColor(summary.best_score)">
-                        {{ summary.best_score }}%
-                    </div>
-                    <div v-if="summary.best_attempt_no" class="text-xs text-text-secondary mt-1">
-                        Attempt #{{ summary.best_attempt_no }}
-                    </div>
+            </section>
+
+            <!-- Attempts -->
+            <section aria-labelledby="attempts-heading">
+                <div class="flex items-end justify-between gap-4 mb-6 sm:mb-8">
+                    <h2
+                        id="attempts-heading"
+                        class="text-lg sm:text-xl font-semibold text-text-primary dark:text-text-inverted tracking-tight"
+                    >
+                        Attempts
+                    </h2>
+                    <span
+                        v-if="hasAttempts"
+                        class="text-xs font-medium tabular-nums text-text-secondary"
+                    >
+                        {{ attempts.length }} record{{ attempts.length !== 1 ? "s" : "" }}
+                    </span>
                 </div>
-                <div class="card p-4">
-                    <div class="text-sm text-text-secondary mb-1">Latest Attempt</div>
-                    <div class="text-sm font-medium text-text-primary dark:text-text-inverted">
-                        {{ formatDate(summary.latest_attempt_date) || 'N/A' }}
+
+                <!-- Empty -->
+                <div
+                    v-if="!hasAttempts"
+                    class="py-16 sm:py-20 px-4 text-center border border-dashed border-border-light dark:border-border-dark rounded-2xl bg-surface-muted/30 dark:bg-surface-dark-muted/20"
+                >
+                    <div
+                        class="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-muted dark:bg-surface-dark-muted text-text-secondary"
+                    >
+                        <svg class="h-7 w-7 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="1.5"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                        </svg>
                     </div>
-                </div>
-            </div>
-
-            <!-- Action Button -->
-            <div class="mb-6">
-                <Link :href="route('student.assessments.show', assessment.id)"
-                    class="inline-flex items-center justify-center px-4 py-2 bg-accent-primary text-white text-sm font-medium rounded-lg hover:bg-accent-muted transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2">
-                    Take Assessment
-                </Link>
-            </div>
-
-            <!-- Attempts List -->
-            <div class="space-y-4">
-                <h2 class="text-xl font-semibold text-text-primary dark:text-text-inverted mb-4">
-                    All Attempts
-                </h2>
-
-                <!-- Empty State -->
-                <div v-if="attempts.length === 0" class="card p-12 text-center text-text-secondary">
-                    <svg class="mx-auto h-16 w-16 mb-4 opacity-50" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h3 class="text-lg font-medium text-text-primary dark:text-text-inverted mb-2">
+                    <h3 class="text-base font-semibold text-text-primary dark:text-text-inverted">
                         No attempts yet
                     </h3>
-                    <p class="text-sm mb-4">
-                        You haven't taken this assessment yet.
+                    <p class="mt-2 text-sm text-text-secondary max-w-sm mx-auto leading-relaxed">
+                        When you complete this assessment, each attempt will appear here with your score and breakdown.
                     </p>
-                    <Link :href="route('student.assessments.show', assessment.id)"
-                        class="inline-flex items-center justify-center px-4 py-2 bg-accent-primary text-white text-sm font-medium rounded-lg hover:bg-accent-muted transition-colors duration-200">
-                        Take Assessment Now
+                    <Link
+                        :href="route('student.assessments.show', assessment.id)"
+                        class="mt-8 inline-flex items-center justify-center min-h-[44px] px-6 rounded-full text-sm font-medium bg-accent-primary text-white hover:bg-accent-muted transition-colors"
+                    >
+                        Start assessment
                     </Link>
                 </div>
 
-                <!-- Attempt Cards -->
-                <div v-for="(attempt, index) in attempts" :key="attempt.id"
-                    class="card p-6 hover:shadow-lg transition-all duration-200"
-                    :class="getScoreBgColor(attempt.score)">
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="flex items-center gap-3">
-                            <div
-                                class="flex-shrink-0 w-10 h-10 rounded-full bg-accent-primary text-white flex items-center justify-center font-bold text-sm">
-                                #{{ attempt.attempt_no }}
-                            </div>
-                            <div>
-                                <div class="flex items-center gap-2 mb-1">
-                                    <h3 class="text-lg font-semibold text-text-primary dark:text-text-inverted">
-                                        Attempt {{ attempt.attempt_no }}
-                                    </h3>
-                                    <span v-if="isBestAttempt(attempt.attempt_no)"
-                                        class="px-2 py-1 text-xs font-medium bg-yellow-500 text-white rounded">
-                                        Best
-                                    </span>
-                                    <span v-if="isLatestAttempt(index)"
-                                        class="px-2 py-1 text-xs font-medium bg-blue-500 text-white rounded">
-                                        Latest
-                                    </span>
-                                </div>
-                                <p class="text-sm text-text-secondary">
-                                    {{ formatDate(attempt.created_at) }}
-                                </p>
-                            </div>
-                        </div>
-                        <div class="text-3xl font-bold" :class="getScoreColor(attempt.score)">
-                            {{ attempt.score }}%
-                        </div>
-                    </div>
-
-                    <!-- Stats -->
-                    <div class="grid grid-cols-4 gap-4 mb-4">
-                        <div>
-                            <div class="text-xs text-text-secondary mb-1">Total</div>
-                            <div class="text-sm font-semibold text-text-primary dark:text-text-inverted">
-                                {{ attempt.total_questions }}
-                            </div>
-                        </div>
-                        <div>
-                            <div class="text-xs text-green-600 dark:text-green-400 mb-1">Correct</div>
-                            <div class="text-sm font-semibold text-green-600 dark:text-green-400">
-                                {{ attempt.correct_answers }}
-                            </div>
-                        </div>
-                        <div>
-                            <div class="text-xs text-red-600 dark:text-red-400 mb-1">Incorrect</div>
-                            <div class="text-sm font-semibold text-red-600 dark:text-red-400">
-                                {{ attempt.wrong_answers }}
-                            </div>
-                        </div>
-                        <div>
-                            <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">No Answer</div>
-                            <div class="text-sm font-semibold text-gray-600 dark:text-gray-400">
-                                {{ attempt.no_answer }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- View Results Button -->
-                    <div class="pt-4 border-t border-border-light dark:border-border-dark flex flex-wrap items-center gap-3">
-                        <Link :href="route('student.assessments.results', {
-                            assessment: assessment.id,
-                            attempt: attempt.id
-                        })"
-                            class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 text-accent-primary border border-accent-primary text-sm font-medium rounded-lg hover:bg-accent-primary hover:text-white transition-colors duration-200">
-                            View Results
-                        </Link>
-
-                        <!-- Accordion: Adaptive assessments from this attempt -->
-                        <div v-if="hasAdaptives(attempt)" class="w-full mt-3">
-                            <button
-                                type="button"
-                                @click="toggleAccordion(attempt.id)"
-                                class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg bg-accent-primary/10 dark:bg-accent-primary/20 border border-accent-primary/30 text-left text-sm font-medium text-text-primary dark:text-text-inverted hover:bg-accent-primary/20 dark:hover:bg-accent-primary/30 transition-colors"
-                            >
-                                <span class="flex items-center gap-2">
-                                    <svg
-                                        class="w-4 h-4 text-accent-primary"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                    </svg>
-                                    Adaptive assessments from this attempt ({{ attempt.adaptive_assessments.length }})
-                                </span>
-                                <svg
-                                    class="w-5 h-5 text-accent-primary transition-transform"
-                                    :class="{ 'rotate-180': isAccordionOpen(attempt.id) }"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                            <div
-                                v-show="isAccordionOpen(attempt.id)"
-                                class="mt-2 pl-4 space-y-2 border-l-2 border-accent-primary/30"
-                            >
+                <!-- List -->
+                <ul v-else class="space-y-4 sm:space-y-5 list-none p-0 m-0">
+                    <li v-for="(attempt, index) in attempts" :key="attempt.id">
+                        <article
+                            class="rounded-2xl border border-border-light dark:border-border-dark bg-surface dark:bg-surface-dark-muted overflow-hidden transition-shadow hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:hover:shadow-none"
+                            :class="['border-l-[3px]', scoreAccentBorder(attempt.score)]"
+                        >
+                            <!-- Top row: meta + score -->
+                            <div class="p-5 sm:p-6 sm:pb-5">
                                 <div
-                                    v-for="adaptive in attempt.adaptive_assessments"
-                                    :key="adaptive.id"
-                                    class="py-2"
+                                    class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
                                 >
-                                    <div class="text-sm text-text-secondary mb-1">
-                                        {{ adaptive.title }}
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                                            <span
+                                                class="inline-flex items-center justify-center min-w-[2rem] h-8 px-2 rounded-lg text-xs font-semibold tabular-nums bg-surface-muted dark:bg-surface-dark text-text-primary dark:text-text-inverted"
+                                            >
+                                                #{{ attempt.attempt_no }}
+                                            </span>
+                                            <span
+                                                v-if="isBestAttempt(attempt.attempt_no)"
+                                                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ring-amber-500/35 text-amber-800 dark:text-amber-200 bg-amber-500/10"
+                                            >
+                                                Best
+                                            </span>
+                                            <span
+                                                v-if="isLatestAttempt(index)"
+                                                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ring-sky-500/35 text-sky-800 dark:text-sky-200 bg-sky-500/10"
+                                            >
+                                                Latest
+                                            </span>
+                                        </div>
+                                        <time
+                                            class="text-sm text-text-secondary tabular-nums"
+                                            :datetime="attempt.created_at"
+                                        >
+                                            {{ formatDate(attempt.created_at) }}
+                                        </time>
                                     </div>
-                                    <div class="flex items-center gap-2 text-xs text-text-secondary mb-2">
-                                        {{ formatDate(adaptive.created_at) }}
+                                    <div class="flex sm:flex-col sm:items-end gap-1 sm:text-right shrink-0">
+                                        <span
+                                            class="text-4xl sm:text-[2.75rem] font-semibold tabular-nums leading-none tracking-tight"
+                                            :class="getScoreColor(attempt.score)"
+                                        >
+                                            {{ attempt.score }}%
+                                        </span>
+                                        <span class="text-[11px] uppercase tracking-wider text-text-secondary sm:mt-1">
+                                            Score
+                                        </span>
                                     </div>
+                                </div>
+
+                                <!-- Metrics: inline, scannable -->
+                                <dl
+                                    class="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm border-t border-border-light/80 dark:border-border-dark/80 pt-5"
+                                >
+                                    <div class="flex items-baseline gap-2">
+                                        <dt class="text-text-secondary">Total</dt>
+                                        <dd class="font-semibold tabular-nums text-text-primary dark:text-text-inverted">
+                                            {{ attempt.total_questions }}
+                                        </dd>
+                                    </div>
+                                    <div class="flex items-baseline gap-2">
+                                        <dt class="text-emerald-600 dark:text-emerald-400">Correct</dt>
+                                        <dd class="font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                                            {{ attempt.correct_answers }}
+                                        </dd>
+                                    </div>
+                                    <div class="flex items-baseline gap-2">
+                                        <dt class="text-rose-600 dark:text-rose-400">Incorrect</dt>
+                                        <dd class="font-semibold tabular-nums text-rose-600 dark:text-rose-400">
+                                            {{ attempt.wrong_answers }}
+                                        </dd>
+                                    </div>
+                                    <div class="flex items-baseline gap-2">
+                                        <dt class="text-text-secondary">Unanswered</dt>
+                                        <dd class="font-semibold tabular-nums text-text-primary dark:text-text-inverted">
+                                            {{ attempt.no_answer }}
+                                        </dd>
+                                    </div>
+                                </dl>
+                            </div>
+
+                            <!-- Actions -->
+                            <div
+                                class="px-5 sm:px-6 py-4 bg-surface-muted/40 dark:bg-surface-dark/40 border-t border-border-light/70 dark:border-border-dark/70"
+                            >
+                                <div class="flex flex-col gap-3">
                                     <Link
-                                        :href="route('student.assessments.show', adaptive.id)"
-                                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-accent-primary text-white hover:bg-accent-muted"
+                                        :href="
+                                            route('student.assessments.results', {
+                                                assessment: assessment.id,
+                                                attempt: attempt.id,
+                                            })
+                                        "
+                                        class="inline-flex w-full sm:w-auto sm:min-w-[10rem] items-center justify-center min-h-[44px] px-5 rounded-full text-sm font-medium border border-accent-primary text-accent-primary hover:bg-accent-primary hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-surface-dark"
                                     >
-                                        Take Assessment
+                                        View results
                                     </Link>
-                                    <Link
-                                        :href="route('student.assessments.history', adaptive.id)"
-                                        class="inline-flex items-center px-3 py-1.5 ml-2 text-xs font-medium rounded-lg border border-border-light dark:border-border-dark text-text-primary dark:text-text-inverted hover:bg-surface-muted dark:hover:bg-surface-dark-muted"
-                                    >
-                                        View History
-                                    </Link>
+
+                                    <div v-if="hasAdaptives(attempt)" class="w-full">
+                                        <button
+                                            type="button"
+                                            class="flex w-full items-center justify-between gap-3 min-h-[44px] px-3 -mx-1 text-left text-sm font-medium text-text-primary dark:text-text-inverted rounded-lg hover:bg-surface-muted/80 dark:hover:bg-surface-dark-muted/50 transition-colors"
+                                            :aria-expanded="isAccordionOpen(attempt.id)"
+                                            :aria-controls="`adaptive-${attempt.id}`"
+                                            @click="toggleAccordion(attempt.id)"
+                                        >
+                                            <span class="flex items-center gap-2 min-w-0">
+                                                <svg
+                                                    class="h-4 w-4 shrink-0 text-accent-primary opacity-80"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                    aria-hidden="true"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                                    />
+                                                </svg>
+                                                <span class="truncate">
+                                                    Adaptive follow-ups
+                                                    <span class="text-text-secondary font-normal">
+                                                        ({{ countTotalAdaptives(attempt.adaptive_assessments) }})
+                                                    </span>
+                                                </span>
+                                            </span>
+                                            <svg
+                                                class="h-5 w-5 shrink-0 text-text-secondary transition-transform duration-200"
+                                                :class="{ 'rotate-180': isAccordionOpen(attempt.id) }"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                                aria-hidden="true"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M19 9l-7 7-7-7"
+                                                />
+                                            </svg>
+                                        </button>
+                                        <div
+                                            :id="`adaptive-${attempt.id}`"
+                                            v-show="isAccordionOpen(attempt.id)"
+                                            class="mt-3 pl-1 border-l border-border-light dark:border-border-dark ml-1.5"
+                                        >
+                                            <div class="pl-4 py-1">
+                                                <AdaptiveTree
+                                                    :adaptives="attempt.adaptive_assessments"
+                                                    :formatDate="formatDate"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                        </article>
+                    </li>
+                </ul>
+            </section>
         </div>
     </StudentLayout>
 </template>

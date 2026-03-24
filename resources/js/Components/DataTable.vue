@@ -13,8 +13,8 @@ defineProps({
 </script>
 
 <template>
-    <div class="card p-4 h-full flex flex-col">
-        <div class="overflow-x-auto flex-1">
+    <div class="card p-4 h-full flex flex-col min-w-0">
+        <div class="overflow-x-auto flex-1 min-w-0 w-full">
             <table class="min-w-full text-sm">
                 <thead class="bg-surface-muted dark:bg-surface-dark-muted">
                     <tr>

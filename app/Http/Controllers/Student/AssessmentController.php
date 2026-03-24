@@ -255,13 +255,67 @@ class AssessmentController extends Controller
 
         $totalQuestions = $assessment->items->count();
 
-        // Load adaptive assessments generated from this assessment, grouped by source attempt
+        // Recursive helper to load the full tree of adaptive assessments
+        $loadAdaptiveTree = function ($assessment) use (&$loadAdaptiveTree, $student) {
+            return $assessment->children()
+                ->where('type', 'adaptive')
+                ->orderBy('created_at')
+                ->get()
+                ->map(function ($child) use (&$loadAdaptiveTree, $student) {
+                    $latestAttempt = $child->attempts()
+                        ->where('student_id', $student->id)
+                        ->latest()
+                        ->first();
+
+                    $score = null;
+                    if ($latestAttempt) {
+                        $totalItems = max($child->items()->count(), 1);
+                        $correct = $latestAttempt->answers()->where('correct_answer', true)->count();
+                        $score = round(($correct / $totalItems) * 100, 2);
+                    }
+
+                    return [
+                        'id' => $child->id,
+                        'title' => $child->title,
+                        'created_at' => $child->created_at,
+                        'score' => $score,
+                        'children' => $loadAdaptiveTree($child),
+                    ];
+                })
+                ->values()
+                ->all();
+        };
+
+        // Load direct adaptive assessments grouped by source_attempt_id, and include their nested children
         $adaptivesByAttemptId = Assessment::where('parent_assessment_id', $assessment->id)
             ->whereNotNull('source_attempt_id')
             ->where('type', 'adaptive')
             ->orderBy('created_at')
             ->get()
-            ->groupBy('source_attempt_id');
+            ->groupBy('source_attempt_id')
+            ->map(function ($group) use (&$loadAdaptiveTree, $student) {
+                return $group->map(function ($adaptive) use (&$loadAdaptiveTree, $student) {
+                    $latestAttempt = $adaptive->attempts()
+                        ->where('student_id', $student->id)
+                        ->latest()
+                        ->first();
+
+                    $score = null;
+                    if ($latestAttempt) {
+                        $totalItems = max($adaptive->items()->count(), 1);
+                        $correct = $latestAttempt->answers()->where('correct_answer', true)->count();
+                        $score = round(($correct / $totalItems) * 100, 2);
+                    }
+
+                    return [
+                        'id' => $adaptive->id,
+                        'title' => $adaptive->title,
+                        'created_at' => $adaptive->created_at,
+                        'score' => $score,
+                        'children' => $loadAdaptiveTree($adaptive),
+                    ];
+                })->values()->all();
+            });
 
         // Process each attempt to calculate scores and stats
         $attemptsData = $attempts->map(function ($attempt) use ($totalQuestions, $adaptivesByAttemptId) {
@@ -272,13 +326,8 @@ class AssessmentController extends Controller
             $noAnswer = $attempt->answers->whereNull('choices')->count();
             $score = $totalQuestions > 0 ? round(($correctAnswers / $totalQuestions) * 100, 2) : 0;
 
-            $adaptiveList = $adaptivesByAttemptId->get($attempt->id, collect())->map(function ($adaptive) {
-                return [
-                    'id' => $adaptive->id,
-                    'title' => $adaptive->title,
-                    'created_at' => $adaptive->created_at,
-                ];
-            })->values()->all();
+            // Get the adaptive tree for this attempt
+            $adaptiveList = $adaptivesByAttemptId->get($attempt->id, []);
 
             return [
                 'id' => $attempt->id,
@@ -399,7 +448,7 @@ class AssessmentController extends Controller
                 'no_answer' => $noAnswer,
                 'score' => $score,
             ],
-            'show_adaptive_button' => $score < 100,
+            'show_adaptive_button' => $score < 100 && !empty($assessment->lesson->extracted_content),
             'has_wrong_answers' => $wrongAnswers > 0,
             'items' => $items,
         ]);

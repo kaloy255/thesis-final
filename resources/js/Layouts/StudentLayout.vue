@@ -17,6 +17,7 @@ const theme = useTheme();
 const sidebarOpen = ref(false);
 const profileOpen = ref(false);
 const profileDropdownRef = ref(null);
+const showBackToTop = ref(false);
 
 const navItems = [
     { name: "Dashboard", route: "student.dashboard" },
@@ -31,11 +32,7 @@ const isActive = (routeName) => {
 const userName = computed(() => page.props.auth?.user?.name || "Student");
 const userInitials = computed(() => {
     const name = userName.value;
-    const parts = name.split(" ").filter(Boolean);
-    if (parts.length >= 2) {
-        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
+    return name ? name.charAt(0).toUpperCase() : "?";
 });
 
 // Close profile dropdown when clicking outside
@@ -47,11 +44,22 @@ const handleClickOutside = (e) => {
 
 onMounted(() => {
     document.addEventListener("click", handleClickOutside);
+    window.addEventListener("scroll", handleScrollVisibility, { passive: true });
+    handleScrollVisibility();
 });
 
 onUnmounted(() => {
     document.removeEventListener("click", handleClickOutside);
+    window.removeEventListener("scroll", handleScrollVisibility);
 });
+
+const handleScrollVisibility = () => {
+    showBackToTop.value = window.scrollY > 250;
+};
+
+const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+};
 </script>
 
 <template>
@@ -82,7 +90,7 @@ onUnmounted(() => {
             </div>
 
             <!-- Mobile right section -->
-            <div class="flex items-center gap-2">
+            <div class="flex items-center justify-end gap-2">
                 <NotificationDropdown role="student" />
                 <button
                     @click="toggleTheme"
@@ -155,20 +163,58 @@ onUnmounted(() => {
                 </div>
 
                 <!-- Navigation -->
-                <nav class="flex-1 p-4 space-y-1">
-                    <Link
-                        v-for="item in navItems"
-                        :key="item.route"
-                        :href="route(item.route)"
-                        :class="[
-                            'flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors',
-                            isActive(item.route)
-                                ? 'bg-accent-primary text-white'
-                                : 'text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-dark-muted hover:text-text-primary dark:hover:text-text-inverted',
-                        ]"
-                    >
-                        {{ item.name }}
-                    </Link>
+                <nav class="flex-1 flex flex-col min-h-0 p-4">
+                    <div class="flex-1 min-h-0 overflow-y-auto space-y-1">
+                        <Link
+                            v-for="item in navItems"
+                            :key="item.route"
+                            :href="route(item.route)"
+                            @click="sidebarOpen = false"
+                            :class="[
+                                'flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors',
+                                isActive(item.route)
+                                    ? 'bg-accent-primary text-white'
+                                    : 'text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-dark-muted hover:text-text-primary dark:hover:text-text-inverted',
+                            ]"
+                        >
+                            {{ item.name }}
+                        </Link>
+                    </div>
+
+                    <!-- Mobile: Profile & Logout (pinned to bottom) -->
+                    <div class="lg:hidden mt-auto pt-4 border-t border-border-light dark:border-border-dark space-y-1">
+                        <Link
+                            :href="route('student.settings')"
+                            @click="sidebarOpen = false"
+                            :class="[
+                                'flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors',
+                                isActive('student.settings')
+                                    ? 'bg-accent-primary text-white'
+                                    : 'text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-dark-muted hover:text-text-primary dark:hover:text-text-inverted',
+                            ]"
+                        >
+                            <svg class="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Profile
+                        </Link>
+                        <form :action="route('logout')" method="POST" class="w-full" @submit="sidebarOpen = false">
+                            <input type="hidden" name="_token" :value="$page.props.csrf_token" />
+                            <button
+                                type="submit"
+                                class="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left"
+                            >
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                Logout
+                            </button>
+                        </form>
+                    </div>
                 </nav>
             </div>
         </aside>
@@ -313,5 +359,17 @@ onUnmounted(() => {
                 </div>
             </main>
         </div>
+        <button
+            v-if="showBackToTop"
+            type="button"
+            class="fixed bottom-24 right-4 sm:right-6 lg:bottom-6 z-[55] inline-flex items-center justify-center w-11 h-11 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            aria-label="Back to top"
+            title="Back to top"
+            @click="scrollToTop"
+        >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+            </svg>
+        </button>
     </div>
 </template>
