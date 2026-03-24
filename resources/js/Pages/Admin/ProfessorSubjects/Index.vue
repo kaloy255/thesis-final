@@ -47,6 +47,7 @@ const hasActiveFilters = computed(
 );
 const detailsSectionRef = ref(null);
 const isDetailsStuck = ref(false);
+const STICKY_RELEASE_OFFSET = 8;
 
 const applyFilters = () => {
     router.get(route("admin.assignments.index"), {
@@ -71,7 +72,15 @@ const updateStickyState = () => {
     const el = detailsSectionRef.value;
     if (!el) return;
     const stickyTop = Number.parseFloat(window.getComputedStyle(el).top || "0") || 0;
-    isDetailsStuck.value = el.getBoundingClientRect().top <= stickyTop + 0.5;
+    const rectTop = el.getBoundingClientRect().top;
+
+    if (isDetailsStuck.value) {
+        if (rectTop > stickyTop + STICKY_RELEASE_OFFSET) {
+            isDetailsStuck.value = false;
+        }
+    } else if (rectTop <= stickyTop + 0.5) {
+        isDetailsStuck.value = true;
+    }
 };
 
 onMounted(() => {
@@ -262,79 +271,71 @@ const formatDate = (dateString) => {
     <AdminLayout>
         <Head title="Assignments" />
 
-        <!-- Sticky Header + Filters -->
-        <div ref="detailsSectionRef" class="sticky top-[64px] z-40 mb-6 pb-2">
+        <!-- Header Section -->
+        <div class="p-3 sm:p-4 mb-2">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-4">
+                <div class="w-full sm:w-auto">
+                    <h1 class="text-lg sm:text-2xl font-semibold text-text-primary dark:text-text-inverted mb-1">
+                        Assignments
+                    </h1>
+                    <p class="text-xs sm:text-sm text-text-secondary">
+                        Manage instructor assignments per subject
+                    </p>
+                </div>
+                <div class="flex w-full sm:w-auto">
+                    <button
+                        @click="openImportModal"
+                        class="inline-flex w-full sm:w-auto justify-center items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-surface dark:bg-surface-dark-muted text-text-secondary border border-border-light dark:border-border-dark text-xs sm:text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200 whitespace-nowrap"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        Import Assigned
+                    </button>
+                </div>
+            </div>
+            <div class="w-full sm:w-64">
+                <label class="block text-xs font-medium text-text-secondary mb-1.5">
+                    Filter by subject
+                </label>
+                <SearchableSelect
+                    v-model="subjectFilterId"
+                    :options="subjectFilterOptions"
+                    placeholder="Filter by subject..."
+                />
+            </div>
+        </div>
+
+        <!-- Sticky Search -->
+        <div ref="detailsSectionRef" class="sticky top-[64px] z-40 mb-6">
             <div
                 :class="[
-                    'rounded-b-xl rounded-t-none transition-all duration-200',
+                    'rounded-lg transition-all duration-200',
                     isDetailsStuck
-                        ? 'px-3 py-2 sm:p-4 bg-white/95 dark:bg-slate-900/95 border border-border-light dark:border-slate-700 shadow-md backdrop-blur-sm'
-                        : 'p-3 sm:p-4 bg-transparent border border-transparent shadow-none',
+                        ? 'px-3 py-2 sm:px-4 sm:py-3 bg-white/95 dark:bg-slate-900/95 border border-border-light dark:border-slate-700 shadow-md backdrop-blur-sm'
+                        : '',
                 ]"
             >
-                <!-- Header -->
-                <div v-if="!isDetailsStuck" :class="isDetailsStuck ? 'mb-2 sm:mb-4' : 'mb-4'">
-                    <div :class="['flex flex-col sm:flex-row sm:items-center justify-between', isDetailsStuck ? 'gap-2 sm:gap-4' : 'gap-4']">
-                        <div class="w-full sm:w-auto">
-                            <h1 :class="['font-semibold text-text-primary dark:text-text-inverted', isDetailsStuck ? 'text-xl sm:text-2xl mb-0.5 sm:mb-1' : 'text-2xl mb-1']">
-                                Assignments
-                            </h1>
-                            <p :class="['text-text-secondary', isDetailsStuck ? 'text-xs sm:text-sm' : 'text-sm']">
-                                Manage instructor assignments per subject
-                            </p>
-                        </div>
-                        <div class="grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-                            <button
-                                @click="openImportModal"
-                                :class="['col-span-2 sm:col-auto inline-flex w-full sm:w-auto justify-center items-center px-4 bg-surface dark:bg-surface-dark-muted text-text-secondary border border-border-light dark:border-border-dark text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200', isDetailsStuck ? 'gap-1.5 py-2' : 'gap-2 py-2.5']"
-                            >
-                                <svg :class="isDetailsStuck ? 'w-4 h-4' : 'w-5 h-5'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                                </svg>
-                                Import Assigned
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Filters -->
-                <div :class="['flex flex-col sm:flex-row', isDetailsStuck ? 'gap-2 sm:gap-4' : 'gap-4']">
-                    <div class="flex-1 min-w-0">
-                        <label :class="['block text-xs font-medium text-text-secondary', isDetailsStuck ? 'mb-1' : 'mb-1.5']">
-                            Search
-                        </label>
-                        <div class="relative">
-                            <svg
-                                class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                />
-                            </svg>
-                            <input
-                                v-model="searchQuery"
-                                type="text"
-                                placeholder="Search subjects or instructors..."
-                                :class="['w-full pl-10 pr-4 text-sm border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all', isDetailsStuck ? 'py-2' : 'py-2.5']"
-                            />
-                        </div>
-                    </div>
-                    <div v-if="!isDetailsStuck" class="w-full sm:w-64">
-                        <label :class="['block text-xs font-medium text-text-secondary', isDetailsStuck ? 'mb-1' : 'mb-1.5']">
-                            Filter by subject
-                        </label>
-                        <SearchableSelect
-                            v-model="subjectFilterId"
-                            :options="subjectFilterOptions"
-                            placeholder="Filter by subject..."
+                <div class="relative w-full sm:max-w-md">
+                    <svg
+                        class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                         />
-                    </div>
+                    </svg>
+                    <input
+                        v-model="searchQuery"
+                        type="text"
+                        placeholder="Search subjects or instructors..."
+                        class="w-full pl-10 pr-4 py-2 text-sm border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+                    />
                 </div>
             </div>
         </div>

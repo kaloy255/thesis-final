@@ -41,6 +41,7 @@ const importForm = useForm({
 const searchQuery = ref(props.filters?.search || "");
 const detailsSectionRef = ref(null);
 const isDetailsStuck = ref(false);
+const STICKY_RELEASE_OFFSET = 8;
 let searchTimeout = null;
 
 watch(searchQuery, (newValue) => {
@@ -49,6 +50,7 @@ watch(searchQuery, (newValue) => {
         router.get(route("admin.departments.index"), { search: newValue, per_page: props.filters?.per_page || 10 }, {
             preserveState: true,
             preserveScroll: true,
+            replace: true,
         });
     }, 300);
 });
@@ -57,7 +59,15 @@ const updateStickyState = () => {
     const el = detailsSectionRef.value;
     if (!el) return;
     const stickyTop = Number.parseFloat(window.getComputedStyle(el).top || "0") || 0;
-    isDetailsStuck.value = el.getBoundingClientRect().top <= stickyTop + 0.5;
+    const rectTop = el.getBoundingClientRect().top;
+
+    if (isDetailsStuck.value) {
+        if (rectTop > stickyTop + STICKY_RELEASE_OFFSET) {
+            isDetailsStuck.value = false;
+        }
+    } else if (rectTop <= stickyTop + 0.5) {
+        isDetailsStuck.value = true;
+    }
 };
 
 onMounted(() => {
@@ -243,82 +253,80 @@ const formatDate = (dateString) => {
     <AdminLayout>
         <Head title="Departments" />
         
-        <div ref="detailsSectionRef" class="sticky top-[64px] z-40 mb-6 pb-2">
+        <!-- Header Section -->
+        <div class="p-2.5 sm:p-4 mb-2">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                <div class="w-full sm:w-auto">
+                    <h1 class="text-lg sm:text-2xl font-semibold text-text-primary dark:text-text-inverted mb-1">
+                        Departments
+                    </h1>
+                    <p class="text-xs sm:text-sm text-text-secondary">
+                        Manage academic departments
+                    </p>
+                </div>
+                <div class="grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                    <button
+                        @click="openImportModal"
+                        class="inline-flex w-full sm:w-auto justify-center items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-surface dark:bg-surface-dark-muted text-text-secondary border border-border-light dark:border-border-dark text-xs sm:text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200 whitespace-nowrap"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        Import
+                    </button>
+                    <button
+                        @click="openCreateModal"
+                        class="inline-flex w-full sm:w-auto justify-center items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-indigo-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200 whitespace-nowrap"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span class="sm:hidden">Add Dept</span>
+                        <span class="hidden sm:inline">Add Department</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sticky Search -->
+        <div ref="detailsSectionRef" class="sticky top-[64px] z-40 mb-6">
             <div
                 :class="[
-                    'rounded-b-xl rounded-t-none transition-all duration-200',
+                    'rounded-lg transition-all duration-200',
                     isDetailsStuck
-                        ? 'px-2.5 py-2 sm:p-4 bg-white/95 dark:bg-slate-900/95 border border-border-light dark:border-slate-700 shadow-md backdrop-blur-sm'
-                        : 'p-2.5 sm:p-4 bg-transparent border border-transparent shadow-none',
+                        ? 'px-3 py-2 sm:px-4 sm:py-3 bg-white/95 dark:bg-slate-900/95 border border-border-light dark:border-slate-700 shadow-md backdrop-blur-sm'
+                        : '',
                 ]"
             >
-                <!-- Header Section -->
-                <div v-if="!isDetailsStuck" :class="isDetailsStuck ? 'mb-1.5 sm:mb-4' : 'mb-2.5 sm:mb-4'">
-                    <div :class="['flex flex-col sm:flex-row sm:items-center justify-between', isDetailsStuck ? 'gap-1.5 sm:gap-4' : 'gap-2 sm:gap-4']">
-                        <div class="w-full sm:w-auto">
-                            <h1 :class="['font-semibold text-text-primary dark:text-text-inverted', isDetailsStuck ? 'text-lg sm:text-2xl mb-0.5 sm:mb-1' : 'text-lg sm:text-2xl mb-1']">
-                                Departments
-                            </h1>
-                            <p :class="['text-text-secondary', isDetailsStuck ? 'text-xs sm:text-sm' : 'text-xs sm:text-sm']">
-                                Manage academic departments
-                            </p>
-                        </div>
-                        <div class="grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-                            <button
-                                @click="openImportModal"
-                                :class="['inline-flex w-full sm:w-auto justify-center items-center px-3 sm:px-4 bg-surface dark:bg-surface-dark-muted text-text-secondary border border-border-light dark:border-border-dark text-xs sm:text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200 whitespace-nowrap', isDetailsStuck ? 'gap-1 py-1.5 sm:py-2' : 'gap-1.5 py-2 sm:py-2.5']"
-                            >
-                                <svg :class="isDetailsStuck ? 'w-4 h-4' : 'w-5 h-5'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                                </svg>
-                                Import
-                            </button>
-                            <button
-                                @click="openCreateModal"
-                                :class="['inline-flex w-full sm:w-auto justify-center items-center px-3 sm:px-4 bg-indigo-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200 whitespace-nowrap', isDetailsStuck ? 'gap-1 py-1.5 sm:py-2' : 'gap-1.5 py-2 sm:py-2.5']"
-                            >
-                                <svg :class="isDetailsStuck ? 'w-4 h-4' : 'w-5 h-5'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                </svg>
-                                <span class="sm:hidden">Add Dept</span>
-                                <span class="hidden sm:inline">Add Department</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Search Bar -->
-                <div>
-                    <div class="relative w-full sm:max-w-md">
-                        <svg
-                            class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                            />
-                        </svg>
-                        <input
-                            id="search"
-                            v-model="searchQuery"
-                            type="text"
-                            placeholder="Search departments by name..."
-                            :class="['w-full pl-10 pr-4 text-sm border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all', isDetailsStuck ? 'py-2' : 'py-2.5']"
+                <div class="relative w-full sm:max-w-md">
+                    <svg
+                        class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                         />
-                    </div>
+                    </svg>
+                    <input
+                        id="search"
+                        v-model="searchQuery"
+                        type="text"
+                        placeholder="Search departments by name..."
+                        class="w-full pl-10 pr-4 py-2 text-sm border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+                    />
                 </div>
             </div>
         </div>
 
         <!-- Departments List -->
-        <div class="bg-surface dark:bg-surface-dark-muted min-h-[calc(100vh-300px)] relative flex flex-col justify-between rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden min-w-0">
+        <div class="bg-surface dark:bg-surface-dark-muted min-h-[calc(100vh-300px)] flex flex-col justify-between rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden min-w-0">
             <!-- Empty State -->
-            <div v-if="!hasDepartments" class="p-12 text-center absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%]" >
+            <div v-if="!hasDepartments" class="p-8 sm:p-12 text-center min-h-[20rem] flex flex-col items-center justify-center">
                 <svg class="mx-auto h-12 w-12 text-text-secondary mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
