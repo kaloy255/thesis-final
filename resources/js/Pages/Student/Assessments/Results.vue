@@ -337,7 +337,7 @@ const questionStatusAccent = (item) => {
                         :disabled="adaptiveForm.processing || showProcessingModal"
                         @click="openAdaptiveModal"
                     >
-                        Customize
+                        Generate Adaptive
                     </button>
                 </div>
                 <p
