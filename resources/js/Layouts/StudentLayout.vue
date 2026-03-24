@@ -131,93 +131,95 @@ const scrollToTop = () => {
         <!-- Sidebar -->
         <aside
             :class="[
-                'fixed top-0 left-0 z-50 h-screen w-64 transition-transform',
+                'fixed left-0 top-0 z-50 w-64 max-h-[100dvh] h-[100dvh] transition-transform',
                 'bg-white dark:bg-surface-dark',
                 'border-r border-border-light dark:border-border-dark',
+                'flex flex-col min-h-0',
                 sidebarOpen
                     ? 'translate-x-0'
                     : '-translate-x-full lg:translate-x-0',
             ]"
         >
-            <div class="flex h-full min-h-0 flex-col">
-                <!-- Logo -->
-                <div
-                    class="shrink-0 border-b border-border-light p-6 dark:border-border-dark"
+            <!-- Logo: fixed height -->
+            <div
+                class="shrink-0 border-b border-border-light p-6 dark:border-border-dark"
+            >
+                <Link
+                    :href="route('student.dashboard')"
+                    class="flex items-center gap-3"
                 >
-                    <Link
-                        :href="route('student.dashboard')"
-                        class="flex items-center gap-3"
-                    >
-                        <ApplicationLogo class="h-10 w-10" />
-                        <div>
-                            <div
-                                class="font-bold text-text-primary dark:text-text-inverted"
-                            >
-                                CHCC
-                            </div>
-                            <div class="text-xs text-text-secondary">
-                                Student Portal
-                            </div>
+                    <ApplicationLogo class="h-10 w-10" />
+                    <div>
+                        <div
+                            class="font-bold text-text-primary dark:text-text-inverted"
+                        >
+                            CHCC
                         </div>
-                    </Link>
-                </div>
-
-                <!-- Navigation: scrollable links + fixed footer (Profile/Logout) on mobile -->
-                <nav class="flex min-h-0 flex-1 flex-col p-4">
-                    <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-1">
-                        <Link
-                            v-for="item in navItems"
-                            :key="item.route"
-                            :href="route(item.route)"
-                            @click="sidebarOpen = false"
-                            :class="[
-                                'flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors',
-                                isActive(item.route)
-                                    ? 'bg-accent-primary text-white'
-                                    : 'text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-dark-muted hover:text-text-primary dark:hover:text-text-inverted',
-                            ]"
-                        >
-                            {{ item.name }}
-                        </Link>
+                        <div class="text-xs text-text-secondary">
+                            Student Portal
+                        </div>
                     </div>
+                </Link>
+            </div>
 
-                    <!-- Mobile: Profile & Logout (always visible — shrink-0 keeps it above safe area) -->
-                    <div
-                        class="shrink-0 space-y-1 border-t border-border-light pt-4 dark:border-border-dark lg:hidden pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            <!-- Main links only: scrolls — hindi kasama ang Logout dito -->
+            <nav
+                class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-1"
+                aria-label="Main navigation"
+            >
+                <Link
+                    v-for="item in navItems"
+                    :key="item.route"
+                    :href="route(item.route)"
+                    @click="sidebarOpen = false"
+                    :class="[
+                        'flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors',
+                        isActive(item.route)
+                            ? 'bg-accent-primary text-white'
+                            : 'text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-dark-muted hover:text-text-primary dark:hover:text-text-inverted',
+                    ]"
+                >
+                    {{ item.name }}
+                </Link>
+            </nav>
+
+            <!-- Mobile: Profile + Logout — hiwalay sa nav, laging nakadikit sa ilalim ng drawer -->
+            <div
+                class="shrink-0 border-t border-border-light bg-white px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-4 dark:border-border-dark dark:bg-surface-dark lg:hidden"
+            >
+                <div class="space-y-1">
+                    <Link
+                        :href="route('student.settings')"
+                        @click="sidebarOpen = false"
+                        :class="[
+                            'flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors',
+                            isActive('student.settings')
+                                ? 'bg-accent-primary text-white'
+                                : 'text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-dark-muted hover:text-text-primary dark:hover:text-text-inverted',
+                        ]"
                     >
-                        <Link
-                            :href="route('student.settings')"
-                            @click="sidebarOpen = false"
-                            :class="[
-                                'flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors',
-                                isActive('student.settings')
-                                    ? 'bg-accent-primary text-white'
-                                    : 'text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-dark-muted hover:text-text-primary dark:hover:text-text-inverted',
-                            ]"
+                        <svg class="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Profile
+                    </Link>
+                    <form :action="route('logout')" method="POST" class="w-full" @submit="sidebarOpen = false">
+                        <input type="hidden" name="_token" :value="$page.props.csrf_token" />
+                        <button
+                            type="submit"
+                            class="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                         >
-                            <svg class="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
-                            Profile
-                        </Link>
-                        <form :action="route('logout')" method="POST" class="w-full" @submit="sidebarOpen = false">
-                            <input type="hidden" name="_token" :value="$page.props.csrf_token" />
-                            <button
-                                type="submit"
-                                class="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left"
-                            >
-                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                </svg>
-                                Logout
-                            </button>
-                        </form>
-                    </div>
-                </nav>
+                            Logout
+                        </button>
+                    </form>
+                </div>
             </div>
         </aside>
 
