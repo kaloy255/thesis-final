@@ -266,29 +266,29 @@ const formatDate = (dateString) => {
         <div ref="detailsSectionRef" class="sticky top-[64px] z-40 mb-6 pb-2">
             <div
                 :class="[
-                    'rounded-b-xl rounded-t-none p-3 sm:p-4 transition-all duration-200',
+                    'rounded-b-xl rounded-t-none transition-all duration-200',
                     isDetailsStuck
-                        ? 'bg-white/95 dark:bg-slate-900/95 border border-border-light dark:border-slate-700 shadow-md backdrop-blur-sm'
-                        : 'bg-transparent border border-transparent shadow-none',
+                        ? 'px-3 py-2 sm:p-4 bg-white/95 dark:bg-slate-900/95 border border-border-light dark:border-slate-700 shadow-md backdrop-blur-sm'
+                        : 'p-3 sm:p-4 bg-transparent border border-transparent shadow-none',
                 ]"
             >
                 <!-- Header -->
-                <div class="mb-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div :class="isDetailsStuck ? 'mb-2 sm:mb-4' : 'mb-4'">
+                    <div :class="['flex flex-col sm:flex-row sm:items-center justify-between', isDetailsStuck ? 'gap-2 sm:gap-4' : 'gap-4']">
                         <div class="w-full sm:w-auto">
-                            <h1 class="text-2xl font-semibold text-text-primary dark:text-text-inverted mb-1">
+                            <h1 :class="['font-semibold text-text-primary dark:text-text-inverted', isDetailsStuck ? 'text-xl sm:text-2xl mb-0.5 sm:mb-1' : 'text-2xl mb-1']">
                                 Assignments
                             </h1>
-                            <p class="text-sm text-text-secondary">
+                            <p :class="['text-text-secondary', isDetailsStuck ? 'text-xs sm:text-sm' : 'text-sm']">
                                 Manage instructor assignments per subject
                             </p>
                         </div>
-                        <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                        <div class="grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                             <button
                                 @click="openImportModal"
-                                class="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-4 py-2.5 bg-surface dark:bg-surface-dark-muted text-text-secondary border border-border-light dark:border-border-dark text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
+                                :class="['col-span-2 sm:col-auto inline-flex w-full sm:w-auto justify-center items-center px-4 bg-surface dark:bg-surface-dark-muted text-text-secondary border border-border-light dark:border-border-dark text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200', isDetailsStuck ? 'gap-1.5 py-2' : 'gap-2 py-2.5']"
                             >
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg :class="isDetailsStuck ? 'w-4 h-4' : 'w-5 h-5'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                 </svg>
                                 Import Assigned
@@ -298,9 +298,9 @@ const formatDate = (dateString) => {
                 </div>
 
                 <!-- Filters -->
-                <div class="flex flex-col sm:flex-row gap-4">
+                <div :class="['flex flex-col sm:flex-row', isDetailsStuck ? 'gap-2 sm:gap-4' : 'gap-4']">
                     <div class="flex-1 min-w-0">
-                        <label class="block text-xs font-medium text-text-secondary mb-1.5">
+                        <label :class="['block text-xs font-medium text-text-secondary', isDetailsStuck ? 'mb-1' : 'mb-1.5']">
                             Search
                         </label>
                         <div class="relative">
@@ -321,12 +321,12 @@ const formatDate = (dateString) => {
                                 v-model="searchQuery"
                                 type="text"
                                 placeholder="Search subjects or instructors..."
-                                class="w-full pl-10 pr-4 py-2.5 text-sm border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+                                :class="['w-full pl-10 pr-4 text-sm border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all', isDetailsStuck ? 'py-2' : 'py-2.5']"
                             />
                         </div>
                     </div>
                     <div class="w-full sm:w-64">
-                        <label class="block text-xs font-medium text-text-secondary mb-1.5">
+                        <label :class="['block text-xs font-medium text-text-secondary', isDetailsStuck ? 'mb-1' : 'mb-1.5']">
                             Filter by subject
                         </label>
                         <SearchableSelect
