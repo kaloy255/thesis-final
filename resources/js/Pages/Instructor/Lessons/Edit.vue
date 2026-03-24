@@ -8,7 +8,7 @@
                 >
                     <div class="p-6">
                         <!-- Header -->
-                        <div class="flex justify-between items-center mb-6">
+                        <div class="flex justify-between items-center mb-6 gap-3">
                             <div class="border-l-4 border-indigo-500 pl-4">
                                 <h2
                                     class="text-2xl font-semibold text-text-primary dark:text-text-inverted tracking-tight"
@@ -22,6 +22,12 @@
                                     {{ lesson.subject?.name }}
                                 </p>
                             </div>
+                            <Link
+                                :href="route('instructor.lessons.index')"
+                                class="inline-flex items-center px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-text-secondary bg-surface dark:bg-surface-dark-muted border border-border-light dark:border-border-dark rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors shadow-sm whitespace-nowrap"
+                            >
+                                Cancel
+                            </Link>
                         </div>
 
                         <!-- Assessment Info Row -->
@@ -156,20 +162,21 @@
                                 class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition ease-in-out duration-150 shadow-sm"
                             >
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-                                Add Question
+                                <span class="sm:hidden">Question</span>
+                                <span class="hidden sm:inline">Add Question</span>
                             </button>
                         </div>
 
                         <!-- Add Question Modal Overlay -->
                         <div v-if="showAddForm" class="fixed inset-0 z-[100] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-                            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-4 text-center sm:block sm:p-0">
                                 <!-- Background overlay -->
                                 <div class="fixed inset-0 bg-gray-500/75 dark:bg-gray-900/90 transition-opacity backdrop-blur-sm" @click="cancelAddQuestion"></div>
 
                                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
                                 <!-- Modal panel -->
-                                <div class="inline-block align-bottom bg-surface dark:bg-surface-dark-muted rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-border-light dark:border-border-dark">
+                                <div class="inline-block align-bottom bg-surface dark:bg-surface-dark-muted rounded-xl text-left shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-border-light dark:border-border-dark">
                                     <div class="px-6 py-4 border-b border-border-light dark:border-border-dark flex justify-between items-center bg-gray-50 dark:bg-surface-dark-muted/50">
                                         <h3 class="text-lg font-semibold text-text-primary dark:text-text-inverted" id="modal-title">
                                             Add New Question
@@ -179,12 +186,54 @@
                                         </button>
                                     </div>
 
-                                    <div class="px-6 py-5 max-h-[65vh] overflow-y-auto">
-                                        <div class="space-y-5">
+                                    <div ref="addFormScrollContainer" class="px-6 py-5 max-h-[75vh] overflow-y-auto scroll-smooth">
+                                        <div class="space-y-5 pb-6">
                                             <!-- Question Type -->
                                             <div>
                                                 <label class="block text-sm font-medium text-text-secondary mb-1">Question Type</label>
-                                                <select v-model="newQuestion.type" @change="handleTypeChange" class="mt-1 block w-full border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm">
+
+                                                <!-- Mobile/Tablet Type Selector -->
+                                                <div class="mt-1 grid grid-cols-1 sm:grid-cols-3 gap-2 lg:hidden">
+                                                    <button
+                                                        type="button"
+                                                        @click="setQuestionType('multiple_choice')"
+                                                        :class="[
+                                                            'w-full rounded-lg border px-3 py-2 text-sm font-medium text-left transition-colors',
+                                                            newQuestion.type === 'multiple_choice'
+                                                                ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
+                                                                : 'border-border-light dark:border-border-dark text-text-secondary hover:bg-gray-50 dark:hover:bg-white/5'
+                                                        ]"
+                                                    >
+                                                        Multiple Choice
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        @click="setQuestionType('identification')"
+                                                        :class="[
+                                                            'w-full rounded-lg border px-3 py-2 text-sm font-medium text-left transition-colors',
+                                                            newQuestion.type === 'identification'
+                                                                ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
+                                                                : 'border-border-light dark:border-border-dark text-text-secondary hover:bg-gray-50 dark:hover:bg-white/5'
+                                                        ]"
+                                                    >
+                                                        Identification
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        @click="setQuestionType('true_or_false')"
+                                                        :class="[
+                                                            'w-full rounded-lg border px-3 py-2 text-sm font-medium text-left transition-colors',
+                                                            newQuestion.type === 'true_or_false'
+                                                                ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
+                                                                : 'border-border-light dark:border-border-dark text-text-secondary hover:bg-gray-50 dark:hover:bg-white/5'
+                                                        ]"
+                                                    >
+                                                        True/False
+                                                    </button>
+                                                </div>
+
+                                                <!-- Desktop Type Dropdown -->
+                                                <select v-model="newQuestion.type" @change="handleTypeChange" class="mt-1 hidden lg:block w-full border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm">
                                                     <option value="multiple_choice">Multiple Choice</option>
                                                     <option value="identification">Identification</option>
                                                     <option value="true_or_false">True/False</option>
@@ -199,17 +248,17 @@
                                             </div>
 
                                             <!-- Choices (Multiple Choice Only) -->
-                                            <div v-if="newQuestion.type === 'multiple_choice'" class="bg-gray-50 dark:bg-surface-dark-muted/80 p-4 rounded-lg border border-border-light dark:border-border-dark">
-                                                <div class="flex justify-between items-center mb-3">
+                                            <div v-if="newQuestion.type === 'multiple_choice'" class="bg-gray-50 dark:bg-surface-dark-muted/80 p-3 sm:p-4 rounded-lg border border-border-light dark:border-border-dark">
+                                                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
                                                     <label class="block text-sm font-medium text-text-secondary">Choices</label>
-                                                    <button v-if="newQuestion.choices.length < 8" @click="addChoice" type="button" class="inline-flex items-center text-xs font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded-md transition-colors">
+                                                    <button v-if="newQuestion.choices.length < 8" @click="addChoice" type="button" class="inline-flex items-center justify-center sm:justify-start text-xs font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded-md transition-colors w-full sm:w-auto">
                                                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> Add Choice
                                                     </button>
                                                 </div>
                                                 <div class="space-y-2.5">
-                                                    <div v-for="(choice, choiceIndex) in newQuestion.choices" :key="choiceIndex" class="flex items-center gap-2">
-                                                        <div class="flex-shrink-0 w-6 flex justify-center text-sm font-medium text-gray-500">{{ String.fromCharCode(65 + choiceIndex) }}.</div>
-                                                        <input v-model="newQuestion.choices[choiceIndex]" @input="validateChoices(); errors.choices = '';" type="text" :class="['flex-1 dark:bg-gray-900 dark:text-text-secondary sm:text-sm rounded-lg shadow-sm', errors.choices ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border-light dark:border-border-dark focus:border-indigo-500 focus:ring-indigo-500']" :placeholder="`Choice ${choiceIndex + 1}`" />
+                                                    <div v-for="(choice, choiceIndex) in newQuestion.choices" :key="choiceIndex" class="flex items-center gap-2 min-w-0">
+                                                        <div class="flex-shrink-0 w-6 flex justify-center text-xs sm:text-sm font-medium text-gray-500">{{ String.fromCharCode(65 + choiceIndex) }}.</div>
+                                                        <input v-model="newQuestion.choices[choiceIndex]" @input="validateChoices(); errors.choices = '';" type="text" :class="['flex-1 min-w-0 w-0 dark:bg-gray-900 dark:text-text-secondary sm:text-sm rounded-lg shadow-sm truncate', errors.choices ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border-light dark:border-border-dark focus:border-indigo-500 focus:ring-indigo-500']" :placeholder="`Choice ${choiceIndex + 1}`" />
                                                         <button v-if="newQuestion.choices.filter(c => c.trim() !== '').length > 4" @click="removeChoice(choiceIndex)" type="button" class="flex-shrink-0 p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors" title="Remove choice">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                                         </button>
@@ -221,17 +270,55 @@
                                             <!-- Correct Answer -->
                                             <div>
                                                 <label class="block text-sm font-medium text-text-secondary mb-1">Correct Answer</label>
-                                                <!-- Dropdown for Multiple Choice -->
-                                                <select v-if="newQuestion.type === 'multiple_choice'" v-model="newQuestion.correct_answer" @change="validateCorrectAnswer" @focus="errors.correct_answer = ''" :class="['mt-1 block w-full dark:bg-gray-900 dark:text-text-secondary sm:text-sm rounded-lg shadow-sm', errors.correct_answer ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border-light dark:border-border-dark focus:border-indigo-500 focus:ring-indigo-500']">
+
+                                                <!-- Mobile/Tablet Checkbox Selector for Multiple Choice -->
+                                                <div v-if="newQuestion.type === 'multiple_choice'" class="lg:hidden mt-1 space-y-2 rounded-lg border border-border-light dark:border-border-dark p-3">
+                                                    <label v-for="(choice, choiceIdx) in newQuestion.choices.filter(c => c.trim() !== '')" :key="`mobile-choice-${choiceIdx}`" class="flex items-center gap-2 cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            :checked="newQuestion.correct_answer === choice"
+                                                            @change="setCorrectAnswerOption(choice, $event.target.checked)"
+                                                            class="rounded border-border-light text-indigo-600 focus:ring-indigo-500 dark:border-border-dark dark:bg-gray-900"
+                                                        />
+                                                        <span class="text-sm text-text-secondary dark:text-text-secondary">{{ String.fromCharCode(65 + choiceIdx) }}. {{ choice }}</span>
+                                                    </label>
+                                                </div>
+
+                                                <!-- Desktop Dropdown for Multiple Choice -->
+                                                <select v-if="newQuestion.type === 'multiple_choice'" v-model="newQuestion.correct_answer" @change="validateCorrectAnswer" @focus="errors.correct_answer = ''; scrollCorrectAnswerIntoView($event)" :class="['mt-1 hidden lg:block w-full dark:bg-gray-900 dark:text-text-secondary sm:text-sm rounded-lg shadow-sm', errors.correct_answer ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border-light dark:border-border-dark focus:border-indigo-500 focus:ring-indigo-500']">
                                                     <option value="">Select correct answer</option>
-                                                    <option v-for="(choice, choiceIdx) in newQuestion.choices.filter(c => c.trim() !== '')" :key="choiceIdx" :value="choice">{{ String.fromCharCode(65 + choiceIdx) }}. {{ choice }}</option>
+                                                    <option v-for="(choice, choiceIdx) in newQuestion.choices.filter(c => c.trim() !== '')" :key="`desktop-choice-${choiceIdx}`" :value="choice">{{ String.fromCharCode(65 + choiceIdx) }}. {{ choice }}</option>
                                                 </select>
-                                                <!-- Dropdown for True/False -->
-                                                <select v-else-if="newQuestion.type === 'true_or_false'" v-model="newQuestion.correct_answer" @change="validateCorrectAnswer" @focus="errors.correct_answer = ''" :class="['mt-1 block w-full dark:bg-gray-900 dark:text-text-secondary sm:text-sm rounded-lg shadow-sm', errors.correct_answer ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border-light dark:border-border-dark focus:border-indigo-500 focus:ring-indigo-500']">
+
+                                                <!-- Mobile/Tablet Checkbox Selector for True/False -->
+                                                <div v-else-if="newQuestion.type === 'true_or_false'" class="lg:hidden mt-1 space-y-2 rounded-lg border border-border-light dark:border-border-dark p-3">
+                                                    <label class="flex items-center gap-2 cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            :checked="newQuestion.correct_answer === 'True'"
+                                                            @change="setCorrectAnswerOption('True', $event.target.checked)"
+                                                            class="rounded border-border-light text-indigo-600 focus:ring-indigo-500 dark:border-border-dark dark:bg-gray-900"
+                                                        />
+                                                        <span class="text-sm text-text-secondary dark:text-text-secondary">True</span>
+                                                    </label>
+                                                    <label class="flex items-center gap-2 cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            :checked="newQuestion.correct_answer === 'False'"
+                                                            @change="setCorrectAnswerOption('False', $event.target.checked)"
+                                                            class="rounded border-border-light text-indigo-600 focus:ring-indigo-500 dark:border-border-dark dark:bg-gray-900"
+                                                        />
+                                                        <span class="text-sm text-text-secondary dark:text-text-secondary">False</span>
+                                                    </label>
+                                                </div>
+
+                                                <!-- Desktop Dropdown for True/False -->
+                                                <select v-else-if="newQuestion.type === 'true_or_false'" v-model="newQuestion.correct_answer" @change="validateCorrectAnswer" @focus="errors.correct_answer = ''; scrollCorrectAnswerIntoView($event)" :class="['mt-1 hidden lg:block w-full dark:bg-gray-900 dark:text-text-secondary sm:text-sm rounded-lg shadow-sm', errors.correct_answer ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border-light dark:border-border-dark focus:border-indigo-500 focus:ring-indigo-500']">
                                                     <option value="">Select answer</option>
                                                     <option value="True">True</option>
                                                     <option value="False">False</option>
                                                 </select>
+
                                                 <!-- Textarea for Identification -->
                                                 <textarea v-else v-model="newQuestion.correct_answer" @blur="validateCorrectAnswer" @input="errors.correct_answer = ''" rows="1" :class="['mt-1 block w-full dark:bg-gray-900 dark:text-text-secondary sm:text-sm rounded-lg shadow-sm', errors.correct_answer ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border-light dark:border-border-dark focus:border-indigo-500 focus:ring-indigo-500']" placeholder="Enter the exact correct answer..."></textarea>
                                                 <InputError class="mt-1" :message="errors.correct_answer" />
@@ -243,7 +330,7 @@
                                         <button type="button" @click="cancelAddQuestion" class="w-full inline-flex justify-center rounded-lg border border-border-light dark:border-border-dark shadow-sm px-4 py-2 bg-surface dark:bg-surface-dark-muted text-base font-medium text-text-secondary hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none sm:w-auto sm:text-sm transition-colors">
                                             Cancel
                                         </button>
-                                        <button type="button" @click="addQuestion" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm transition-colors">
+                                        <button type="button" @click="addQuestion" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-3 py-2 bg-indigo-600 text-sm sm:text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto transition-colors whitespace-nowrap">
                                             Add Question
                                         </button>
                                     </div>
@@ -318,7 +405,7 @@
                                     <!-- Choices (Multiple Choice Only) -->
                                     <div
                                         v-if="item.type === 'multiple_choice'"
-                                        class="mb-4 bg-gray-50 dark:bg-surface-dark-muted/50 p-4 rounded-xl border border-border-light dark:border-border-dark"
+                                        class="mb-4 bg-gray-50 dark:bg-surface-dark-muted/50 p-3 sm:p-4 rounded-xl border border-border-light dark:border-border-dark"
                                     >
                                         <label class="block text-sm font-medium text-text-secondary mb-3">
                                             Choices
@@ -327,13 +414,13 @@
                                             <div
                                                 v-for="(choice, choiceIndex) in item.choices"
                                                 :key="choiceIndex"
-                                                class="flex items-center gap-2"
+                                                class="flex items-center gap-2 min-w-0"
                                             >
-                                                <div class="flex-shrink-0 w-6 flex justify-center text-sm font-medium text-gray-500">{{ String.fromCharCode(65 + choiceIndex) }}.</div>
+                                                <div class="flex-shrink-0 w-6 flex justify-center text-xs sm:text-sm font-medium text-gray-500">{{ String.fromCharCode(65 + choiceIndex) }}.</div>
                                                 <input
                                                     v-model="item.choices[choiceIndex]"
                                                     type="text"
-                                                    class="flex-1 border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
+                                                    class="flex-1 min-w-0 w-0 border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm truncate"
                                                 />
                                             </div>
                                         </div>
@@ -344,26 +431,75 @@
                                         <label class="block text-sm font-medium text-text-secondary mb-1">
                                             Correct Answer
                                         </label>
-                                        <!-- Dropdown for Multiple Choice -->
+
+                                        <!-- Mobile/Tablet Checkbox Selector for Multiple Choice -->
+                                        <div
+                                            v-if="item.type === 'multiple_choice'"
+                                            class="lg:hidden mt-1 space-y-2 rounded-lg border border-border-light dark:border-border-dark p-3"
+                                        >
+                                            <label
+                                                v-for="(choice, choiceIdx) in item.choices.filter((c) => c && c.trim() !== '')"
+                                                :key="`existing-mobile-choice-${index}-${choiceIdx}`"
+                                                class="flex items-center gap-2 cursor-pointer"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    :checked="item.correct_answer === choice"
+                                                    @change="setExistingCorrectAnswerOption(item, choice, $event.target.checked)"
+                                                    class="rounded border-border-light text-indigo-600 focus:ring-indigo-500 dark:border-border-dark dark:bg-gray-900"
+                                                />
+                                                <span class="text-sm text-text-secondary dark:text-text-secondary">
+                                                    {{ String.fromCharCode(65 + choiceIdx) }}. {{ choice }}
+                                                </span>
+                                            </label>
+                                        </div>
+
+                                        <!-- Desktop Dropdown for Multiple Choice -->
                                         <select
                                             v-if="item.type === 'multiple_choice'"
                                             v-model="item.correct_answer"
-                                            class="mt-1 block w-full border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
+                                            class="mt-1 hidden lg:block w-full border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
                                         >
                                             <option value="">Select correct answer</option>
                                             <option
-                                                v-for="(choice, choiceIdx) in item.choices"
-                                                :key="choiceIdx"
+                                                v-for="(choice, choiceIdx) in item.choices.filter((c) => c && c.trim() !== '')"
+                                                :key="`existing-desktop-choice-${index}-${choiceIdx}`"
                                                 :value="choice"
                                             >
                                                 {{ String.fromCharCode(65 + choiceIdx) }}. {{ choice }}
                                             </option>
                                         </select>
-                                        <!-- Dropdown for True/False -->
+
+                                        <!-- Mobile/Tablet Checkbox Selector for True/False -->
+                                        <div
+                                            v-else-if="item.type === 'true_or_false'"
+                                            class="lg:hidden mt-1 space-y-2 rounded-lg border border-border-light dark:border-border-dark p-3"
+                                        >
+                                            <label class="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    :checked="item.correct_answer === 'True'"
+                                                    @change="setExistingCorrectAnswerOption(item, 'True', $event.target.checked)"
+                                                    class="rounded border-border-light text-indigo-600 focus:ring-indigo-500 dark:border-border-dark dark:bg-gray-900"
+                                                />
+                                                <span class="text-sm text-text-secondary dark:text-text-secondary">True</span>
+                                            </label>
+                                            <label class="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    :checked="item.correct_answer === 'False'"
+                                                    @change="setExistingCorrectAnswerOption(item, 'False', $event.target.checked)"
+                                                    class="rounded border-border-light text-indigo-600 focus:ring-indigo-500 dark:border-border-dark dark:bg-gray-900"
+                                                />
+                                                <span class="text-sm text-text-secondary dark:text-text-secondary">False</span>
+                                            </label>
+                                        </div>
+
+                                        <!-- Desktop Dropdown for True/False -->
                                         <select
                                             v-else-if="item.type === 'true_or_false'"
                                             v-model="item.correct_answer"
-                                            class="mt-1 block w-full border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
+                                            class="mt-1 hidden lg:block w-full border-border-light dark:border-border-dark dark:bg-gray-900 dark:text-text-secondary focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm sm:text-sm"
                                         >
                                             <option value="">Select answer</option>
                                             <option value="True">True</option>
@@ -414,7 +550,7 @@
 
 <script setup>
 import { ref, computed } from "vue";
-import { router } from "@inertiajs/vue3";
+import { router, Link } from "@inertiajs/vue3";
 import InstructorLayout from "@/Layouts/InstructorLayout.vue";
 import SectionAssignment from "@/Components/SectionAssignment.vue";
 import InputError from "@/Components/InputError.vue";
@@ -490,6 +626,25 @@ const toggleItem = (index) => {
 
 // Add Question Form State
 const showAddForm = ref(false);
+const addFormScrollContainer = ref(null);
+
+const scrollCorrectAnswerIntoView = (event) => {
+    const container = addFormScrollContainer.value;
+    if (!container || !event.target) return;
+    setTimeout(() => {
+        event.target.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+};
+
+const setCorrectAnswerOption = (value, checked) => {
+    newQuestion.value.correct_answer = checked ? value : "";
+    validateCorrectAnswer();
+};
+
+const setExistingCorrectAnswerOption = (item, value, checked) => {
+    item.correct_answer = checked ? value : "";
+};
+
 const newQuestion = ref({
     type: "multiple_choice",
     question: "",
@@ -667,6 +822,12 @@ const handleTypeChange = () => {
     }
     newQuestion.value.correct_answer = "";
     clearErrors();
+};
+
+const setQuestionType = (type) => {
+    if (newQuestion.value.type === type) return;
+    newQuestion.value.type = type;
+    handleTypeChange();
 };
 
 const addChoice = () => {

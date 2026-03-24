@@ -1,7 +1,7 @@
 <script setup>
 import InstructorLayout from "@/Layouts/InstructorLayout.vue";
 import { Head, Link, router } from "@inertiajs/vue3";
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, onMounted, onBeforeUnmount } from "vue";
 
 const props = defineProps({
     subjects: Array,
@@ -10,7 +10,25 @@ const props = defineProps({
 
 const hasSubjects = computed(() => props.subjects && props.subjects.length > 0);
 const searchQuery = ref(props.filters?.search || "");
+const detailsSectionRef = ref(null);
+const isDetailsStuck = ref(false);
+const STICKY_RELEASE_OFFSET = 8;
 let searchTimeout = null;
+
+const updateStickyState = () => {
+    const el = detailsSectionRef.value;
+    if (!el) return;
+    const stickyTop = Number.parseFloat(window.getComputedStyle(el).top || "0") || 0;
+    const rectTop = el.getBoundingClientRect().top;
+
+    if (isDetailsStuck.value) {
+        if (rectTop > stickyTop + STICKY_RELEASE_OFFSET) {
+            isDetailsStuck.value = false;
+        }
+    } else if (rectTop <= stickyTop + 0.5) {
+        isDetailsStuck.value = true;
+    }
+};
 
 // Reactive search with debouncing
 watch(searchQuery, (newValue) => {
@@ -24,11 +42,21 @@ watch(searchQuery, (newValue) => {
             { search: newValue },
             {
                 preserveState: true,
-                preserveScroll: false,
+                preserveScroll: true,
                 replace: true,
             }
         );
-    }, 500);
+    }, 300);
+});
+
+onMounted(() => {
+    updateStickyState();
+    window.addEventListener("scroll", updateStickyState, { passive: true });
+});
+
+onBeforeUnmount(() => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    window.removeEventListener("scroll", updateStickyState);
 });
 </script>
 
@@ -36,29 +64,34 @@ watch(searchQuery, (newValue) => {
     <InstructorLayout>
         <Head title="My Subjects" />
 
-        <div class="mb-6">
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <h1
-                        class="text-2xl font-bold text-text-primary dark:text-text-inverted"
-                    >
-                        My Subjects
-                    </h1>
-                    <p class="text-text-secondary">
-                        View and manage your assigned subjects and join
-                        requests.
-                    </p>
-                </div>
+        <div class="p-2.5 sm:p-4 mb-2">
+            <div>
+                <h1
+                    class="text-lg sm:text-2xl font-semibold text-text-primary dark:text-text-inverted"
+                >
+                    My Subjects
+                </h1>
+                <p class="text-xs sm:text-sm text-text-secondary">
+                    View and manage your assigned subjects and join requests.
+                </p>
             </div>
+        </div>
 
-            <!-- Search Bar -->
-            <div class="w-96 my-10">
-                <div class="relative">
+        <div ref="detailsSectionRef" class="sticky top-16 lg:top-[64px] z-40 mb-6">
+            <div
+                :class="[
+                    'rounded-lg transition-all duration-200',
+                    isDetailsStuck
+                        ? 'px-3 py-2 sm:px-4 sm:py-3 bg-white/95 dark:bg-slate-900/95 border border-border-light dark:border-slate-700 shadow-md backdrop-blur-sm'
+                        : '',
+                ]"
+            >
+                <div class="relative w-full sm:max-w-md">
                     <div
                         class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
                     >
                         <svg
-                            class="h-5 w-5 text-text-secondary"
+                            class="h-4 w-4 text-text-secondary"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -75,7 +108,7 @@ watch(searchQuery, (newValue) => {
                         v-model="searchQuery"
                         type="text"
                         placeholder="Search by subject name, code, or description..."
-                        class="input pl-10 w-full"
+                        class="w-full pl-10 pr-4 py-2 text-sm border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
                     />
                 </div>
             </div>

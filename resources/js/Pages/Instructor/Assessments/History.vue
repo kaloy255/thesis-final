@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import InstructorLayout from "@/Layouts/InstructorLayout.vue";
 import Modal from "@/Components/Modal.vue";
 import { Head, Link, router } from "@inertiajs/vue3";
@@ -25,6 +25,9 @@ const props = defineProps({
 const showMistakesModal = ref(false);
 const searchQuery = ref(props.filters?.search || "");
 const sectionFilter = ref(props.filters?.section || "all");
+const detailsSectionRef = ref(null);
+const isDetailsStuck = ref(false);
+const STICKY_RELEASE_OFFSET = 8;
 let searchTimeout = null;
 
 const applyFilters = () => {
@@ -97,6 +100,31 @@ const getMasteryRingStyle = (student) => {
         background: `conic-gradient(${color} ${percent}%, #e5e7eb ${percent}% 100%)`,
     };
 };
+
+const updateStickyState = () => {
+    const el = detailsSectionRef.value;
+    if (!el) return;
+    const stickyTop = Number.parseFloat(window.getComputedStyle(el).top || "0") || 0;
+    const rectTop = el.getBoundingClientRect().top;
+
+    if (isDetailsStuck.value) {
+        if (rectTop > stickyTop + STICKY_RELEASE_OFFSET) {
+            isDetailsStuck.value = false;
+        }
+    } else if (rectTop <= stickyTop + 0.5) {
+        isDetailsStuck.value = true;
+    }
+};
+
+onMounted(() => {
+    updateStickyState();
+    window.addEventListener("scroll", updateStickyState, { passive: true });
+});
+
+onBeforeUnmount(() => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    window.removeEventListener("scroll", updateStickyState);
+});
 </script>
 
 <template>
@@ -104,139 +132,123 @@ const getMasteryRingStyle = (student) => {
         <Head :title="`History - ${assessment.title}`" />
 
         <div class="max-w-4xl mx-auto">
-            <!-- Header -->
-            <div class="mb-6">
-                <div class="card p-6">
-                    <h1
-                        class="text-2xl font-bold text-text-primary dark:text-text-inverted mb-2"
-                    >
+            <div class="mb-4 sm:mb-5">
+                <div class="flex flex-col gap-2">
+                    <h1 class="text-lg sm:text-2xl font-semibold text-text-primary dark:text-text-inverted">
                         Assessment History
                     </h1>
-                    <div class="text-sm text-text-secondary space-y-1">
-                        <p>
-                            <span class="font-medium">Assessment:</span>
-                            {{ assessment.title }}
-                        </p>
-                        <p>
-                            <span class="font-medium">Subject:</span>
-                            {{ assessment.subject.name }}
-                            ({{ assessment.subject.code }})
-                        </p>
-                        <p>
-                            <span class="font-medium">Lesson:</span>
-                            {{ assessment.lesson.title }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div class="card p-4">
-                    <div class="text-sm text-text-secondary mb-1">
-                        Students Who Took
-                    </div>
-                    <div
-                        class="text-2xl font-bold text-text-primary dark:text-text-inverted"
-                    >
-                        {{ summary.total_students }}
-                    </div>
-                </div>
-                <div class="card p-4">
-                    <div class="text-sm text-text-secondary mb-1">
-                        Best Score
-                    </div>
-                    <div
-                        class="text-2xl font-bold"
-                        :class="getScoreColor(summary.best_score)"
-                    >
-                        {{ summary.best_score }}%
-                    </div>
-                    <div
-                        v-if="summary.best_student_name"
-                        class="text-xs text-text-secondary mt-1"
-                    >
-                        {{ summary.best_student_name }}
-                    </div>
-                </div>
-                <button
-                    type="button"
-                    @click="showMistakesModal = true"
-                    class="card p-4 text-left cursor-pointer hover:shadow-lg hover:border-accent-primary/30 transition-all duration-200 border-2 border-transparent"
-                >
-                    <div class="text-sm text-text-secondary mb-1">
-                        Most Common Mistakes
-                    </div>
-                    <div
-                        class="text-2xl font-bold text-text-primary dark:text-text-inverted"
-                    >
-                        {{
-                            most_common_mistakes.length > 0
-                                ? most_common_mistakes[0].mistake_count + " students"
-                                : "None"
-                        }}
-                    </div>
-                    <div class="text-xs text-text-secondary mt-1">
-                        Most missed on first take
-                        <span v-if="activeSectionName()">
-                            ({{ activeSectionName() }})
+                    <p class="text-sm sm:text-base font-medium text-text-primary dark:text-text-inverted truncate">
+                        {{ assessment.title }}
+                    </p>
+                    <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-text-secondary">
+                        <span class="inline-flex items-center px-2 py-1 rounded-md bg-surface-muted dark:bg-surface-dark-muted">
+                            {{ assessment.subject.code }}
                         </span>
-                    </div>
-                </button>
-            </div>
-
-            <!-- Search and Filter Section -->
-            <div class="mb-6 flex flex-col sm:flex-row gap-4">
-                <div class="flex-1">
-                    <div class="relative">
-                        <div
-                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-                        >
-                            <svg
-                                class="h-5 w-5 text-gray-400 dark:text-gray-500"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                />
-                            </svg>
-                        </div>
-                        <input
-                            v-model="searchQuery"
-                            @input="handleSearch"
-                            type="text"
-                            placeholder="Search by student name..."
-                            class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent text-sm"
-                        />
+                        <span class="truncate">{{ assessment.subject.name }}</span>
+                        <span class="hidden sm:inline">-</span>
+                        <span class="truncate">Lesson: {{ assessment.lesson.title }}</span>
                     </div>
                 </div>
-                <div class="sm:w-48">
-                    <select
-                        v-model="sectionFilter"
-                        @change="handleSectionFilter"
-                        class="block w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent text-sm"
+            </div>
+
+            <div class="mb-4 sm:mb-5 rounded-lg border border-border-light dark:border-border-dark bg-surface dark:bg-surface-dark p-3 sm:p-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                    <div class="sm:pr-3 sm:border-r sm:border-border-light dark:sm:border-border-dark">
+                        <p class="text-xs sm:text-sm text-text-secondary">Students Who Took</p>
+                        <p class="text-lg sm:text-xl font-semibold text-text-primary dark:text-text-inverted">
+                            {{ summary.total_students }}
+                        </p>
+                    </div>
+                    <div class="sm:px-3 sm:border-r sm:border-border-light dark:sm:border-border-dark">
+                        <p class="text-xs sm:text-sm text-text-secondary">Best Score</p>
+                        <p class="text-lg sm:text-xl font-semibold" :class="getScoreColor(summary.best_score)">
+                            {{ summary.best_score }}%
+                        </p>
+                        <p v-if="summary.best_student_name" class="text-xs text-text-secondary mt-0.5 truncate">
+                            {{ summary.best_student_name }}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        @click="showMistakesModal = true"
+                        class="sm:pl-3 text-left rounded-lg px-2 py-1 hover:bg-surface-muted dark:hover:bg-surface-dark-muted transition-colors"
                     >
-                        <option value="all">All Sections</option>
-                        <option
-                            v-for="section in sections"
-                            :key="section.id"
-                            :value="section.id"
-                        >
-                            {{ section.name }}
-                        </option>
-                    </select>
+                        <p class="text-xs sm:text-sm text-text-secondary">Most Common Mistakes</p>
+                        <p class="text-lg sm:text-xl font-semibold text-text-primary dark:text-text-inverted">
+                            {{
+                                most_common_mistakes.length > 0
+                                    ? most_common_mistakes[0].mistake_count + " students"
+                                    : "None"
+                            }}
+                        </p>
+                        <p class="text-xs text-text-secondary mt-0.5">
+                            First-take misses
+                            <span v-if="activeSectionName()">({{ activeSectionName() }})</span>
+                        </p>
+                    </button>
+                </div>
+            </div>
+
+            <div ref="detailsSectionRef" class="sticky top-16 lg:top-[64px] z-40 mb-5">
+                <div
+                    :class="[
+                        'rounded-lg transition-all duration-200',
+                        isDetailsStuck
+                            ? 'px-3 py-2 sm:px-4 sm:py-3 bg-white/95 dark:bg-slate-900/95 border border-border-light dark:border-slate-700 shadow-md backdrop-blur-sm'
+                            : '',
+                    ]"
+                >
+                    <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                        <div class="w-full sm:w-48">
+                            <select
+                                v-model="sectionFilter"
+                                @change="handleSectionFilter"
+                                class="block w-full px-3 py-2 border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted focus:outline-none focus:ring-2 focus:ring-indigo-500/40 text-sm"
+                            >
+                                <option value="all">All Sections</option>
+                                <option
+                                    v-for="section in sections"
+                                    :key="section.id"
+                                    :value="section.id"
+                                >
+                                    {{ section.name }}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="relative w-full sm:max-w-md">
+                            <div
+                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                            >
+                                <svg
+                                    class="h-4 w-4 text-text-secondary"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                    />
+                                </svg>
+                            </div>
+                            <input
+                                v-model="searchQuery"
+                                @input="handleSearch"
+                                type="text"
+                                placeholder="Search by student name..."
+                                class="block w-full pl-10 pr-3 py-2 border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 text-sm"
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Students List -->
-            <div class="space-y-4">
+            <div class="space-y-3 sm:space-y-4">
                 <h2
-                    class="text-xl font-semibold text-text-primary dark:text-text-inverted mb-4"
+                    class="text-base sm:text-xl font-semibold text-text-primary dark:text-text-inverted mb-2 sm:mb-3"
                 >
                     Students
                 </h2>
@@ -273,21 +285,21 @@ const getMasteryRingStyle = (student) => {
                 <div
                     v-for="student in students"
                     :key="student.student_id"
-                    class="card p-6 flex items-center justify-between hover:shadow-lg transition-all duration-200"
+                    class="card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 hover:shadow-md transition-all duration-200"
                 >
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-3 sm:gap-4 min-w-0">
                         <div
-                            class="flex-shrink-0 w-12 h-12 rounded-full bg-accent-primary/20 dark:bg-accent-primary/30 text-accent-primary flex items-center justify-center font-bold text-lg"
+                            class="flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-accent-primary/20 dark:bg-accent-primary/30 text-accent-primary flex items-center justify-center font-bold text-sm sm:text-base"
                         >
                             {{ student.student_name?.charAt(0)?.toUpperCase() || "?" }}
                         </div>
-                        <div>
+                        <div class="min-w-0">
                             <h3
-                                class="text-lg font-semibold text-text-primary dark:text-text-inverted"
+                                class="text-sm sm:text-base font-semibold text-text-primary dark:text-text-inverted truncate"
                             >
                                 {{ student.student_name }}
                             </h3>
-                            <p class="text-sm text-text-secondary">
+                            <p class="text-xs sm:text-sm text-text-secondary">
                                 {{ student.attempt_count }}
                                 {{ student.attempt_count === 1 ? "attempt" : "attempts" }}
                                 · Best: {{ student.best_score }}%
@@ -303,10 +315,10 @@ const getMasteryRingStyle = (student) => {
                             </p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 w-full sm:w-auto">
                         <div class="flex items-center gap-2">
                             <div
-                                class="relative w-14 h-14 rounded-full p-[4px]"
+                                class="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full p-[4px]"
                                 :style="getMasteryRingStyle(student)"
                             >
                                 <div
@@ -319,7 +331,7 @@ const getMasteryRingStyle = (student) => {
                                     </span>
                                 </div>
                             </div>
-                            <div class="text-xs leading-tight">
+                            <div class="text-[11px] sm:text-xs leading-tight">
                                 <div
                                     class="font-semibold text-text-primary dark:text-text-inverted"
                                 >
@@ -334,7 +346,7 @@ const getMasteryRingStyle = (student) => {
                                     student.student_id,
                                 ])
                             "
-                            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-accent-primary rounded-lg hover:bg-accent-muted transition-colors duration-150"
+                            class="inline-flex items-center justify-center px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-accent-primary rounded-lg hover:bg-accent-muted transition-colors duration-150 min-w-[84px]"
                         >
                             View
                         </Link>
@@ -390,11 +402,11 @@ const getMasteryRingStyle = (student) => {
                     <div
                         v-for="item in most_common_mistakes"
                         :key="item.item_id"
-                        class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+                        class="p-3 rounded-lg border border-border-light dark:border-border-dark bg-surface dark:bg-surface-dark-muted"
                     >
                         <div class="flex items-start gap-4">
                             <div
-                                class="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center font-bold text-sm"
+                                class="flex-shrink-0 w-7 h-7 rounded-full bg-surface-muted dark:bg-surface-dark text-text-primary dark:text-text-inverted flex items-center justify-center font-semibold text-xs"
                             >
                                 {{ item.rank }}
                             </div>
@@ -402,7 +414,7 @@ const getMasteryRingStyle = (student) => {
                                 <p class="text-sm text-text-primary dark:text-text-inverted">
                                     {{ item.question }}
                                 </p>
-                                <p class="text-xs text-red-600 dark:text-red-400 font-medium mt-1">
+                                <p class="text-xs text-text-secondary font-medium mt-1">
                                     {{ item.mistake_count }} {{ item.mistake_count === 1 ? "student" : "students" }} got this wrong
                                 </p>
                             </div>

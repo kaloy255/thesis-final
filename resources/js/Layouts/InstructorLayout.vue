@@ -17,6 +17,11 @@ const theme = useTheme();
 const sidebarOpen = ref(false);
 const profileOpen = ref(false);
 const profileDropdownRef = ref(null);
+const showBackToTop = ref(false);
+const isLessonsActionPage = computed(() =>
+    route().current("instructor.lessons.edit") ||
+    route().current("instructor.lessons.createManual")
+);
 
 const navItems = [
     { name: "Dashboard", route: "instructor.dashboard" },
@@ -43,11 +48,22 @@ const handleClickOutside = (e) => {
 
 onMounted(() => {
     document.addEventListener("click", handleClickOutside);
+    window.addEventListener("scroll", handleScrollVisibility, { passive: true });
+    handleScrollVisibility();
 });
 
 onUnmounted(() => {
     document.removeEventListener("click", handleClickOutside);
+    window.removeEventListener("scroll", handleScrollVisibility);
 });
+
+const handleScrollVisibility = () => {
+    showBackToTop.value = window.scrollY > 250;
+};
+
+const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+};
 </script>
 
 <template>
@@ -347,5 +363,20 @@ onUnmounted(() => {
                 </div>
             </main>
         </div>
+        <button
+            v-if="showBackToTop"
+            type="button"
+            :class="[
+                'fixed right-4 sm:right-6 z-[55] inline-flex items-center justify-center w-11 h-11 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2',
+                isLessonsActionPage ? 'bottom-20 sm:bottom-24' : 'bottom-4 sm:bottom-6',
+            ]"
+            aria-label="Back to top"
+            title="Back to top"
+            @click="scrollToTop"
+        >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+            </svg>
+        </button>
     </div>
 </template>
