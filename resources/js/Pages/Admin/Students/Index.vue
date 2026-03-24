@@ -367,7 +367,7 @@ const formatDate = (dateString) => {
                 ]"
             >
                 <!-- Header Section -->
-                <div :class="isDetailsStuck ? 'mb-2 sm:mb-4' : 'mb-4'">
+                <div v-if="!isDetailsStuck" :class="isDetailsStuck ? 'mb-2 sm:mb-4' : 'mb-4'">
                     <div :class="['flex flex-col sm:flex-row sm:items-center justify-between', isDetailsStuck ? 'gap-2 sm:gap-4' : 'gap-4']">
                         <div class="w-full sm:w-auto">
                             <h1
@@ -441,7 +441,7 @@ const formatDate = (dateString) => {
                             />
                         </div>
                     </div>
-                    <div class="sm:w-64">
+                    <div v-if="!isDetailsStuck" class="sm:w-64">
                         <label :class="['block text-xs font-medium text-text-secondary', isDetailsStuck ? 'mb-1' : 'mb-1.5']">
                             Filter by department
                         </label>
@@ -451,7 +451,7 @@ const formatDate = (dateString) => {
                             placeholder="Filter by department..."
                         />
                     </div>
-                    <div class="sm:w-64">
+                    <div v-if="!isDetailsStuck" class="sm:w-64">
                         <label :class="['block text-xs font-medium text-text-secondary', isDetailsStuck ? 'mb-1' : 'mb-1.5']">
                             Filter by section
                         </label>

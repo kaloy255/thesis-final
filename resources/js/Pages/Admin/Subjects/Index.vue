@@ -259,7 +259,7 @@ const truncateText = (text, maxLength = 80) => {
                 ]"
             >
                 <!-- Header Section -->
-                <div :class="isDetailsStuck ? 'mb-2 sm:mb-4' : 'mb-4'">
+                <div v-if="!isDetailsStuck" :class="isDetailsStuck ? 'mb-2 sm:mb-4' : 'mb-4'">
                     <div :class="['flex flex-col sm:flex-row sm:items-center justify-between', isDetailsStuck ? 'gap-2 sm:gap-4' : 'gap-4']">
                         <div class="w-full sm:w-auto">
                             <h1
