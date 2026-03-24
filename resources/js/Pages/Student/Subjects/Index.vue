@@ -3,13 +3,15 @@ import StudentLayout from "@/Layouts/StudentLayout.vue";
 import { Head, router, usePage } from "@inertiajs/vue3";
 import { computed, ref, watch, onMounted, onBeforeUnmount } from "vue";
 import Badge from "@/Components/Badge.vue";
+import Pagination from "@/Components/Pagination.vue";
 import { useToast } from "@/Stores/useToast";
 
 const page = usePage();
 const { success, error } = useToast();
 
 const props = defineProps({
-    subjects: Array,
+    /** Laravel paginator */
+    subjects: Object,
     filters: Object,
 });
 
@@ -37,7 +39,8 @@ watch(
     { immediate: true }
 );
 
-const hasSubjects = computed(() => props.subjects && props.subjects.length > 0);
+const subjectTotal = computed(() => props.subjects?.total ?? 0);
+const hasSubjects = computed(() => (props.subjects?.data?.length ?? 0) > 0);
 
 const getStatusBadge = (status) => {
     switch (status) {
@@ -147,7 +150,11 @@ watch(search, (newValue) => {
     searchTimeout = setTimeout(() => {
         router.get(
             route("student.subjects.index"),
-            { search: newValue },
+            {
+                search: newValue || undefined,
+                per_page: props.filters?.per_page || 10,
+                page: 1,
+            },
             {
                 preserveState: true,
                 preserveScroll: true,
@@ -174,19 +181,20 @@ onBeforeUnmount(() => {
     <StudentLayout>
         <Head title="Join Subjects" />
 
-        <div class="p-2.5 sm:p-4 mb-2">
+        <div class="mb-4 sm:mb-5">
             <h1
                 class="text-lg sm:text-2xl font-semibold text-text-primary dark:text-text-inverted"
             >
                 Join Subjects
             </h1>
-            <p class="text-xs sm:text-sm text-text-secondary">
+            <p class="text-xs sm:text-sm text-text-secondary mt-1">
                 Browse available subjects and request to join with your
                 preferred instructor.
             </p>
         </div>
 
-        <div ref="detailsSectionRef" class="sticky top-16 lg:top-[64px] z-40 mb-6">
+        <!-- z-20: below app headers so header dropdowns (notifications) are not covered -->
+        <div ref="detailsSectionRef" class="sticky top-16 lg:top-[64px] z-20 mb-5 sm:mb-6">
             <div
                 :class="[
                     'rounded-lg transition-all duration-200',
@@ -215,9 +223,9 @@ onBeforeUnmount(() => {
             </div>
         </div>
 
-        <!-- Empty State -->
+        <!-- Empty State: no subjects in system -->
         <div
-            v-if="!hasSubjects && !search"
+            v-if="subjectTotal === 0 && !search.trim()"
             class="card p-12 text-center text-text-secondary"
         >
             <svg
@@ -246,7 +254,7 @@ onBeforeUnmount(() => {
 
         <!-- No Results State -->
         <div
-            v-else-if="!hasSubjects && search"
+            v-else-if="subjectTotal === 0 && search.trim()"
             class="card p-8 sm:p-12 text-center min-h-[20rem] flex flex-col items-center justify-center text-text-secondary"
         >
             <svg
@@ -273,12 +281,12 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Subjects Grid -->
+        <template v-else-if="hasSubjects">
         <div
-            v-else
-            class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 scroll-mt-28"
         >
             <article
-                v-for="subject in props.subjects"
+                v-for="subject in props.subjects.data"
                 :key="subject.id"
                 class="card overflow-hidden p-0 hover:shadow-lg transition-all duration-200 border border-border-light dark:border-border-dark flex flex-col"
                 :class="{
@@ -412,6 +420,24 @@ onBeforeUnmount(() => {
                 </div>
             </article>
         </div>
+
+        <div class="mt-6 sm:mt-8 bg-surface dark:bg-surface-dark-muted rounded-xl border border-border-light dark:border-border-dark max-lg:mb-6 max-lg:pb-1">
+            <Pagination
+                :links="props.subjects.links || []"
+                :current-page="props.subjects.current_page || 1"
+                :last-page="props.subjects.last_page || 1"
+                :per-page="props.filters?.per_page || 10"
+                :total="props.subjects.total || 0"
+                :from="props.subjects.from || 0"
+                :to="props.subjects.to || 0"
+                route-name="student.subjects.index"
+                :filters="{
+                    search: search || props.filters?.search || '',
+                    per_page: props.filters?.per_page || 10,
+                }"
+            />
+        </div>
+        </template>
     </StudentLayout>
 </template>
 

@@ -124,76 +124,124 @@ const perPageOptionsSorted = computed(() => {
     }
     return Array.from(opts).sort((a, b) => a - b);
 });
+
+const pageBtnClass = (isActive) =>
+    [
+        "min-w-[2.25rem] shrink-0 px-2.5 py-2 text-sm font-medium rounded-lg text-center transition-colors",
+        isActive
+            ? "bg-indigo-600 text-white"
+            : "text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700",
+    ];
+
+const navLinkClass = "shrink-0 px-2 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors disabled:opacity-50";
+const navLinkDisabledClass = "shrink-0 px-2 py-2 text-sm text-gray-400 dark:text-gray-500";
 </script>
 
 <template>
-    <div
+    <nav
         v-if="showPagination"
-        class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4"
+        class="px-4 py-4 sm:px-5 border-t border-gray-200 dark:border-gray-700"
+        aria-label="Pagination"
     >
-        <!-- Mobile: Prev/Next only -->
-        <div class="flex-1 flex justify-between sm:hidden w-full">
-            <Link
-                v-if="prevLink.url"
-                :href="prevLink.url"
-                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                preserve-scroll
+        <!-- Phones & tablets: summary → scrollable page row → prev/next (per-page is desktop-only, see xl+ block) -->
+        <div class="lg:hidden flex flex-col gap-4 w-full min-w-0">
+            <p
+                class="text-center text-sm text-gray-700 dark:text-gray-300 tabular-nums leading-snug px-1"
+                aria-live="polite"
             >
-                Previous
-            </Link>
-            <span v-else class="px-4 py-2 text-sm text-gray-400 dark:text-gray-500">Previous</span>
-            <Link
-                v-if="nextLink.url"
-                :href="nextLink.url"
-                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                preserve-scroll
-            >
-                Next
-            </Link>
-            <span v-else class="px-4 py-2 text-sm text-gray-400 dark:text-gray-500">Next</span>
-        </div>
-
-        <!-- Desktop: Full pagination -->
-        <div class="hidden sm:flex flex-1 items-center justify-between w-full">
-            <div class="text-sm text-gray-700 dark:text-gray-300">
-                Showing
                 <span class="font-medium">{{ from || 0 }}</span>
-                to
+                <span class="text-gray-500 dark:text-gray-400">–</span>
                 <span class="font-medium">{{ to || 0 }}</span>
-                of
+                <span class="text-gray-500 dark:text-gray-400"> of </span>
                 <span class="font-medium">{{ total || 0 }}</span>
-                results
+            </p>
+
+            <!-- Page numbers: full-width scroll strip with padding so first/last digits are never clipped -->
+            <div
+                class="w-full min-w-0 -mx-1 px-3 overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-smooth [scrollbar-width:thin]"
+            >
+                <div class="flex w-max min-h-[44px] items-center justify-center gap-1 mx-auto py-0.5">
+                    <template v-for="(item, idx) in displayPages" :key="idx">
+                        <Link
+                            v-if="item.type === 'page'"
+                            :href="pageLink(item.number)"
+                            :class="pageBtnClass(item.number === currentPage)"
+                            preserve-scroll
+                        >
+                            {{ item.number }}
+                        </Link>
+                        <span
+                            v-else
+                            class="px-1.5 py-2 text-sm text-gray-400 dark:text-gray-500 shrink-0 select-none"
+                        >
+                            …
+                        </span>
+                    </template>
+                </div>
             </div>
 
-            <div class="flex items-center gap-3">
-                <!-- Previous -->
+            <!-- Prev / Next: equal columns, aligned with summary -->
+            <div class="grid grid-cols-2 gap-3 w-full px-0.5">
                 <Link
                     v-if="prevLink.url"
                     :href="prevLink.url"
-                    class="px-3 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                    class="inline-flex items-center justify-center min-h-[44px] px-3 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     preserve-scroll
                 >
                     Previous
                 </Link>
                 <span
                     v-else
-                    class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500"
+                    class="inline-flex items-center justify-center min-h-[44px] px-3 rounded-lg border border-dashed border-gray-200 dark:border-gray-700 text-sm text-gray-400 dark:text-gray-500"
                 >
                     Previous
                 </span>
+                <Link
+                    v-if="nextLink.url"
+                    :href="nextLink.url"
+                    class="inline-flex items-center justify-center min-h-[44px] px-3 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    preserve-scroll
+                >
+                    Next
+                </Link>
+                <span
+                    v-else
+                    class="inline-flex items-center justify-center min-h-[44px] px-3 rounded-lg border border-dashed border-gray-200 dark:border-gray-700 text-sm text-gray-400 dark:text-gray-500"
+                >
+                    Next
+                </span>
+            </div>
+        </div>
 
-                <!-- Page numbers -->
-                <div class="flex items-center gap-1">
+        <!-- Desktop (lg+): single row; per-page control only on xl+ (wide desktop) -->
+        <div class="hidden lg:flex flex-row flex-wrap xl:flex-nowrap items-center justify-between gap-x-4 gap-y-3 w-full min-w-0">
+            <p class="text-sm text-gray-700 dark:text-gray-300 shrink-0">
+                Showing
+                <span class="font-medium tabular-nums">{{ from || 0 }}</span>
+                to
+                <span class="font-medium tabular-nums">{{ to || 0 }}</span>
+                of
+                <span class="font-medium tabular-nums">{{ total || 0 }}</span>
+                results
+            </p>
+
+            <div class="flex flex-wrap items-center gap-2 xl:gap-3 min-w-0 justify-end flex-1">
+                <Link
+                    v-if="prevLink.url"
+                    :href="prevLink.url"
+                    :class="navLinkClass"
+                    preserve-scroll
+                >
+                    Previous
+                </Link>
+                <span v-else :class="navLinkDisabledClass">Previous</span>
+
+                <div class="flex items-center gap-1 flex-wrap justify-end">
                     <template v-for="(item, idx) in displayPages" :key="idx">
                         <Link
                             v-if="item.type === 'page'"
                             :href="pageLink(item.number)"
-                            :class="[
-                                'min-w-[2.25rem] px-3 py-2 text-sm font-medium rounded-lg text-center transition-colors',
-                                item.number === currentPage
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700',
-                            ]"
+                            :class="pageBtnClass(item.number === currentPage)"
                             preserve-scroll
                         >
                             {{ item.number }}
@@ -207,28 +255,25 @@ const perPageOptionsSorted = computed(() => {
                     </template>
                 </div>
 
-                <!-- Next -->
                 <Link
                     v-if="nextLink.url"
                     :href="nextLink.url"
-                    class="px-3 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                    :class="navLinkClass"
                     preserve-scroll
                 >
                     Next
                 </Link>
-                <span
-                    v-else
-                    class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500"
-                >
-                    Next
-                </span>
+                <span v-else :class="navLinkDisabledClass">Next</span>
 
-                <!-- Per page selector -->
-                <div class="flex items-center gap-2 ml-2 pl-2 border-l border-gray-200 dark:border-gray-600">
+                <div
+                    class="hidden xl:flex items-center gap-2 ml-2 pl-2 border-l border-gray-200 dark:border-gray-600 shrink-0"
+                >
+                    <label class="sr-only" for="pagination-per-page-desktop">Results per page</label>
                     <select
+                        id="pagination-per-page-desktop"
                         :value="perPage"
+                        class="min-h-[40px] px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
                         @change="changePerPage(($event.target).value)"
-                        class="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
                     >
                         <option
                             v-for="opt in perPageOptionsSorted"
@@ -241,5 +286,5 @@ const perPageOptionsSorted = computed(() => {
                 </div>
             </div>
         </div>
-    </div>
+    </nav>
 </template>

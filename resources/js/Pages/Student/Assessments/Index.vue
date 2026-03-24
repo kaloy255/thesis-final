@@ -97,7 +97,8 @@ onBeforeUnmount(() => {
             </p>
         </div>
 
-        <div ref="detailsSectionRef" class="sticky top-16 lg:top-[64px] z-40 mb-6">
+        <!-- z-20: stay below app headers (z-30 desktop / z-40 mobile) so notification dropdowns stack on top -->
+        <div ref="detailsSectionRef" class="sticky top-16 lg:top-[64px] z-20 mb-6">
             <div
                 :class="[
                     'rounded-lg transition-all duration-200',

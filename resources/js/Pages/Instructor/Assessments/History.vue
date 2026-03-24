@@ -189,7 +189,8 @@ onBeforeUnmount(() => {
                 </div>
             </div>
 
-            <div ref="detailsSectionRef" class="sticky top-16 lg:top-[64px] z-40 mb-5">
+            <!-- z-20: below app headers so notification dropdown stacks on top -->
+            <div ref="detailsSectionRef" class="sticky top-16 lg:top-[64px] z-20 mb-5">
                 <div
                     :class="[
                         'rounded-lg transition-all duration-200',

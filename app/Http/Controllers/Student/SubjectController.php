@@ -28,8 +28,9 @@ class SubjectController extends Controller
         $student->load('user');
 
         $search = $request->string('search')->toString();
+        $perPage = (int) $request->input('per_page', 10);
+        $perPage = in_array($perPage, [10, 25, 50, 100], true) ? $perPage : 10;
 
-        // Get all subjects with their assigned professors
         $subjects = Subject::with(['professors.user', 'professors.department'])
             ->when($search, function ($query, $term) {
                 $query->where(function ($q) use ($term) {
@@ -39,62 +40,15 @@ class SubjectController extends Controller
                 });
             })
             ->orderBy('name')
-            ->get()
-            ->map(function ($subject) use ($student) {
-                // Get student's status for this subject
-                $studentSubject = StudentSubject::where('student_id', $student->id)
-                    ->where('subject_id', $subject->id)
-                    ->first();
-
-                // Find which instructor was notified for this request (if any)
-                $selectedInstructorId = null;
-                if ($studentSubject && in_array($studentSubject->status, ['pending', 'approved'])) {
-                    $studentName = $student->user->name;
-                    $subjectName = $subject->name;
-
-                    // Find notification for this request to determine which instructor was selected
-                    $notification = Notification::where('description', "{$studentName} has requested to join {$subjectName}.")
-                        ->orderBy('created_at', 'desc')
-                        ->first();
-
-                    if ($notification) {
-                        // Get the professor_id from the user_id in notification
-                        $professor = \App\Models\Professor::where('user_id', $notification->user_id)->first();
-                        if ($professor) {
-                            $selectedInstructorId = $professor->id;
-                        }
-                    }
-                }
-
-                // Get instructors assigned to this subject
-                $instructors = $subject->professors->map(function ($professor) use ($selectedInstructorId, $studentSubject) {
-                    $isSelected = $professor->id === $selectedInstructorId;
-
-                    return [
-                        'id' => $professor->id,
-                        'name' => $professor->user->name,
-                        'user_id' => $professor->user_id,
-                        'is_selected' => $isSelected,
-                        'department_name' => $professor->department?->name,
-                    ];
-                });
-
-                return [
-                    'id' => $subject->id,
-                    'name' => $subject->name,
-                    'code' => $subject->code,
-                    'description' => $subject->description,
-                    'instructors' => $instructors,
-                    'status' => $studentSubject ? $studentSubject->status : 'not_joined',
-                    'student_subject_id' => $studentSubject?->id,
-                    'selected_instructor_id' => $selectedInstructorId,
-                ];
-            });
+            ->paginate($perPage)
+            ->withQueryString()
+            ->through(fn (Subject $subject) => $this->mapSubjectForStudentIndex($subject, $student));
 
         return Inertia::render('Student/Subjects/Index', [
             'subjects' => $subjects,
             'filters' => [
                 'search' => $search,
+                'per_page' => $perPage,
             ],
         ]);
     }
@@ -200,5 +154,57 @@ class SubjectController extends Controller
                 'error' => 'Failed to submit join request: ' . $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Shape a subject row for the student join-subjects listing (used with pagination).
+     *
+     * @param  \App\Models\Student  $student
+     */
+    private function mapSubjectForStudentIndex(Subject $subject, $student): array
+    {
+        $studentSubject = StudentSubject::where('student_id', $student->id)
+            ->where('subject_id', $subject->id)
+            ->first();
+
+        $selectedInstructorId = null;
+        if ($studentSubject && in_array($studentSubject->status, ['pending', 'approved'], true)) {
+            $studentName = $student->user->name;
+            $subjectName = $subject->name;
+
+            $notification = Notification::where('description', "{$studentName} has requested to join {$subjectName}.")
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if ($notification) {
+                $professor = Professor::where('user_id', $notification->user_id)->first();
+                if ($professor) {
+                    $selectedInstructorId = $professor->id;
+                }
+            }
+        }
+
+        $instructors = $subject->professors->map(function ($professor) use ($selectedInstructorId) {
+            $isSelected = $professor->id === $selectedInstructorId;
+
+            return [
+                'id' => $professor->id,
+                'name' => $professor->user->name,
+                'user_id' => $professor->user_id,
+                'is_selected' => $isSelected,
+                'department_name' => $professor->department?->name,
+            ];
+        });
+
+        return [
+            'id' => $subject->id,
+            'name' => $subject->name,
+            'code' => $subject->code,
+            'description' => $subject->description,
+            'instructors' => $instructors,
+            'status' => $studentSubject ? $studentSubject->status : 'not_joined',
+            'student_subject_id' => $studentSubject?->id,
+            'selected_instructor_id' => $selectedInstructorId,
+        ];
     }
 }

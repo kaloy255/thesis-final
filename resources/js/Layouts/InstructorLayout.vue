@@ -368,7 +368,7 @@ const scrollToTop = () => {
             type="button"
             :class="[
                 'fixed right-4 sm:right-6 z-[55] inline-flex items-center justify-center w-11 h-11 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2',
-                isLessonsActionPage ? 'bottom-20 sm:bottom-24' : 'bottom-4 sm:bottom-6',
+                isLessonsActionPage ? 'bottom-20 sm:bottom-24' : 'bottom-24 lg:bottom-6',
             ]"
             aria-label="Back to top"
             title="Back to top"

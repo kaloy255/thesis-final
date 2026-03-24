@@ -187,213 +187,236 @@ onUnmounted(() => {
 
 <template>
     <StudentLayout>
-
         <Head :title="assessment.title" />
 
-        <div class="max-w-4xl mx-auto">
-
-            <!-- Cheating Detection Warning Banner -->
-            <div class="mb-6 card p-4 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-lg">
-                <div class="flex items-start gap-3">
-                    <svg class="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div class="flex-1">
-                        <h3 class="text-sm font-semibold text-red-800 dark:text-red-300">
-                            ⚠ Assessment Monitoring Active
-                        </h3>
-                        <p class="text-xs text-red-700 dark:text-red-400 mt-1">
-                            This assessment is being monitored. Switching tabs, leaving this page, or opening other windows will be recorded and reported to your instructor.
-                        </p>
-                    </div>
-                    <div v-if="violationCount > 0"
-                        class="flex-shrink-0 px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
-                        {{ violationCount }} violation{{ violationCount !== 1 ? 's' : '' }}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Header -->
-            <div class="mb-6">
-                <div class="card p-6">
-                    <h1 class="text-2xl font-bold text-text-primary dark:text-text-inverted mb-2">
-                        {{ assessment.title }}
-                    </h1>
-                    <div class="text-sm text-text-secondary space-y-1">
-                        <p>
-                            <span class="font-medium">Subject:</span>
-                            {{ assessment.subject.name }}
-                            ({{ assessment.subject.code }})
-                        </p>
-                        <p>
-                            <span class="font-medium">Lesson:</span>
-                            {{ assessment.lesson.title }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Progress Info -->
-            <div class="mb-6 card p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                <div class="flex items-center justify-between text-sm mb-3">
-                    <span class="text-text-primary dark:text-text-inverted font-medium">
-                        Question {{ currentQuestionIndex + 1 }} of {{ totalQuestions }}
-                    </span>
-                    <span class="text-text-secondary">
-                        {{ answeredQuestions }} / {{ totalQuestions }} answered
+        <div
+            class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-36 sm:pb-10 pt-4 sm:pt-6"
+        >
+            <!-- Monitoring: thin accent strip, no card -->
+            <div
+                class="mb-8 sm:mb-10 pl-6 border-l-2 border-amber-500/90 dark:border-amber-400/80 py-0.5"
+            >
+                <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <p class="text-[13px] sm:text-sm font-medium text-text-primary dark:text-text-inverted">
+                        Session is monitored
+                    </p>
+                    <span
+                        v-if="violationCount > 0"
+                        class="text-xs font-medium text-amber-800 dark:text-amber-200 tabular-nums"
+                    >
+                        {{ violationCount }} notice{{ violationCount !== 1 ? "s" : "" }}
                     </span>
                 </div>
-                <!-- Progress Bar -->
-                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div class="bg-accent-primary h-2 rounded-full transition-all duration-300"
-                        :style="{ width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%` }"></div>
-                </div>
+                <p class="text-xs sm:text-[13px] text-text-secondary mt-1.5 max-w-prose leading-relaxed">
+                    Tab switches and leaving this page may be logged for your instructor.
+                </p>
             </div>
 
-            <!-- Questions -->
-            <form @submit.prevent="submitForm">
-                <div v-if="currentQuestion" class="card p-6 mb-6">
-                    <div class="flex items-start gap-4">
-                        <div
-                            class="flex-shrink-0 w-8 h-8 rounded-full bg-accent-primary text-white flex items-center justify-center font-semibold text-sm">
-                            {{ currentQuestionIndex + 1 }}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h3 class="text-lg font-semibold text-text-primary dark:text-text-inverted mb-4">
-                                {{ currentQuestion.question }}
-                            </h3>
+            <!-- Title + meta: typography only -->
+            <header class="mb-8 sm:mb-10">
+                <h1
+                    class="text-[clamp(1.375rem,4vw,1.875rem)] font-semibold tracking-tight text-text-primary dark:text-text-inverted leading-tight"
+                >
+                    {{ assessment.title }}
+                </h1>
+                <p
+                    class="mt-3 text-sm text-text-secondary leading-relaxed max-w-prose"
+                >
+                    <span>{{ assessment.subject.name }} ({{ assessment.subject.code }})</span>
+                    <span class="mx-2 text-border-light dark:text-border-dark" aria-hidden="true">·</span>
+                    <span>{{ assessment.lesson.title }}</span>
+                </p>
+            </header>
 
-                            <!-- Multiple Choice -->
-                            <div v-if="currentQuestion.type === 'multiple_choice'" class="space-y-2">
-                                <label v-for="(choice, choiceIndex) in getChoices(currentQuestion)" :key="choiceIndex"
-                                    :class="[
-                                        'flex items-center p-3 rounded-lg border cursor-pointer transition-colors',
-                                        form.answers[currentQuestion.id]?.answer === choice
-                                            ? 'border-accent-primary bg-accent-primary/10 dark:bg-accent-primary/20'
-                                            : 'border-border-light dark:border-border-dark hover:border-accent-primary/50',
-                                    ]">
-                                    <input type="radio" :name="`answer_${currentQuestion.id}`" :value="choice"
-                                        :checked="form.answers[currentQuestion.id]?.answer === choice"
-                                        @change="updateAnswer(currentQuestion.id, choice)"
-                                        class="mr-3 text-accent-primary focus:ring-accent-primary" />
-                                    <span class="text-text-primary dark:text-text-inverted">
-                                        {{ choice }}
-                                    </span>
-                                </label>
-                            </div>
-
-                            <!-- Identification -->
-                            <div v-else-if="currentQuestion.type === 'identification'">
-                                <input :value="form.answers[currentQuestion.id]?.answer || ''"
-                                    @input="updateAnswer(currentQuestion.id, $event.target.value)" type="text"
-                                    placeholder="Enter your answer" class="input w-full" />
-                            </div>
-
-                            <!-- True/False -->
-                            <div v-else-if="currentQuestion.type === 'true_or_false'" class="flex gap-4">
-                                <label :class="[
-                                    'flex items-center p-3 rounded-lg border cursor-pointer transition-colors flex-1',
-                                    form.answers[currentQuestion.id]?.answer === 'True'
-                                        ? 'border-accent-primary bg-accent-primary/10 dark:bg-accent-primary/20'
-                                        : 'border-border-light dark:border-border-dark hover:border-accent-primary/50',
-                                ]">
-                                    <input type="radio" :name="`answer_${currentQuestion.id}`" value="True"
-                                        :checked="form.answers[currentQuestion.id]?.answer === 'True'"
-                                        @change="updateAnswer(currentQuestion.id, 'True')"
-                                        class="mr-3 text-accent-primary focus:ring-accent-primary" />
-                                    <span class="text-text-primary dark:text-text-inverted font-medium">
-                                        True
-                                    </span>
-                                </label>
-                                <label :class="[
-                                    'flex items-center p-3 rounded-lg border cursor-pointer transition-colors flex-1',
-                                    form.answers[currentQuestion.id]?.answer === 'False'
-                                        ? 'border-accent-primary bg-accent-primary/10 dark:bg-accent-primary/20'
-                                        : 'border-border-light dark:border-border-dark hover:border-accent-primary/50',
-                                ]">
-                                    <input type="radio" :name="`answer_${currentQuestion.id}`" value="False"
-                                        :checked="form.answers[currentQuestion.id]?.answer === 'False'"
-                                        @change="updateAnswer(currentQuestion.id, 'False')"
-                                        class="mr-3 text-accent-primary focus:ring-accent-primary" />
-                                    <span class="text-text-primary dark:text-text-inverted font-medium">
-                                        False
-                                    </span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Navigation Buttons -->
+            <!-- Progress: single slim bar + caption -->
+            <div class="mb-10 sm:mb-12">
                 <div
-                    class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-6 border-t border-border-light dark:border-border-dark">
-                    <button
-                        type="button"
-                        @click="previousQuestion"
-                        :disabled="isFirstQuestion"
-                        :class="[
-                            'flex-shrink-0 w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2.5 sm:py-2 rounded-lg font-medium transition-colors',
-                            isFirstQuestion
-                                ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                                : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600',
-                        ]"
-                    >
-                        ← Previous
-                    </button>
-
-                    <!-- Pagination: horizontally scrollable when many questions to prevent overflow -->
+                    class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-xs sm:text-sm text-text-secondary"
+                >
+                    <span class="tabular-nums font-medium text-text-primary dark:text-text-inverted">
+                        {{ currentQuestionIndex + 1 }} / {{ totalQuestions }}
+                    </span>
+                    <span class="tabular-nums">
+                        {{ answeredQuestions }} answered
+                    </span>
+                </div>
+                <div
+                    class="mt-3 h-1 w-full rounded-full bg-border-light/80 dark:bg-border-dark/90 overflow-hidden"
+                    role="progressbar"
+                    :aria-valuenow="currentQuestionIndex + 1"
+                    :aria-valuemax="totalQuestions"
+                    aria-label="Question progress"
+                >
                     <div
-                        class="min-w-0 flex-1 overflow-x-auto overflow-y-hidden py-2 -mx-1 px-1 scroll-smooth"
+                        class="h-full bg-accent-primary transition-[width] duration-300 ease-out rounded-full"
+                        :style="{
+                            width: `${totalQuestions ? ((currentQuestionIndex + 1) / totalQuestions) * 100 : 0}%`,
+                        }"
+                    />
+                </div>
+            </div>
+
+            <form @submit.prevent="submitForm" class="space-y-0">
+                <div v-if="currentQuestion" class="pb-6 sm:pb-8">
+                    <p
+                        class="text-[11px] sm:text-xs font-medium uppercase tracking-[0.12em] text-text-secondary mb-4 sm:mb-5"
                     >
-                        <div class="flex gap-2 justify-start flex-nowrap">
+                        Question {{ currentQuestionIndex + 1 }}
+                    </p>
+                    <h2
+                        class="text-[clamp(1.0625rem,2.8vw,1.25rem)] font-medium text-text-primary dark:text-text-inverted leading-snug mb-8 sm:mb-10"
+                    >
+                        {{ currentQuestion.question }}
+                    </h2>
+
+                    <!-- Multiple choice: list + dividers, no option boxes -->
+                    <div
+                        v-if="currentQuestion.type === 'multiple_choice'"
+                        class="divide-y divide-border-light dark:divide-border-dark -mx-1 sm:mx-0"
+                    >
+                        <label
+                            v-for="(choice, choiceIndex) in getChoices(currentQuestion)"
+                            :key="choiceIndex"
+                            :class="[
+                                'flex items-start gap-3 sm:gap-4 py-4 sm:py-[1.125rem] px-1 sm:px-2 rounded-lg cursor-pointer transition-colors min-h-[3.25rem] sm:min-h-0',
+                                form.answers[currentQuestion.id]?.answer === choice
+                                    ? 'bg-accent-primary/[0.06] dark:bg-accent-primary/10'
+                                    : 'hover:bg-surface-muted/80 dark:hover:bg-surface-dark-muted/50',
+                            ]"
+                        >
+                            <input
+                                type="radio"
+                                :name="`answer_${currentQuestion.id}`"
+                                :value="choice"
+                                :checked="form.answers[currentQuestion.id]?.answer === choice"
+                                class="mt-1.5 shrink-0 w-4 h-4 text-accent-primary border-border-light dark:border-border-dark focus:ring-accent-primary focus:ring-offset-0"
+                                @change="updateAnswer(currentQuestion.id, choice)"
+                            />
+                            <span
+                                class="text-[15px] sm:text-base text-text-primary dark:text-text-inverted leading-relaxed flex-1"
+                            >
+                                {{ choice }}
+                            </span>
+                        </label>
+                    </div>
+
+                    <!-- Identification -->
+                    <div v-else-if="currentQuestion.type === 'identification'" class="pt-1">
+                        <label class="sr-only" :for="`id-${currentQuestion.id}`">Your answer</label>
+                        <input
+                            :id="`id-${currentQuestion.id}`"
+                            :value="form.answers[currentQuestion.id]?.answer || ''"
+                            type="text"
+                            autocomplete="off"
+                            placeholder="Type your answer"
+                            class="w-full bg-transparent border-0 border-b border-border-light dark:border-border-dark px-0 py-3 text-base text-text-primary dark:text-text-inverted placeholder:text-text-secondary/70 focus:border-accent-primary focus:ring-0 focus:outline-none transition-colors rounded-none"
+                            @input="updateAnswer(currentQuestion.id, $event.target.value)"
+                        />
+                    </div>
+
+                    <!-- True / False: minimal pill pair -->
+                    <div
+                        v-else-if="currentQuestion.type === 'true_or_false'"
+                        class="flex flex-col sm:flex-row gap-3 sm:gap-4 max-w-md"
+                    >
+                        <label
+                            :class="[
+                                'flex flex-1 items-center justify-center min-h-[52px] sm:min-h-[48px] rounded-xl cursor-pointer text-base font-medium transition-all',
+                                form.answers[currentQuestion.id]?.answer === 'True'
+                                    ? 'bg-accent-primary text-white shadow-sm'
+                                    : 'bg-surface-muted/70 dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted hover:bg-surface-muted dark:hover:bg-surface-dark-muted/80',
+                            ]"
+                        >
+                            <input
+                                type="radio"
+                                :name="`answer_${currentQuestion.id}`"
+                                value="True"
+                                class="sr-only"
+                                :checked="form.answers[currentQuestion.id]?.answer === 'True'"
+                                @change="updateAnswer(currentQuestion.id, 'True')"
+                            />
+                            True
+                        </label>
+                        <label
+                            :class="[
+                                'flex flex-1 items-center justify-center min-h-[52px] sm:min-h-[48px] rounded-xl cursor-pointer text-base font-medium transition-all',
+                                form.answers[currentQuestion.id]?.answer === 'False'
+                                    ? 'bg-accent-primary text-white shadow-sm'
+                                    : 'bg-surface-muted/70 dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted hover:bg-surface-muted dark:hover:bg-surface-dark-muted/80',
+                            ]"
+                        >
+                            <input
+                                type="radio"
+                                :name="`answer_${currentQuestion.id}`"
+                                value="False"
+                                class="sr-only"
+                                :checked="form.answers[currentQuestion.id]?.answer === 'False'"
+                                @change="updateAnswer(currentQuestion.id, 'False')"
+                            />
+                            False
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Single nav block: sticky on small screens, inline on lg+ -->
+                <div
+                    class="mt-10 sm:mt-12 pt-6 sm:pt-8 border-t border-border-light dark:border-border-dark max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:mt-0 max-sm:pt-3 max-sm:px-4 max-sm:border-t max-sm:border-border-light/80 max-sm:dark:border-border-dark/80 max-sm:bg-surface/95 max-sm:dark:bg-surface-dark/95 max-sm:backdrop-blur-md max-sm:shadow-[0_-4px_24px_rgba(0,0,0,0.06)] max-sm:dark:shadow-[0_-4px_24px_rgba(0,0,0,0.25)] max-sm:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+                >
+                    <div
+                        class="flex gap-1.5 overflow-x-auto pb-3 sm:pb-2 -mx-1 px-1 scroll-smooth max-sm:[scrollbar-width:none] max-sm:[-ms-overflow-style:none] max-sm:[&::-webkit-scrollbar]:hidden"
+                    >
+                        <button
+                            v-for="(item, index) in items"
+                            :key="item.id"
+                            type="button"
+                            :ref="(el) => setPaginationButtonRef(el, index)"
+                            class="flex-shrink-0 w-9 h-9 sm:min-w-[2.25rem] rounded-full text-xs font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-surface-dark"
+                            :class="[
+                                index === currentQuestionIndex
+                                    ? 'bg-accent-primary text-white shadow-sm'
+                                    : form.answers[item.id]?.answer
+                                        ? 'text-accent-primary dark:text-indigo-300 bg-accent-primary/10 dark:bg-accent-primary/15 hover:bg-accent-primary/15'
+                                        : 'text-text-secondary bg-surface-muted/60 dark:bg-surface-dark-muted hover:bg-surface-muted dark:hover:bg-surface-dark-muted/90',
+                            ]"
+                            :title="`Question ${index + 1}`"
+                            @click="goToQuestion(index)"
+                        >
+                            {{ index + 1 }}
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2 sm:gap-4 sm:justify-between sm:pt-2">
+                        <button
+                            type="button"
+                            class="flex-1 sm:flex-none inline-flex items-center justify-center min-h-[48px] sm:min-h-[44px] sm:px-5 rounded-full text-sm font-medium text-text-secondary border border-transparent sm:border-0 max-sm:border-border-light max-sm:dark:border-border-dark hover:text-text-primary dark:hover:text-text-inverted active:bg-surface-muted dark:active:bg-surface-dark-muted sm:hover:bg-transparent transition-colors disabled:opacity-35 disabled:pointer-events-none"
+                            :disabled="isFirstQuestion"
+                            @click="previousQuestion"
+                        >
+                            Back
+                        </button>
+                        <div class="flex flex-1 sm:flex-none items-center justify-end gap-3 sm:min-w-0">
+                            <PrimaryButton
+                                v-if="isLastQuestion"
+                                type="submit"
+                                class="w-full sm:w-auto min-h-[48px] sm:min-h-[44px] px-8 rounded-full justify-center !shadow-none sm:min-w-[7.5rem]"
+                                :class="{ 'opacity-50 cursor-not-allowed': form.processing }"
+                                :disabled="form.processing"
+                            >
+                                <span v-if="form.processing">Submitting…</span>
+                                <span v-else>Submit</span>
+                            </PrimaryButton>
                             <button
-                                v-for="(item, index) in items"
-                                :key="item.id"
+                                v-else
                                 type="button"
-                                :ref="(el) => setPaginationButtonRef(el, index)"
-                                @click="goToQuestion(index)"
-                                :class="[
-                                    'flex-shrink-0 w-8 h-8 rounded-full text-sm font-medium transition-colors',
-                                    index === currentQuestionIndex
-                                        ? 'bg-accent-primary text-white'
-                                        : form.answers[item.id]?.answer
-                                            ? 'bg-green-500 text-white hover:bg-green-600'
-                                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600',
-                                ]" :title="`Question ${index + 1}`">
-                                {{ index + 1 }}
+                                class="w-full sm:w-auto min-h-[48px] sm:min-h-[44px] px-8 rounded-full text-sm font-medium bg-accent-primary text-white hover:bg-accent-muted active:bg-accent-muted transition-colors sm:min-w-[7.5rem]"
+                                @click="nextQuestion"
+                            >
+                                Next
                             </button>
                         </div>
                     </div>
-
-                    <div class="flex flex-shrink-0 gap-3 justify-end sm:justify-start w-full sm:w-auto min-w-0">
-                        <PrimaryButton
-                            v-if="isLastQuestion"
-                            type="submit"
-                            :class="[
-                                'w-full sm:w-auto min-h-[44px] sm:min-h-0 justify-center',
-                                { 'opacity-50 cursor-not-allowed': form.processing },
-                            ]"
-                            :disabled="form.processing"
-                        >
-                            <span v-if="form.processing">Submitting...</span>
-                            <template v-else>
-                                <span class="sm:hidden">Submit</span>
-                                <span class="hidden sm:inline">Submit Assessment</span>
-                            </template>
-                        </PrimaryButton>
-                        <button
-                            v-else
-                            type="button"
-                            @click="nextQuestion"
-                            class="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2.5 sm:py-2 bg-accent-primary text-white rounded-lg font-medium hover:bg-accent-muted transition-colors"
-                        >
-                            Next →
-                        </button>
-                    </div>
                 </div>
 
-                <InputError :message="form.errors.error" class="mt-4" />
+                <InputError :message="form.errors.error" class="mt-4 sm:mt-6" />
             </form>
         </div>
     </StudentLayout>

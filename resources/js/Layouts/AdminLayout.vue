@@ -340,7 +340,7 @@ onBeforeUnmount(() => {
         <button
             v-if="showBackToTop"
             type="button"
-            class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[65] inline-flex items-center justify-center w-11 h-11 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            class="fixed bottom-24 right-4 sm:right-6 lg:bottom-6 z-[65] inline-flex items-center justify-center w-11 h-11 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
             aria-label="Back to top"
             title="Back to top"
             @click="scrollToTop"
