@@ -143,10 +143,10 @@ const scrollToTop = () => {
                     : '-translate-x-full lg:translate-x-0',
             ]"
         >
-            <div class="flex flex-col h-full">
+            <div class="flex h-full min-h-0 flex-col">
                 <!-- Logo -->
                 <div
-                    class="p-6 border-b border-border-light dark:border-border-dark"
+                    class="shrink-0 border-b border-border-light p-6 dark:border-border-dark"
                 >
                     <Link
                         :href="route('instructor.dashboard')"
@@ -166,9 +166,9 @@ const scrollToTop = () => {
                     </Link>
                 </div>
 
-                <!-- Navigation -->
-                <nav class="flex-1 flex flex-col min-h-0 p-4">
-                    <div class="flex-1 min-h-0 overflow-y-auto space-y-1">
+                <!-- Navigation: scrollable links + fixed footer (Profile/Logout) on mobile -->
+                <nav class="flex min-h-0 flex-1 flex-col p-4">
+                    <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-1">
                         <Link
                             v-for="item in navItems"
                             :key="item.route"
@@ -185,8 +185,10 @@ const scrollToTop = () => {
                         </Link>
                     </div>
 
-                    <!-- Mobile: Profile & Logout (pinned to bottom) -->
-                    <div class="lg:hidden mt-auto pt-4 border-t border-border-light dark:border-border-dark space-y-1">
+                    <!-- Mobile: Profile & Logout (always visible — shrink-0 keeps it above safe area) -->
+                    <div
+                        class="shrink-0 space-y-1 border-t border-border-light pt-4 dark:border-border-dark lg:hidden pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+                    >
                         <Link
                             :href="route('instructor.settings')"
                             @click="sidebarOpen = false"
