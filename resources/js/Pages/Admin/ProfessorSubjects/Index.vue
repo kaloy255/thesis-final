@@ -5,55 +5,84 @@ import InputLabel from "@/Components/InputLabel.vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
 import SecondaryButton from "@/Components/SecondaryButton.vue";
 import SearchableSelect from "@/Components/SearchableSelect.vue";
+import Pagination from "@/Components/Pagination.vue";
 import Modal from "@/Components/Modal.vue";
 import { Head, router, useForm } from "@inertiajs/vue3";
-import { ref, computed } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { useToast } from "@/Stores/useToast";
 import ConfirmationModal from "@/Components/ConfirmationModal.vue";
 import { Icon } from "@iconify/vue";
 
 const props = defineProps({
-    subjects: Array,
+    subjects: Object,
+    subjectOptions: Array,
     professors: Array,
+    filters: Object,
 });
 
-const { success, error } = useToast();
+const { success, error, warning } = useToast();
 
 // Search
-const searchQuery = ref("");
+const searchQuery = ref(props.filters?.search || "");
 
 // Subject filter (dropdown to filter by specific subject)
-const subjectFilterId = ref("");
+const subjectFilterId = ref(
+    props.filters?.subject_id != null && props.filters.subject_id !== ""
+        ? String(props.filters.subject_id)
+        : ""
+);
+let searchTimeout = null;
 
 const subjectFilterOptions = computed(() => [
     { value: "", label: "All subjects" },
-    ...props.subjects.map((s) => ({
+    ...(props.subjectOptions || []).map((s) => ({
         value: String(s.id),
-        label: `(${s.assignments?.length || 0}) ${s.code} — ${s.name}`,
+        label: `(${s.assignments_count || 0}) ${s.code} — ${s.name}`,
     })),
 ]);
 
-const filteredSubjects = computed(() => {
-    let list = props.subjects;
+const hasSubjects = computed(() => props.subjects?.data?.length > 0);
+const hasActiveFilters = computed(
+    () => searchQuery.value || subjectFilterId.value
+);
+const detailsSectionRef = ref(null);
+const isDetailsStuck = ref(false);
 
-    // Filter by selected subject (null/empty = all)
-    const subjectId = subjectFilterId.value;
-    if (subjectId != null && subjectId !== "") {
-        list = list.filter((s) => String(s.id) === subjectId);
-    }
+const applyFilters = () => {
+    router.get(route("admin.assignments.index"), {
+        search: searchQuery.value || undefined,
+        subject_id: subjectFilterId.value || undefined,
+        per_page: props.filters?.per_page || 10,
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
+};
 
-    // Filter by search query
-    if (searchQuery.value) {
-        const q = searchQuery.value.toLowerCase();
-        list = list.filter(
-            (s) =>
-                s.name.toLowerCase().includes(q) ||
-                s.code.toLowerCase().includes(q) ||
-                s.assignments.some((a) => a.professor_name.toLowerCase().includes(q))
-        );
-    }
+watch(subjectFilterId, applyFilters);
 
-    return list;
+watch(searchQuery, () => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(applyFilters, 400);
+});
+
+const updateStickyState = () => {
+    const el = detailsSectionRef.value;
+    if (!el) return;
+    const stickyTop = Number.parseFloat(window.getComputedStyle(el).top || "0") || 0;
+    isDetailsStuck.value = el.getBoundingClientRect().top <= stickyTop + 0.5;
+};
+
+onMounted(() => {
+    updateStickyState();
+    window.addEventListener("scroll", updateStickyState, { passive: true });
+    window.addEventListener("resize", updateStickyState);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener("scroll", updateStickyState);
+    window.removeEventListener("resize", updateStickyState);
 });
 
 // Assign modal
@@ -233,80 +262,92 @@ const formatDate = (dateString) => {
     <AdminLayout>
         <Head title="Assignments" />
 
-        <!-- Header -->
-        <div class="mb-8">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div class="w-full sm:w-auto">
-                    <h1 class="text-2xl font-semibold text-text-primary dark:text-text-inverted mb-1">
-                        Assignments
-                    </h1>
-                    <p class="text-sm text-text-secondary">
-                        Manage instructor assignments per subject
-                    </p>
+        <!-- Sticky Header + Filters -->
+        <div ref="detailsSectionRef" class="sticky top-[64px] z-40 mb-6 pb-2">
+            <div
+                :class="[
+                    'rounded-b-xl rounded-t-none p-3 sm:p-4 transition-all duration-200',
+                    isDetailsStuck
+                        ? 'bg-white/95 dark:bg-slate-900/95 border border-border-light dark:border-slate-700 shadow-md backdrop-blur-sm'
+                        : 'bg-transparent border border-transparent shadow-none',
+                ]"
+            >
+                <!-- Header -->
+                <div class="mb-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="w-full sm:w-auto">
+                            <h1 class="text-2xl font-semibold text-text-primary dark:text-text-inverted mb-1">
+                                Assignments
+                            </h1>
+                            <p class="text-sm text-text-secondary">
+                                Manage instructor assignments per subject
+                            </p>
+                        </div>
+                        <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                            <button
+                                @click="openImportModal"
+                                class="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-4 py-2.5 bg-surface dark:bg-surface-dark-muted text-text-secondary border border-border-light dark:border-border-dark text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                                Import Assigned
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                    <button
-                        @click="openImportModal"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-surface dark:bg-surface-dark-muted text-text-secondary border border-border-light dark:border-border-dark text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
-                    >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                        </svg>
-                        Import Assigned
-                    </button>
-                </div>
-            </div>
-        </div>
 
-        <!-- Filters -->
-        <div class="mb-6 flex flex-col sm:flex-row gap-4">
-            <div class="flex-1 min-w-0">
-                <label class="block text-xs font-medium text-text-secondary mb-1.5">
-                    Search
-                </label>
-                <div class="relative">
-                    <svg
-                        class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                <!-- Filters -->
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="flex-1 min-w-0">
+                        <label class="block text-xs font-medium text-text-secondary mb-1.5">
+                            Search
+                        </label>
+                        <div class="relative">
+                            <svg
+                                class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                />
+                            </svg>
+                            <input
+                                v-model="searchQuery"
+                                type="text"
+                                placeholder="Search subjects or instructors..."
+                                class="w-full pl-10 pr-4 py-2.5 text-sm border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+                            />
+                        </div>
+                    </div>
+                    <div class="w-full sm:w-64">
+                        <label class="block text-xs font-medium text-text-secondary mb-1.5">
+                            Filter by subject
+                        </label>
+                        <SearchableSelect
+                            v-model="subjectFilterId"
+                            :options="subjectFilterOptions"
+                            placeholder="Filter by subject..."
                         />
-                    </svg>
-                    <input
-                        v-model="searchQuery"
-                        type="text"
-                        placeholder="Search subjects or instructors..."
-                        class="w-full pl-10 pr-4 py-2.5 text-sm border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
-                    />
+                    </div>
                 </div>
-            </div>
-            <div class="sm:w-64">
-                <label class="block text-xs font-medium text-text-secondary mb-1.5">
-                    Filter by subject
-                </label>
-                <SearchableSelect
-                    v-model="subjectFilterId"
-                    :options="subjectFilterOptions"
-                    placeholder="Filter by subject..."
-                />
             </div>
         </div>
 
         <!-- Subject Cards Grid -->
         <div
-            v-if="filteredSubjects.length > 0"
+            v-if="hasSubjects"
             class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"
         >
             <div
-                v-for="subject in filteredSubjects"
+                v-for="subject in props.subjects.data"
                 :key="subject.id"
-                class="bg-surface dark:bg-surface-dark-muted rounded-xl border border-border-light dark:border-border-dark overflow-hidden flex flex-col"
+                class="bg-surface dark:bg-surface-dark-muted rounded-xl border border-border-light dark:border-border-dark overflow-hidden flex flex-col min-w-0"
             >
                 <!-- Card Header -->
                 <div class="px-5 pt-5 pb-4">
@@ -360,7 +401,7 @@ const formatDate = (dateString) => {
                             </div>
                             <button
                                 @click="openDeleteModal(assignment.id)"
-                                class="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-all"
+                                class="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 inline-flex items-center justify-center w-9 h-9 sm:w-auto sm:h-auto sm:p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-all"
                                 title="Remove"
                             >
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -384,6 +425,22 @@ const formatDate = (dateString) => {
                     </button>
                 </div>
             </div>
+        </div>
+        <div v-if="hasSubjects" class="mt-5 bg-surface dark:bg-surface-dark-muted rounded-xl border border-border-light dark:border-border-dark overflow-hidden">
+            <Pagination
+                :links="props.subjects.links || []"
+                :current-page="props.subjects.current_page || 1"
+                :last-page="props.subjects.last_page || 1"
+                :per-page="props.filters?.per_page || 10"
+                :total="props.subjects.total || 0"
+                :from="props.subjects.from || 0"
+                :to="props.subjects.to || 0"
+                route-name="admin.assignments.index"
+                :filters="{
+                    search: searchQuery || props.filters?.search || '',
+                    subject_id: subjectFilterId || props.filters?.subject_id || '',
+                }"
+            />
         </div>
 
         <!-- No Results -->
@@ -409,7 +466,7 @@ const formatDate = (dateString) => {
                     No subjects found
                 </h3>
                 <p class="text-sm text-text-secondary">
-                    {{ subjectFilterId || searchQuery ? "Try adjusting your filters or search query." : "No subjects in database yet." }}
+                    {{ hasActiveFilters ? "Try adjusting your filters or search query." : "No subjects in database yet." }}
                 </p>
             </div>
           
@@ -446,11 +503,11 @@ const formatDate = (dateString) => {
                         />
                         <InputError class="mt-2" :message="assignForm.errors.professor_id" />
                     </div>
-                    <div class="flex justify-end gap-3 pt-4 border-t border-border-light dark:border-border-dark">
-                        <SecondaryButton type="button" @click="closeAssignModal" class="px-4 py-2">
+                    <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-border-light dark:border-border-dark">
+                        <SecondaryButton type="button" @click="closeAssignModal" class="px-4 py-2 w-full sm:w-auto">
                             Cancel
                         </SecondaryButton>
-                        <PrimaryButton :disabled="assignForm.processing" class="px-4 py-2">
+                        <PrimaryButton :disabled="assignForm.processing" class="px-4 py-2 w-full sm:w-auto">
                             Assign
                         </PrimaryButton>
                     </div>
@@ -590,14 +647,14 @@ const formatDate = (dateString) => {
                             <li v-if="importErrors.length > 10" class="text-amber-600 dark:text-amber-500">... and {{ importErrors.length - 10 }} more</li>
                         </ul>
                     </div>
-                    <div class="flex justify-end gap-3 pt-4 border-t border-border-light dark:border-border-dark">
-                        <SecondaryButton type="button" @click="closeImportModal" class="px-4 py-2">
+                    <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-border-light dark:border-border-dark">
+                        <SecondaryButton type="button" @click="closeImportModal" class="px-4 py-2 w-full sm:w-auto">
                             Cancel
                         </SecondaryButton>
                         <PrimaryButton
                             type="submit"
                             :disabled="!importForm.file || importForm.processing"
-                            class="px-4 py-2"
+                            class="px-4 py-2 w-full sm:w-auto"
                         >
                             {{ importForm.processing ? "Importing..." : "Import" }}
                         </PrimaryButton>

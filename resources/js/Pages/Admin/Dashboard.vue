@@ -195,8 +195,8 @@ const chartData = computed(() => {
                 data: gemini,
                 fill: false,
                 tension: 0.4,
-                borderColor: gray,
-                backgroundColor: "rgba(107, 114, 128, 0.12)",
+                borderColor: purple,
+                backgroundColor: "rgba(168, 85, 247, 0.12)",
                 pointRadius: 3,
                 pointHoverRadius: 5,
             },
@@ -205,8 +205,8 @@ const chartData = computed(() => {
                 data: groq,
                 fill: false,
                 tension: 0.4,
-                borderColor: purple,
-                backgroundColor: "rgba(168, 85, 247, 0.12)",
+                borderColor: gray,
+                backgroundColor: "rgba(107, 114, 128, 0.12)",
                 pointRadius: 3,
                 pointHoverRadius: 5,
             },
@@ -232,6 +232,8 @@ const chartOptions = computed(() => {
                 },
             },
             y: {
+                beginAtZero: true,
+                min: 0,
                 ticks: {
                     color: textColor,
                     callback: (value) => value.toLocaleString(),
@@ -415,17 +417,16 @@ const onApplyRange = async () => {
                 </div>
             </Link>
         </div>
-        <div class="card p-4 mb-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
+        <div class="card p-3 sm:p-4 mb-6 overflow-hidden">
+            <div class="flex flex-col gap-3 mb-3">
                 <div>
                     <h2 class="text-lg font-semibold">AI Token Usage (Daily)</h2>
                     <div class="text-xs text-text-secondary mt-1">
                         Daily total tokens by fallback provider
                     </div>
-                </div>
-                <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                    <div class="w-full sm:w-auto sm:self-start min-w-0 mt-3">
                     <DatePicker
-                        class="border p-2 rounded-lg min-w-[15rem] flex justify-center"
+                        class="border p-2 rounded-lg w-full sm:w-[18rem] lg:w-[20rem] min-w-0"
                         ref="datePickerRef"
                         v-model="rangeValue"
                         selectionMode="range"
@@ -436,20 +437,20 @@ const onApplyRange = async () => {
                         :hideOnRangeSelection="false"
                         dateFormat="M-d-yy"
                         placeholder="Select date range"
-                        inputClass="w-56"
+                        inputClass="w-full"
                     >
                         <template #footer>
-                            <div class="flex items-center justify-center gap-2 w-full">
+                            <div class="flex items-center justify-end gap-2 w-full">
                                 <button
                                     type="button"
-                                    class="px-4 py-2 rounded-md border border-border-light/30 bg-transparent text-sm text-text-secondary"
+                                    class="px-3 py-2 rounded-md border border-border-light/30 bg-transparent text-sm text-text-secondary"
                                     @click="onCancelRange"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="button"
-                                    class="px-4 py-2 rounded-md border border-accent-primary bg-accent-primary/10 text-sm text-accent-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                                    class="px-3 py-2 rounded-md border border-accent-primary bg-accent-primary/10 text-sm text-accent-primary disabled:opacity-50 disabled:cursor-not-allowed"
                                     :disabled="!isRangeComplete"
                                     @click="onApplyRange"
                                 >
@@ -461,23 +462,24 @@ const onApplyRange = async () => {
                     <!-- Preserves existing behavior: chart updates only after clicking Apply -->
                     <span class="sr-only">Use Apply to update charts</span>
                 </div>
+                </div>
             </div>
 
-            <div class="h-[320px]">
+            <div class="h-[260px] sm:h-[320px] min-w-0 overflow-hidden">
                 <Chart type="line" :data="chartData" :options="chartOptions" />
             </div>
         </div>
         <!--logs table-->
-        <div class="card p-4">
-            <div class="flex items-center justify-between mb-3">
+        <div class="card p-3 sm:p-4 overflow-hidden">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3 min-w-0">
                 <h2 class="text-lg font-semibold">Recent Activity</h2>
-                <div class="flex items-center gap-3">
-                    <span class="text-xs text-text-secondary"
+                <div class="flex items-center justify-between sm:justify-end gap-3 min-w-0">
+                    <span class="text-xs text-text-secondary truncate"
                         >Latest 7 entries</span
                     >
                     <Link
                         :href="route('admin.logs.index')"
-                        class="btn-ghost text-sm"
+                        class="btn-ghost text-sm shrink-0"
                     >
                         Show All
                     </Link>

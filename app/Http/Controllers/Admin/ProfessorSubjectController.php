@@ -19,12 +19,35 @@ use App\Http\Requests\Admin\AssignmentImportRequest;
 
 class ProfessorSubjectController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $subjects = Subject::with(['professorSubjects.professor.user', 'professorSubjects.professor.department'])
+        $search = trim((string) $request->input('search', ''));
+        $subjectId = trim((string) $request->input('subject_id', ''));
+        $perPage = (int) $request->input('per_page', 10);
+        $perPage = in_array($perPage, [10, 25, 50, 100], true) ? $perPage : 10;
+
+        $subjectsQuery = Subject::query()
+            ->with(['professorSubjects.professor.user', 'professorSubjects.professor.department']);
+
+        if ($subjectId !== '') {
+            $subjectsQuery->where('id', $subjectId);
+        }
+
+        if ($search !== '') {
+            $subjectsQuery->where(function ($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhereHas('professorSubjects.professor.user', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $subjects = $subjectsQuery
             ->orderBy('name')
-            ->get()
-            ->map(function ($subject) {
+            ->paginate($perPage)
+            ->withQueryString()
+            ->through(function ($subject) {
                 return [
                     'id' => $subject->id,
                     'code' => $subject->code,
@@ -37,13 +60,32 @@ class ProfessorSubjectController extends Controller
                             'department_name' => $ps->professor->department->name ?? 'No Department',
                             'created_at' => $ps->created_at?->toISOString(),
                         ];
-                    }),
+                    })->values(),
+                ];
+            });
+
+        $subjectOptions = Subject::query()
+            ->withCount('professorSubjects')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($subject) {
+                return [
+                    'id' => $subject->id,
+                    'code' => $subject->code,
+                    'name' => $subject->name,
+                    'assignments_count' => $subject->professor_subjects_count,
                 ];
             });
 
         return Inertia::render('Admin/ProfessorSubjects/Index', [
             'subjects' => $subjects,
+            'subjectOptions' => $subjectOptions,
             'professors' => Professor::with(['user', 'department'])->orderBy('id')->get(),
+            'filters' => [
+                'search' => $search,
+                'subject_id' => $subjectId,
+                'per_page' => $perPage,
+            ],
         ]);
     }
 
