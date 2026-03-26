@@ -294,16 +294,6 @@ const formatDate = (dateString) => {
                     </button>
                 </div>
             </div>
-            <div class="w-full sm:w-64">
-                <label class="block text-xs font-medium text-text-secondary mb-1.5">
-                    Filter by subject
-                </label>
-                <SearchableSelect
-                    v-model="subjectFilterId"
-                    :options="subjectFilterOptions"
-                    placeholder="Filter by subject..."
-                />
-            </div>
         </div>
 
         <!-- Sticky Search -->
@@ -340,108 +330,123 @@ const formatDate = (dateString) => {
             </div>
         </div>
 
-        <!-- Subject Cards Grid -->
+        <!-- Subject Filter (non-sticky, below search) -->
+        <div class="mb-4 sm:mb-5 w-full sm:w-64">
+            <label class="block text-xs font-medium text-text-secondary mb-1.5">
+                Filter by subject
+            </label>
+            <SearchableSelect
+                v-model="subjectFilterId"
+                :options="subjectFilterOptions"
+                placeholder="Filter by subject..."
+            />
+        </div>
+
+        <!-- Subject Cards + Pagination -->
         <div
             v-if="hasSubjects"
-            class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"
+            class="min-h-[calc(100vh-330px)] flex flex-col"
         >
-            <div
-                v-for="subject in props.subjects.data"
-                :key="subject.id"
-                class="bg-surface dark:bg-surface-dark-muted rounded-xl border border-border-light dark:border-border-dark overflow-hidden flex flex-col min-w-0"
-            >
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                <div
+                    v-for="subject in props.subjects.data"
+                    :key="subject.id"
+                    class="bg-surface dark:bg-surface-dark-muted rounded-xl border border-border-light dark:border-border-dark overflow-hidden flex flex-col min-w-0"
+                >
                 <!-- Card Header -->
-                <div class="px-5 pt-5 pb-4">
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="min-w-0">
-                            <span class="text-xs font-mono font-medium text-indigo-600 dark:text-indigo-400">
-                                {{ subject.code }}
-                            </span>
-                            <h3 class="text-base font-semibold text-text-primary dark:text-text-inverted mt-0.5 leading-snug">
-                                {{ subject.name }}
-                            </h3>
-                        </div>
-                        <span class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-surface-dark-muted text-text-secondary">
-                            {{ subject.assignments.length }} instructor{{ subject.assignments.length !== 1 ? 's' : '' }}
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Assigned Instructors -->
-                <div class="flex-1 px-5 pb-3">
-                    <!-- Empty state -->
-                    <div
-                        v-if="subject.assignments.length === 0"
-                        class="py-6 text-center"
-                    >
-                        <Icon icon="simple-line-icons:people" class="w-5 h-5 text-text-secondary mx-auto mb-4" />
-                        <p class="text-xs text-text-secondary">
-                            No instructor assigned
-                        </p>
-                    </div>
-
-                    <!-- Instructor list -->
-                    <div v-else class="space-y-2">
-                        <div
-                            v-for="assignment in subject.assignments"
-                            :key="assignment.id"
-                            class="group flex items-center justify-between gap-2 py-2 px-3 -mx-1 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
-                        >
-                            <div class="flex items-center gap-3 min-w-0">
-                                <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                                    {{ assignment.professor_name.charAt(0).toUpperCase() }}
-                                </div>
-                                <div class="min-w-0">
-                                    <p class="text-sm font-medium text-text-primary dark:text-text-inverted truncate">
-                                        {{ assignment.professor_name }}
-                                    </p>
-                                    <p class="text-xs text-text-secondary truncate">
-                                        {{ assignment.department_name }}
-                                    </p>
-                                </div>
+                    <div class="px-5 pt-5 pb-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <span class="text-xs font-mono font-medium text-indigo-600 dark:text-indigo-400">
+                                    {{ subject.code }}
+                                </span>
+                                <h3 class="text-base font-semibold text-text-primary dark:text-text-inverted mt-0.5 leading-snug">
+                                    {{ subject.name }}
+                                </h3>
                             </div>
-                            <button
-                                @click="openDeleteModal(assignment.id)"
-                                class="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 inline-flex items-center justify-center w-9 h-9 sm:w-auto sm:h-auto sm:p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-all"
-                                title="Remove"
-                            >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
+                            <span class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-surface-dark-muted text-text-secondary">
+                                {{ subject.assignments.length }} instructor{{ subject.assignments.length !== 1 ? 's' : '' }}
+                            </span>
                         </div>
                     </div>
-                </div>
 
-                <!-- Card Footer — Add Button -->
-                <div class="px-5 py-3 border-t border-gray-100 dark:border-border-dark">
-                    <button
-                        @click="openAssignModal(subject)"
-                        class="w-full flex items-center justify-center gap-1.5 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        Assign Instructor
-                    </button>
+                    <!-- Assigned Instructors -->
+                    <div class="flex-1 px-5 pb-3">
+                        <!-- Empty state -->
+                        <div
+                            v-if="subject.assignments.length === 0"
+                            class="py-6 text-center"
+                        >
+                            <Icon icon="simple-line-icons:people" class="w-5 h-5 text-text-secondary mx-auto mb-4" />
+                            <p class="text-xs text-text-secondary">
+                                No instructor assigned
+                            </p>
+                        </div>
+
+                        <!-- Instructor list -->
+                        <div v-else class="space-y-2">
+                            <div
+                                v-for="assignment in subject.assignments"
+                                :key="assignment.id"
+                                class="group flex items-center justify-between gap-2 py-2 px-3 -mx-1 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                            >
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                                        {{ assignment.professor_name.charAt(0).toUpperCase() }}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-medium text-text-primary dark:text-text-inverted truncate">
+                                            {{ assignment.professor_name }}
+                                        </p>
+                                        <p class="text-xs text-text-secondary truncate">
+                                            {{ assignment.department_name }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    @click="openDeleteModal(assignment.id)"
+                                    class="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 inline-flex items-center justify-center w-9 h-9 sm:w-auto sm:h-auto sm:p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-all"
+                                    title="Remove"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Footer — Add Button -->
+                    <div class="px-5 py-3 border-t border-gray-100 dark:border-border-dark">
+                        <button
+                            @click="openAssignModal(subject)"
+                            class="w-full flex items-center justify-center gap-1.5 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Assign Instructor
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div v-if="hasSubjects" class="mt-5 bg-surface dark:bg-surface-dark-muted rounded-xl border border-border-light dark:border-border-dark overflow-hidden">
-            <Pagination
-                :links="props.subjects.links || []"
-                :current-page="props.subjects.current_page || 1"
-                :last-page="props.subjects.last_page || 1"
-                :per-page="props.filters?.per_page || 10"
-                :total="props.subjects.total || 0"
-                :from="props.subjects.from || 0"
-                :to="props.subjects.to || 0"
-                route-name="admin.assignments.index"
-                :filters="{
-                    search: searchQuery || props.filters?.search || '',
-                    subject_id: subjectFilterId || props.filters?.subject_id || '',
-                }"
-            />
+
+            <div class="mt-5 bg-surface dark:bg-surface-dark-muted rounded-xl border border-border-light dark:border-border-dark overflow-hidden mt-auto">
+                <Pagination
+                    :links="props.subjects.links || []"
+                    :current-page="props.subjects.current_page || 1"
+                    :last-page="props.subjects.last_page || 1"
+                    :per-page="props.filters?.per_page || 10"
+                    :total="props.subjects.total || 0"
+                    :from="props.subjects.from || 0"
+                    :to="props.subjects.to || 0"
+                    route-name="admin.assignments.index"
+                    :filters="{
+                        search: searchQuery || props.filters?.search || '',
+                        subject_id: subjectFilterId || props.filters?.subject_id || '',
+                    }"
+                />
+            </div>
         </div>
 
         <!-- No Results -->

@@ -398,28 +398,6 @@ const formatDate = (dateString) => {
                     </button>
                 </div>
             </div>
-            <div class="flex flex-col sm:flex-row gap-4">
-                <div class="sm:w-64">
-                    <label class="block text-xs font-medium text-text-secondary mb-1.5">
-                        Filter by department
-                    </label>
-                    <SearchableSelect
-                        v-model="departmentFilterId"
-                        :options="departmentFilterOptions"
-                        placeholder="Filter by department..."
-                    />
-                </div>
-                <div class="sm:w-64">
-                    <label class="block text-xs font-medium text-text-secondary mb-1.5">
-                        Filter by section
-                    </label>
-                    <SearchableSelect
-                        v-model="sectionFilterId"
-                        :options="sectionFilterOptions"
-                        placeholder="Filter by section..."
-                    />
-                </div>
-            </div>
         </div>
 
         <!-- Sticky Search -->
@@ -454,6 +432,30 @@ const formatDate = (dateString) => {
                         class="w-full pl-10 pr-4 py-2 text-sm border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
                     />
                 </div>
+            </div>
+        </div>
+
+        <!-- Filters (non-sticky, below search) -->
+        <div class="mb-4 sm:mb-5 flex flex-col sm:flex-row gap-4">
+            <div class="sm:w-64">
+                <label class="block text-xs font-medium text-text-secondary mb-1.5">
+                    Filter by department
+                </label>
+                <SearchableSelect
+                    v-model="departmentFilterId"
+                    :options="departmentFilterOptions"
+                    placeholder="Filter by department..."
+                />
+            </div>
+            <div class="sm:w-64">
+                <label class="block text-xs font-medium text-text-secondary mb-1.5">
+                    Filter by section
+                </label>
+                <SearchableSelect
+                    v-model="sectionFilterId"
+                    :options="sectionFilterOptions"
+                    placeholder="Filter by section..."
+                />
             </div>
         </div>
 
@@ -595,6 +597,7 @@ const formatDate = (dateString) => {
 
             <!-- Pagination -->
             <Pagination
+                class="mt-auto"
                 :links="props.students.links || []"
                 :current-page="props.students.current_page || 1"
                 :last-page="props.students.last_page || 1"

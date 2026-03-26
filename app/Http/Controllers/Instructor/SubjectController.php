@@ -22,6 +22,9 @@ class SubjectController extends Controller
         $professor = auth()->user()->professor;
         $search = $request->string('search')->toString();
 
+        $perPage = (int) $request->input('per_page', 10);
+        $perPage = in_array($perPage, [10, 15, 25, 50], true) ? $perPage : 10;
+
         $subjects = $professor->subjects()
             ->selectRaw('subjects.*, (
                 SELECT COUNT(*) 
@@ -42,12 +45,14 @@ class SubjectController extends Controller
                 });
             })
             ->orderBy('name')
-            ->get();
+            ->paginate($perPage)
+            ->withQueryString();
 
         return Inertia::render('Instructor/Subjects/Index', [
             'subjects' => $subjects,
             'filters' => [
                 'search' => $search,
+                'per_page' => $perPage,
             ],
         ]);
     }

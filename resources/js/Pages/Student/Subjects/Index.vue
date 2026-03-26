@@ -16,6 +16,7 @@ const props = defineProps({
 });
 
 const search = ref(props.filters?.search || "");
+const selectedStatus = ref(props.filters?.status || "all");
 const processingJoin = ref(null);
 const detailsSectionRef = ref(null);
 const isDetailsStuck = ref(false);
@@ -145,23 +146,32 @@ const getInitials = (name) => {
     return name.slice(0, 2).toUpperCase();
 };
 
+const applyFilters = ({ resetPage = true } = {}) => {
+    router.get(
+        route("student.subjects.index"),
+        {
+            search: search.value || undefined,
+            status: selectedStatus.value !== "all" ? selectedStatus.value : undefined,
+            per_page: props.filters?.per_page || 10,
+            page: resetPage ? 1 : undefined,
+        },
+        {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        }
+    );
+};
+
 watch(search, (newValue) => {
     if (searchTimeout) clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
-        router.get(
-            route("student.subjects.index"),
-            {
-                search: newValue || undefined,
-                per_page: props.filters?.per_page || 10,
-                page: 1,
-            },
-            {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            }
-        );
+        applyFilters({ resetPage: true });
     }, 300);
+});
+
+watch(selectedStatus, () => {
+    applyFilters({ resetPage: true });
 });
 
 onMounted(() => {
@@ -181,7 +191,11 @@ onBeforeUnmount(() => {
     <StudentLayout>
         <Head title="Join Subjects" />
 
-        <div class="mb-4 sm:mb-5">
+        <!-- Fill viewport below header/breadcrumb so pagination can sit at the bottom -->
+        <div
+            class="flex flex-col min-h-[calc(100dvh-15rem)] lg:min-h-[calc(100dvh-12rem)]"
+        >
+        <div class="mb-4 sm:mb-5 shrink-0">
             <h1
                 class="text-lg sm:text-2xl font-semibold text-text-primary dark:text-text-inverted"
             >
@@ -194,7 +208,7 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- z-20: below app headers so header dropdowns (notifications) are not covered -->
-        <div ref="detailsSectionRef" class="sticky top-16 lg:top-[64px] z-20 mb-5 sm:mb-6">
+        <div ref="detailsSectionRef" class="sticky top-16 lg:top-[64px] z-20 mb-5 sm:mb-6 shrink-0">
             <div
                 :class="[
                     'rounded-lg transition-all duration-200',
@@ -220,13 +234,26 @@ onBeforeUnmount(() => {
                         class="w-full pl-10 pr-4 py-2 text-sm border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
                     />
                 </div>
+                <div class="mt-3 w-full sm:w-56">
+                    <label for="status-filter" class="sr-only">Filter by status</label>
+                    <select
+                        id="status-filter"
+                        v-model="selectedStatus"
+                        class="w-full px-3 py-2 text-sm border border-border-light dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+                    >
+                        <option value="all">All</option>
+                        <option value="enrolled">Enrolled</option>
+                        <option value="available">Available</option>
+                    </select>
+                </div>
             </div>
         </div>
 
+        <div class="flex flex-col flex-1 min-h-0">
         <!-- Empty State: no subjects in system -->
         <div
             v-if="subjectTotal === 0 && !search.trim()"
-            class="card p-12 text-center text-text-secondary"
+            class="card p-12 text-center text-text-secondary flex-1 flex flex-col items-center justify-center"
         >
             <svg
                 class="mx-auto h-16 w-16 mb-4 opacity-50"
@@ -254,8 +281,8 @@ onBeforeUnmount(() => {
 
         <!-- No Results State -->
         <div
-            v-else-if="subjectTotal === 0 && search.trim()"
-            class="card p-8 sm:p-12 text-center min-h-[20rem] flex flex-col items-center justify-center text-text-secondary"
+            v-else-if="subjectTotal === 0 && (search.trim() || selectedStatus !== 'all')"
+            class="card p-8 sm:p-12 text-center flex-1 flex flex-col items-center justify-center min-h-[20rem] text-text-secondary"
         >
             <svg
                 class="mx-auto h-16 w-16 mb-4 opacity-50"
@@ -280,8 +307,11 @@ onBeforeUnmount(() => {
             </p>
         </div>
 
-        <!-- Subjects Grid -->
-        <template v-else-if="hasSubjects">
+        <!-- Subjects Grid + pagination anchored to bottom of viewport when content is short -->
+        <div
+            v-else-if="hasSubjects"
+            class="flex flex-col flex-1 min-h-0 gap-4"
+        >
         <div
             class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 scroll-mt-28"
         >
@@ -421,7 +451,9 @@ onBeforeUnmount(() => {
             </article>
         </div>
 
-        <div class="mt-6 sm:mt-8 bg-surface dark:bg-surface-dark-muted rounded-xl border border-border-light dark:border-border-dark max-lg:mb-6 max-lg:pb-1">
+        <div
+            class="bg-surface dark:bg-surface-dark-muted rounded-xl border border-border-light dark:border-border-dark mt-auto pt-2 max-lg:mb-2 max-lg:pb-[max(0.25rem,env(safe-area-inset-bottom))]"
+        >
             <Pagination
                 :links="props.subjects.links || []"
                 :current-page="props.subjects.current_page || 1"
@@ -433,11 +465,14 @@ onBeforeUnmount(() => {
                 route-name="student.subjects.index"
                 :filters="{
                     search: search || props.filters?.search || '',
+                    status: selectedStatus !== 'all' ? selectedStatus : '',
                     per_page: props.filters?.per_page || 10,
                 }"
             />
         </div>
-        </template>
+        </div>
+        </div>
+        </div>
     </StudentLayout>
 </template>
 

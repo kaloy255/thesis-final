@@ -1,7 +1,8 @@
 <script setup>
 import InstructorLayout from "@/Layouts/InstructorLayout.vue";
 import RecentActivityCard from "@/Components/RecentActivityCard.vue";
-import { Head, Link, router } from "@inertiajs/vue3";
+import Pagination from "@/Components/Pagination.vue";
+import { Head, router } from "@inertiajs/vue3";
 import { computed, ref, watch, onMounted, onBeforeUnmount } from "vue";
 
 const props = defineProps({
@@ -33,7 +34,10 @@ const updateStickyState = () => {
 watch(searchQuery, (newValue) => {
     if (searchTimeout) clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
-        router.get(route("instructor.logs.index"), { search: newValue }, {
+        router.get(route("instructor.logs.index"), {
+            search: newValue,
+            per_page: props.logs?.per_page ?? props.filters?.per_page ?? 15,
+        }, {
             preserveState: true,
             preserveScroll: true,
             replace: true,
@@ -42,6 +46,10 @@ watch(searchQuery, (newValue) => {
 });
 
 const logItems = computed(() => props.logs?.data ?? []);
+
+const logPaginationFilters = computed(() => ({
+    search: props.filters?.search ?? "",
+}));
 
 onMounted(() => {
     updateStickyState();
@@ -94,7 +102,7 @@ onBeforeUnmount(() => {
             </div>
         </div>
 
-        <div class="card p-6 space-y-4">
+        <div class="card p-6 space-y-4 flex flex-col min-h-[calc(100vh-220px)]">
 
             <!-- Empty State -->
             <div
@@ -123,7 +131,7 @@ onBeforeUnmount(() => {
             </div>
 
             <!-- Timeline -->
-            <div v-else class="relative">
+            <div v-else class="relative flex-1">
                 <div
                     class="absolute left-4 top-4 bottom-4 w-0.5 bg-border-light dark:bg-border-dark rounded-full"
                     aria-hidden="true"
@@ -139,27 +147,19 @@ onBeforeUnmount(() => {
                 </div>
             </div>
 
-            <!-- Pagination -->
-            <div
-                v-if="logs?.links?.length"
-                class="mt-6 flex gap-2 flex-wrap"
-            >
-                <Link
-                    v-for="link in logs.links"
-                    :key="link.url || link.label"
-                    :href="link.url || '#'"
-                    v-html="link.label"
-                    class="px-3 py-1 rounded border text-sm transition"
-                    :class="[
-                        link.active
-                            ? 'bg-accent-primary text-white border-transparent'
-                            : 'bg-surface text-text-secondary border-border-light dark:border-border-dark dark:bg-surface-dark dark:text-text-inverted hover:bg-surface-muted dark:hover:bg-surface-dark-muted',
-                        !link.url || link.url === '#' || link.url === null
-                            ? 'opacity-50 cursor-not-allowed pointer-events-none'
-                            : 'cursor-pointer',
-                    ]"
-                />
-            </div>
+            <Pagination
+                class="mt-auto"
+                :links="logs?.links || []"
+                :current-page="logs?.current_page || 1"
+                :last-page="logs?.last_page || 1"
+                :per-page="logs?.per_page || filters?.per_page || 15"
+                :total="logs?.total || 0"
+                :from="logs?.from ?? 0"
+                :to="logs?.to ?? 0"
+                route-name="instructor.logs.index"
+                :filters="logPaginationFilters"
+                :per-page-options="[10, 15, 25, 50, 100]"
+            />
         </div>
     </InstructorLayout>
 </template>

@@ -483,6 +483,7 @@ const formatDate = (dateString) => {
 
             <!-- Pagination -->
             <Pagination
+                class="mt-auto"
                 :links="props.departments.links || []"
                 :current-page="props.departments.current_page || 1"
                 :last-page="props.departments.last_page || 1"

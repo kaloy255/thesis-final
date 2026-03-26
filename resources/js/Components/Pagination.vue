@@ -115,7 +115,8 @@ const changePerPage = (value) => {
     });
 };
 
-const showPagination = computed(() => props.links && props.links.length >= 1 && props.total > 0);
+/** Show whenever the paginator provides link metadata (including empty result sets). */
+const showPagination = computed(() => Array.isArray(props.links) && props.links.length >= 1);
 
 const perPageOptionsSorted = computed(() => {
     const opts = new Set(props.perPageOptions);

@@ -105,13 +105,9 @@ const headerImageStyle = computed(() => {
             <div
                 :class="[
                     'mt-4 gap-2',
-                    hasAttempts && hasLessonFile
+                    hasLessonFile
                         ? 'grid grid-cols-1 sm:grid-cols-3'
-                        : hasAttempts
-                          ? 'grid grid-cols-2 sm:flex sm:items-center sm:justify-end'
-                          : hasLessonFile
-                            ? 'flex flex-col sm:flex-row sm:items-center sm:justify-end'
-                            : 'flex',
+                        : 'grid grid-cols-2 sm:flex sm:items-center sm:justify-end',
                 ]"
             >
                 <a
@@ -123,8 +119,8 @@ const headerImageStyle = computed(() => {
                     <span class="hidden sm:inline">Download lesson</span>
                 </a>
 
+                <!-- History is available even with zero attempts (empty state on history page). -->
                 <Link
-                    v-if="hasAttempts"
                     :href="route('student.assessments.history', assessment.id)"
                     class="w-full inline-flex items-center justify-center px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 whitespace-nowrap"
                 >
@@ -134,8 +130,7 @@ const headerImageStyle = computed(() => {
                 <Link
                     :href="route('student.assessments.show', assessment.id)"
                     :class="[
-                        'inline-flex items-center justify-center px-3 py-2 bg-accent-primary text-white text-sm font-medium rounded-lg hover:bg-accent-muted transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 whitespace-nowrap',
-                        hasAttempts || hasLessonFile ? 'w-full' : 'w-full sm:w-auto sm:ml-auto',
+                        'inline-flex items-center justify-center px-3 py-2 bg-accent-primary text-white text-sm font-medium rounded-lg hover:bg-accent-muted transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 whitespace-nowrap w-full',
                     ]"
                 >
                     <span class="sm:hidden">{{ mobileActionLabel }}</span>

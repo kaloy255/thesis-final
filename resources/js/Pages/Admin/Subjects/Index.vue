@@ -642,6 +642,7 @@ const truncateText = (text, maxLength = 80) => {
 
             <!-- Pagination -->
             <Pagination
+                class="mt-auto"
                 :links="props.subjects.links || []"
                 :current-page="props.subjects.current_page || 1"
                 :last-page="props.subjects.last_page || 1"

@@ -210,13 +210,11 @@
                 aria-hidden="true"
             />
 
-            <!-- Lessons Grid -->
-            <div
-                v-if="lessons.data.length > 0"
-                class="flex flex-col min-h-[440px] justify-between"
-            >
+            <!-- Lessons list + pagination (pagination always shown; same component as admin) -->
+            <div class="flex flex-col min-h-[440px] justify-between gap-4">
                 <div
-                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4"
+                    v-if="lessons.data.length > 0"
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                 >
                     <div
                         v-for="lesson in lessons.data"
@@ -428,34 +426,11 @@
                     </div>
                 </div>
 
-                <!-- Pagination -->
+                <!-- Empty State -->
                 <div
-                    v-if="lessons.links.length > 3"
-                    class="flex justify-center items-center gap-1"
+                    v-else
+                    class="flex flex-col items-center justify-center py-16 px-4"
                 >
-                    <Link
-                        v-for="(link, index) in lessons.links"
-                        :key="index"
-                        :href="link.url"
-                        :class="{
-                            'inline-flex items-center justify-center min-w-[2.5rem] px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-150': true,
-                            'bg-gray-900 dark:bg-white text-white dark:text-gray-900':
-                                link.active,
-                            'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700':
-                                !link.active && link.url,
-                            'bg-gray-50 dark:bg-gray-800/50 text-gray-400 dark:text-gray-600 cursor-not-allowed border border-gray-200 dark:border-gray-700':
-                                !link.url,
-                        }"
-                        v-html="link.label"
-                    />
-                </div>
-            </div>
-
-            <!-- Empty State -->
-            <div
-                v-else
-                class="flex flex-col items-center justify-center py-16 px-4"
-            >
                 <div
                     class="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4"
                 >
@@ -503,6 +478,24 @@
                     </svg>
                     Upload New Lesson
                 </Link>
+                </div>
+
+                <div
+                    class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden mt-auto"
+                >
+                    <Pagination
+                        :links="lessons.links || []"
+                        :current-page="lessons.current_page || 1"
+                        :last-page="lessons.last_page || 1"
+                        :per-page="lessons.per_page || filters?.per_page || 6"
+                        :total="lessons.total || 0"
+                        :from="lessons.from ?? 0"
+                        :to="lessons.to ?? 0"
+                        route-name="instructor.lessons.index"
+                        :filters="lessonPaginationFilters"
+                        :per-page-options="[ 10, 12, 15, 25, 50]"
+                    />
+                </div>
             </div>
         </div>
 
@@ -526,6 +519,7 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { Link, router, Head } from "@inertiajs/vue3";
 import InstructorLayout from "@/Layouts/InstructorLayout.vue";
 import ConfirmationModal from "@/Components/ConfirmationModal.vue";
+import Pagination from "@/Components/Pagination.vue";
 
 const props = defineProps({
     lessons: Object,
@@ -539,6 +533,7 @@ const props = defineProps({
             search: "",
             status: "all",
             section_ids: [],
+            per_page: 6,
         }),
     },
 });
@@ -556,6 +551,18 @@ let searchTimeout = null;
 
 const SECTION_PREVIEW_LIMIT = 4;
 const expandedSections = ref({});
+
+const lessonPaginationFilters = computed(() => {
+    const f = {
+        search: props.filters?.search ?? "",
+        status: props.filters?.status ?? "all",
+    };
+    const ids = props.filters?.section_ids;
+    if (Array.isArray(ids) && ids.length > 0) {
+        f.section_ids = ids;
+    }
+    return f;
+});
 
 const getVisibleSections = (lesson) => {
     const sections = lesson.assessments?.[0]?.sections || [];
@@ -646,6 +653,7 @@ const applyFilters = () => {
     const params = {
         search: searchQuery.value || null,
         status: statusFilter.value,
+        per_page: props.lessons?.per_page ?? props.filters?.per_page ?? 6,
     };
     if (selectedSectionIds.value.length > 0) {
         params.section_ids = selectedSectionIds.value;

@@ -75,7 +75,10 @@ class LessonController extends Controller
             }
         }
 
-        $lessons = $query->latest()->paginate(6)->withQueryString();
+        $perPage = (int) $request->input('per_page', 10);
+        $perPage = in_array($perPage, [10, 15, 25, 50], true) ? $perPage : 10;
+
+        $lessons = $query->latest()->paginate($perPage)->withQueryString();
 
         // Load all sections with departments for the filter dropdown
         $sections = \App\Models\Section::with('department')
@@ -102,6 +105,7 @@ class LessonController extends Controller
                 'search' => $request->search ?? '',
                 'status' => $request->status ?? 'all',
                 'section_ids' => $request->input('section_ids', []),
+                'per_page' => $perPage,
             ],
         ]);
     }

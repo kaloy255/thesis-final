@@ -40,6 +40,9 @@ class AssessmentController extends Controller
 
         $search = $request->string('search')->toString();
 
+        $perPage = (int) $request->input('per_page', 10);
+        $perPage = in_array($perPage, [10, 15, 25, 50], true) ? $perPage : 10;
+
         // Get accessible assessments (exclude adaptive; those are shown in History accordion)
         $assessments = Assessment::accessibleBy($student)
             ->where('type', '!=', 'adaptive')
@@ -57,8 +60,9 @@ class AssessmentController extends Controller
                 });
             })
             ->latest()
-            ->get()
-            ->map(function ($assessment) use ($student) {
+            ->paginate($perPage)
+            ->withQueryString()
+            ->through(function ($assessment) use ($student) {
                 // Get attempt count for this student
                 $attemptCount = AssessmentAttempt::where('student_id', $student->id)
                     ->where('assessment_id', $assessment->id)
@@ -93,6 +97,7 @@ class AssessmentController extends Controller
             'assessments' => $assessments,
             'filters' => [
                 'search' => $search,
+                'per_page' => $perPage,
             ],
         ]);
     }

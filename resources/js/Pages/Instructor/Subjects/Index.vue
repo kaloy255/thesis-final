@@ -1,19 +1,27 @@
 <script setup>
 import InstructorLayout from "@/Layouts/InstructorLayout.vue";
+import Pagination from "@/Components/Pagination.vue";
 import { Head, Link, router } from "@inertiajs/vue3";
 import { computed, ref, watch, onMounted, onBeforeUnmount } from "vue";
 
 const props = defineProps({
-    subjects: Array,
+    /** Laravel paginator */
+    subjects: Object,
     filters: Object,
 });
 
-const hasSubjects = computed(() => props.subjects && props.subjects.length > 0);
+const subjectList = computed(() => props.subjects?.data ?? []);
+const hasSubjects = computed(() => subjectList.value.length > 0);
+
 const searchQuery = ref(props.filters?.search || "");
 const detailsSectionRef = ref(null);
 const isDetailsStuck = ref(false);
 const STICKY_RELEASE_OFFSET = 8;
 let searchTimeout = null;
+
+const subjectPaginationFilters = computed(() => ({
+    search: props.filters?.search ?? "",
+}));
 
 const updateStickyState = () => {
     const el = detailsSectionRef.value;
@@ -30,7 +38,6 @@ const updateStickyState = () => {
     }
 };
 
-// Reactive search with debouncing
 watch(searchQuery, (newValue) => {
     if (searchTimeout) {
         clearTimeout(searchTimeout);
@@ -39,7 +46,10 @@ watch(searchQuery, (newValue) => {
     searchTimeout = setTimeout(() => {
         router.get(
             route("instructor.subjects.index"),
-            { search: newValue },
+            {
+                search: newValue,
+                per_page: props.subjects?.per_page ?? props.filters?.per_page ?? 10,
+            },
             {
                 preserveState: true,
                 preserveScroll: true,
@@ -115,138 +125,160 @@ onBeforeUnmount(() => {
             </div>
         </div>
 
-        <!-- Empty State -->
-        <div v-if="!hasSubjects" class="p-6 text-center text-text-secondary">
-            <svg
-                class="mx-auto h-12 w-12 mb-4 opacity-50"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                />
-            </svg>
-            <h3
-                class="text-sm font-medium text-text-primary dark:text-text-inverted"
-            >
-                <span v-if="searchQuery">
-                    No subjects found matching "{{ searchQuery }}"
-                </span>
-                <span v-else> No subjects assigned </span>
-            </h3>
-            <p class="mt-1 text-sm">
-                <span v-if="searchQuery">
-                    Try adjusting your search terms.
-                </span>
-                <span v-else>
-                    You don't have any subjects assigned yet. Contact your
-                    administrator.
-                </span>
-            </p>
-        </div>
-
-        <!-- Subjects Grid -->
-        <div
-            v-else
-            class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
-        >
+        <div class="flex flex-col min-h-[440px] justify-between gap-4">
+            <!-- Empty State -->
             <div
-                v-for="subject in subjects"
-                :key="subject.id"
-                class="card p-6 hover:shadow-lg transition-shadow duration-200"
+                v-if="!hasSubjects"
+                class="p-6 text-center text-text-secondary"
             >
-                <!-- Subject Header -->
-                <div class="flex items-start justify-between mb-4">
-                    <div class="flex-1">
-                        <h3
-                            class="text-lg font-semibold text-text-primary dark:text-text-inverted"
-                        >
-                            {{ subject.name }}
-                        </h3>
-                        <p class="text-sm text-text-secondary mt-1">
-                            {{ subject.code }}
-                        </p>
-                    </div>
-
-                    <!-- Pending Requests Badge -->
-                    <span
-                        v-if="subject.pending_requests_count > 0"
-                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                    >
-                        {{ subject.pending_requests_count }} pending
+                <svg
+                    class="mx-auto h-12 w-12 mb-4 opacity-50"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                    />
+                </svg>
+                <h3
+                    class="text-sm font-medium text-text-primary dark:text-text-inverted"
+                >
+                    <span v-if="searchQuery">
+                        No subjects found matching "{{ searchQuery }}"
                     </span>
-                </div>
+                    <span v-else> No subjects assigned </span>
+                </h3>
+                <p class="mt-1 text-sm">
+                    <span v-if="searchQuery">
+                        Try adjusting your search terms.
+                    </span>
+                    <span v-else>
+                        You don't have any subjects assigned yet. Contact your
+                        administrator.
+                    </span>
+                </p>
+            </div>
 
-                <!-- Statistics -->
-                <div class="flex items-center gap-4 mb-4">
-                    <div class="flex items-center gap-2">
-                        <svg
-                            class="w-4 h-4 text-text-secondary"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                            />
-                        </svg>
-                        <span class="text-sm text-text-secondary">
-                            <span
-                                class="font-medium text-text-primary dark:text-text-inverted"
+            <!-- Subjects Grid -->
+            <div
+                v-else
+                class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            >
+                <div
+                    v-for="subject in subjectList"
+                    :key="subject.id"
+                    class="card p-6 hover:shadow-lg transition-shadow duration-200"
+                >
+                    <!-- Subject Header -->
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1">
+                            <h3
+                                class="text-lg font-semibold text-text-primary dark:text-text-inverted"
                             >
-                                {{ subject.enrolled_students_count || 0 }}
-                            </span>
-                            <span class="ml-1">
-                                {{
-                                    subject.enrolled_students_count === 1
-                                        ? "student"
-                                        : "students"
-                                }}
-                                enrolled
-                            </span>
+                                {{ subject.name }}
+                            </h3>
+                            <p class="text-sm text-text-secondary mt-1">
+                                {{ subject.code }}
+                            </p>
+                        </div>
+
+                        <!-- Pending Requests Badge -->
+                        <span
+                            v-if="subject.pending_requests_count > 0"
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                        >
+                            {{ subject.pending_requests_count }} pending
                         </span>
                     </div>
-                </div>
 
-                <!-- Subject Description -->
-                <p
-                    v-if="subject.description"
-                    class="text-sm text-text-secondary mb-4 line-clamp-2"
-                >
-                    {{ subject.description }}
-                </p>
+                    <!-- Statistics -->
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex items-center gap-2">
+                            <svg
+                                class="w-4 h-4 text-text-secondary"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                                />
+                            </svg>
+                            <span class="text-sm text-text-secondary">
+                                <span
+                                    class="font-medium text-text-primary dark:text-text-inverted"
+                                >
+                                    {{ subject.enrolled_students_count || 0 }}
+                                </span>
+                                <span class="ml-1">
+                                    {{
+                                        subject.enrolled_students_count === 1
+                                            ? "student"
+                                            : "students"
+                                    }}
+                                    enrolled
+                                </span>
+                            </span>
+                        </div>
+                    </div>
 
-                <!-- Actions -->
-                <div class="flex gap-2 mt-4">
-                    <Link
-                        :href="
-                            route('instructor.subjects.requests', subject.id)
-                        "
-                        class="btn-primary w-full flex items-center justify-center gap-2"
+                    <!-- Subject Description -->
+                    <p
+                        v-if="subject.description"
+                        class="text-sm text-text-secondary mb-4 line-clamp-2"
                     >
-                        <svg
-                            class="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                        {{ subject.description }}
+                    </p>
+
+                    <!-- Actions -->
+                    <div class="flex gap-2 mt-4">
+                        <Link
+                            :href="
+                                route('instructor.subjects.requests', subject.id)
+                            "
+                            class="btn-primary w-full flex items-center justify-center gap-2"
                         >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                            />
-                        </svg>
-                        View Requests
-                    </Link>
+                            <svg
+                                class="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                                />
+                            </svg>
+                            View Requests
+                        </Link>
+                    </div>
                 </div>
+            </div>
+
+            <div
+                class="bg-surface dark:bg-surface-dark-muted rounded-xl border border-border-light dark:border-border-dark overflow-hidden mt-auto"
+            >
+                <Pagination
+                    :links="subjects?.links || []"
+                    :current-page="subjects?.current_page || 1"
+                    :last-page="subjects?.last_page || 1"
+                    :per-page="subjects?.per_page || filters?.per_page || 10"
+                    :total="subjects?.total || 0"
+                    :from="subjects?.from ?? 0"
+                    :to="subjects?.to ?? 0"
+                    route-name="instructor.subjects.index"
+                    :filters="subjectPaginationFilters"
+                    :per-page-options="[10, 15, 25, 50]"
+                />
             </div>
         </div>
     </InstructorLayout>
@@ -256,6 +288,7 @@ onBeforeUnmount(() => {
 .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }

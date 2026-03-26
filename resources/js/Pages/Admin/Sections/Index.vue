@@ -341,16 +341,6 @@ const formatDate = (dateString) => {
                     </button>
                 </div>
             </div>
-            <div class="sm:w-64">
-                <label class="block text-xs font-medium text-text-secondary mb-1.5">
-                    Filter by department
-                </label>
-                <SearchableSelect
-                    v-model="departmentFilterId"
-                    :options="departmentFilterOptions"
-                    placeholder="Filter by department..."
-                />
-            </div>
         </div>
 
         <!-- Sticky Search -->
@@ -386,6 +376,18 @@ const formatDate = (dateString) => {
                     />
                 </div>
             </div>
+        </div>
+
+        <!-- Department Filter (non-sticky, below search) -->
+        <div class="mb-4 sm:mb-5 sm:w-64">
+            <label class="block text-xs font-medium text-text-secondary mb-1.5">
+                Filter by department
+            </label>
+            <SearchableSelect
+                v-model="departmentFilterId"
+                :options="departmentFilterOptions"
+                placeholder="Filter by department..."
+            />
         </div>
 
         <!-- Sections List -->
@@ -551,6 +553,7 @@ const formatDate = (dateString) => {
 
             <!-- Pagination -->
             <Pagination
+                class="mt-auto"
                 :links="props.sections.links || []"
                 :current-page="props.sections.current_page || 1"
                 :last-page="props.sections.last_page || 1"
