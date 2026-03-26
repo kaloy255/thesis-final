@@ -28,18 +28,43 @@ class SubjectController extends Controller
         $student->load('user');
 
         $search = $request->string('search')->toString();
+        $status = $request->string('status')->toString();
+        $status = in_array($status, ['all', 'enrolled', 'available'], true) ? $status : 'all';
         $perPage = (int) $request->input('per_page', 10);
         $perPage = in_array($perPage, [10, 25, 50, 100], true) ? $perPage : 10;
 
-        $subjects = Subject::with(['professors.user', 'professors.department'])
+        $subjects = Subject::query()
+            ->select('subjects.*')
+            ->leftJoin('student_subject as ss', function ($join) use ($student) {
+                $join->on('subjects.id', '=', 'ss.subject_id')
+                    ->where('ss.student_id', '=', $student->id);
+            })
+            ->with(['professors.user', 'professors.department'])
             ->when($search, function ($query, $term) {
                 $query->where(function ($q) use ($term) {
-                    $q->where('name', 'like', "%{$term}%")
-                        ->orWhere('code', 'like', "%{$term}%")
-                        ->orWhere('description', 'like', "%{$term}%");
+                    $q->where('subjects.name', 'like', "%{$term}%")
+                        ->orWhere('subjects.code', 'like', "%{$term}%")
+                        ->orWhere('subjects.description', 'like', "%{$term}%");
                 });
             })
-            ->orderBy('name')
+            ->when($status === 'enrolled', function ($query) {
+                $query->where('ss.status', 'approved');
+            })
+            ->when($status === 'available', function ($query) {
+                $query->where(function ($q) {
+                    $q->whereNull('ss.status')
+                        ->orWhereIn('ss.status', ['pending', 'declined']);
+                });
+            })
+            ->orderByRaw("
+                case
+                    when ss.status = 'approved' then 0
+                    when ss.status = 'pending' then 1
+                    when ss.status = 'declined' then 2
+                    else 3
+                end
+            ")
+            ->orderBy('subjects.name')
             ->paginate($perPage)
             ->withQueryString()
             ->through(fn (Subject $subject) => $this->mapSubjectForStudentIndex($subject, $student));
@@ -48,6 +73,7 @@ class SubjectController extends Controller
             'subjects' => $subjects,
             'filters' => [
                 'search' => $search,
+                'status' => $status,
                 'per_page' => $perPage,
             ],
         ]);
