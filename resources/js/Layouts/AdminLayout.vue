@@ -120,22 +120,11 @@ onBeforeUnmount(() => {
                 ]"
             >
                 <div
-                    class="flex items-center h-16 px-4 border-b border-border-light dark:border-border-dark gap-3"
+                    class="flex items-center h-16 px-4 border-b border-border-light dark:border-border-dark"
                 >
-                    <img
-                        v-if="theme.theme === 'dark'"
-                        src="/images/white-logo.svg"
-                        alt="Logo"
-                        class="h-10 w-10"
-                    />
-                    <img
-                        v-else
-                        src="/images/logo.png"
-                        alt="Logo"
-                        class="h-10 w-10"
-                    />
+                    <ApplicationLogo class="h-10 w-10" />
 
-                    <span class="text-lg text-text-primary dark:text-text-inverted font-semibold">CHCC Inc.</span>
+                    <span class="text-lg text-text-primary text-[1.3rem] dark:text-text-inverted font-semibold">CHCC</span>
                 </div>
                 <nav class="p-4 space-y-1">
                     <Link
