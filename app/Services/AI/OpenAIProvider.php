@@ -7,9 +7,15 @@ use Illuminate\Support\Facades\Http;
 class OpenAIProvider implements AIServiceInterface
 {
     protected string $apiKey;
+
     protected string $model;
+
     protected int $timeout;
+
+    protected int $maxCompletionTokens;
+
     protected ?array $lastUsage = null;
+
     protected ?string $lastPromptText = null;
 
     public function __construct(array $config)
@@ -17,12 +23,13 @@ class OpenAIProvider implements AIServiceInterface
         $this->apiKey = $config['api_key'];
         $this->model = $config['model'];
         $this->timeout = $config['timeout'];
+        $this->maxCompletionTokens = (int) ($config['max_output_tokens'] ?? 4096);
     }
 
     public function generateAssessment(string $content, array $options = []): array
     {
         $prompt = $this->buildPrompt($content, '', $options);
-        $this->lastPromptText = ($prompt['system'] ?? '') . "\n\n" . ($prompt['user'] ?? '');
+        $this->lastPromptText = ($prompt['system'] ?? '')."\n\n".($prompt['user'] ?? '');
 
         return $this->makeRequest($prompt);
     }
@@ -30,7 +37,7 @@ class OpenAIProvider implements AIServiceInterface
     public function generateChunk(string $chunkContent, string $previousContext, array $options = []): array
     {
         $prompt = $this->buildPrompt($chunkContent, $previousContext, $options);
-        $this->lastPromptText = ($prompt['system'] ?? '') . "\n\n" . ($prompt['user'] ?? '');
+        $this->lastPromptText = ($prompt['system'] ?? '')."\n\n".($prompt['user'] ?? '');
 
         return $this->makeRequest($prompt);
     }
@@ -70,18 +77,18 @@ class OpenAIProvider implements AIServiceInterface
         }
 
         $systemPrompt = "You are an expert assessment generator aligned with Bloom's Taxonomy. "
-            . "Generate educational assessment questions based on the provided lesson content. "
-            . "Each question must be tagged with its appropriate Bloom's Taxonomy cognitive level.";
+            .'Generate educational assessment questions based on the provided lesson content. '
+            ."Each question must be tagged with its appropriate Bloom's Taxonomy cognitive level.";
 
         $userPrompt = "Generate assessment questions based on this lesson content:\n\n";
 
-        if (!empty($previousContext)) {
+        if (! empty($previousContext)) {
             $userPrompt .= "IMPORTANT: The following sections have already been covered. Avoid duplicating questions from these topics:\n\n";
-            $userPrompt .= $previousContext . "\n\n";
+            $userPrompt .= $previousContext."\n\n";
             $userPrompt .= "Current section to generate questions from:\n\n";
         }
 
-        $userPrompt .= $content . "\n\n";
+        $userPrompt .= $content."\n\n";
         $userPrompt .= "Question Requirements (Total):\n";
         $userPrompt .= "- Multiple Choice: {$totalMcq} questions\n";
         $userPrompt .= "- Identification: {$totalId} questions\n";
@@ -105,22 +112,22 @@ class OpenAIProvider implements AIServiceInterface
         $totalId = $options['identification_count'] ?? 0;
         $totalTf = $options['true_or_false_count'] ?? 0;
 
-        $systemPrompt = "You are an expert, empathetic educational assessment generator. "
-            . "Generate an adaptive practice assessment to help a student overcome specific learning gaps. "
-            . "You have been provided with the student's previous mistakes and the corresponding lesson content. "
-            . "Analyze the mistakes, determine the core misunderstandings, and generate questions that will test those concepts "
-            . "and gently build their understanding, without being overly punitive. "
-            . "Assign the most appropriate Bloom's Taxonomy cognitive level to each question based on what the student needs.";
+        $systemPrompt = 'You are an expert, empathetic educational assessment generator. '
+            .'Generate an adaptive practice assessment to help a student overcome specific learning gaps. '
+            ."You have been provided with the student's previous mistakes and the corresponding lesson content. "
+            .'Analyze the mistakes, determine the core misunderstandings, and generate questions that will test those concepts '
+            .'and gently build their understanding, without being overly punitive. '
+            ."Assign the most appropriate Bloom's Taxonomy cognitive level to each question based on what the student needs.";
 
         $userPrompt = "Generate an adaptive assessment based on the following student performance and lesson content:\n\n";
 
-        if (!empty($previousContext)) {
+        if (! empty($previousContext)) {
             $userPrompt .= "IMPORTANT: The following sections have already been generated in a previous chunk. Avoid duplicating topics:\n\n";
-            $userPrompt .= $previousContext . "\n\n";
+            $userPrompt .= $previousContext."\n\n";
             $userPrompt .= "Current section to generate questions from:\n\n";
         }
 
-        $userPrompt .= $content . "\n\n";
+        $userPrompt .= $content."\n\n";
         $userPrompt .= "Question Requirements (Total to generate):\n";
         $userPrompt .= "- Multiple Choice: {$totalMcq} questions\n";
         $userPrompt .= "- Identification: {$totalId} questions\n";
@@ -146,7 +153,7 @@ class OpenAIProvider implements AIServiceInterface
         try {
             $response = Http::timeout($this->timeout)
                 ->withHeaders([
-                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Authorization' => 'Bearer '.$this->apiKey,
                     'Content-Type' => 'application/json',
                 ])
                 ->post('https://api.openai.com/v1/chat/completions', [
@@ -161,18 +168,19 @@ class OpenAIProvider implements AIServiceInterface
                             'content' => $prompt['user'],
                         ],
                     ],
+                    'max_completion_tokens' => $this->maxCompletionTokens,
                     'response_format' => ['type' => 'json_object'],
                     'temperature' => 0.7,
                 ]);
 
-            if (!$response->successful()) {
-                throw new \Exception('OpenAI API request failed: ' . $response->body());
+            if (! $response->successful()) {
+                throw new \Exception('OpenAI API request failed: '.$response->body());
             }
 
             $data = $response->json();
             $this->lastUsage = $data['usage'] ?? null;
 
-            if (!isset($data['choices'][0]['message']['content'])) {
+            if (! isset($data['choices'][0]['message']['content'])) {
                 throw new \Exception('Invalid response structure from OpenAI');
             }
 
@@ -180,13 +188,13 @@ class OpenAIProvider implements AIServiceInterface
             $result = json_decode($content, true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new \Exception('Invalid JSON response from OpenAI: ' . json_last_error_msg());
+                throw new \Exception('Invalid JSON response from OpenAI: '.json_last_error_msg());
             }
 
             return $result;
 
         } catch (\Exception $e) {
-            throw new \Exception('OpenAI Provider Error: ' . $e->getMessage());
+            throw new \Exception('OpenAI Provider Error: '.$e->getMessage());
         }
     }
 }

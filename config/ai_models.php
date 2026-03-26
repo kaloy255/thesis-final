@@ -17,9 +17,10 @@ return [
             'api_key' => env('OPENAI_API_KEY'),
             'model' => 'gpt-4o-mini',
             'limits' => [
-                'max_input_tokens' => 16385,
-                'max_output_tokens' => 4096,
-                'safe_limit' => 12000,
+                // gpt-4o-mini: 128k context; safe_limit reserves space for system prompt + JSON completion
+                'max_input_tokens' => 128000,
+                'max_output_tokens' => 16384,
+                'safe_limit' => 100000,
             ],
         ],
         'groq' => [

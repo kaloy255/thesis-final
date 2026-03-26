@@ -150,18 +150,16 @@ const scrollToTop = () => {
             >
                 <Link
                     :href="route('instructor.dashboard')"
-                    class="flex items-center gap-3"
+                    class="flex items-center"
                 >
                     <ApplicationLogo class="h-10 w-10" />
                     <div>
                         <div
-                            class="font-bold text-text-primary dark:text-text-inverted"
+                            class="font-bold text-text-primary text-[1.3rem] dark:text-text-inverted"
                         >
                             CHCC
                         </div>
-                        <div class="text-xs text-text-secondary">
-                            Instructor Portal
-                        </div>
+                      
                     </div>
                 </Link>
             </div>
