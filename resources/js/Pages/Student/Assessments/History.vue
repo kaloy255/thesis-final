@@ -29,11 +29,20 @@ const hasAdaptives = (attempt) => {
     return Array.isArray(list) && list.length > 0;
 };
 
+/** Adaptive node + all deeper nodes under its attempts (matches AdaptiveTree). */
+const countAdaptiveSubtreeNodes = (adaptive) => {
+    let n = 1;
+    for (const att of adaptive.attempts || []) {
+        for (const child of att.adaptive_assessments || []) {
+            n += countAdaptiveSubtreeNodes(child);
+        }
+    }
+    return n;
+};
+
 const countTotalAdaptives = (adaptives) => {
     if (!adaptives || !Array.isArray(adaptives)) return 0;
-    return adaptives.reduce((total, adaptive) => {
-        return total + 1 + countTotalAdaptives(adaptive.children || []);
-    }, 0);
+    return adaptives.reduce((total, adaptive) => total + countAdaptiveSubtreeNodes(adaptive), 0);
 };
 
 const formatDate = (dateString) => {
@@ -330,7 +339,7 @@ const hasAttempts = computed(() => (props.attempts?.length || 0) > 0);
                                                     />
                                                 </svg>
                                                 <span class="truncate">
-                                                    Adaptive follow-ups
+                                                    Follow-ups
                                                     <span class="text-text-secondary font-normal">
                                                         ({{ countTotalAdaptives(attempt.adaptive_assessments) }})
                                                     </span>
@@ -361,6 +370,7 @@ const hasAttempts = computed(() => (props.attempts?.length || 0) > 0);
                                                 <AdaptiveTree
                                                     :adaptives="attempt.adaptive_assessments"
                                                     :formatDate="formatDate"
+                                                    :hide-separate-history-link="assessment.type !== 'adaptive'"
                                                 />
                                             </div>
                                         </div>

@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\SubmitAssessmentRequest;
 use App\Models\Assessment;
 use App\Models\AssessmentAttempt;
-use App\Models\AssessmentItem;
 use App\Models\Notification;
 use App\Models\StudentAnswer;
-use App\Services\AI\AIServiceManager;
 use App\Services\AI\AIResponseParser;
+use App\Services\AI\AIServiceManager;
 use App\Services\Assessment\AssessmentGenerator;
+use App\Support\AdaptiveAssessmentHistoryTree;
+use App\Support\AdaptiveAssessmentTitle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -25,8 +26,8 @@ class AssessmentController extends Controller
         protected AIServiceManager $aiManager,
         protected AIResponseParser $aiParser,
         protected AssessmentGenerator $assessmentGenerator
-    ) {
-    }
+    ) {}
+
     /**
      * Display a listing of available assessments.
      */
@@ -34,7 +35,7 @@ class AssessmentController extends Controller
     {
         $student = auth()->user()->student;
 
-        if (!$student) {
+        if (! $student) {
             abort(403, 'Student record not found');
         }
 
@@ -142,12 +143,12 @@ class AssessmentController extends Controller
     {
         $student = auth()->user()->student;
 
-        if (!$student) {
+        if (! $student) {
             abort(403, 'Student record not found');
         }
 
         // Check if student can access this assessment
-        if (!$assessment->canBeAccessedBy($student)) {
+        if (! $assessment->canBeAccessedBy($student)) {
             abort(403, 'You do not have access to this assessment');
         }
 
@@ -191,12 +192,12 @@ class AssessmentController extends Controller
     {
         $student = auth()->user()->student;
 
-        if (!$student) {
+        if (! $student) {
             abort(403, 'Student record not found');
         }
 
         // Check if student can access this assessment
-        if (!$assessment->canBeAccessedBy($student)) {
+        if (! $assessment->canBeAccessedBy($student)) {
             abort(403, 'You do not have access to this assessment');
         }
 
@@ -234,7 +235,7 @@ class AssessmentController extends Controller
                     $isCorrect = false; // Empty answers are considered wrong
                 } else {
                     $formattedAnswer = $this->formatAnswer($item->type, $studentAnswer);
-                    
+
                     // Compare with correct answer
                     $isCorrect = $this->compareAnswer(
                         $item->type,
@@ -257,13 +258,13 @@ class AssessmentController extends Controller
 
             return redirect()->route('student.assessments.results', [
                 'assessment' => $assessment->id,
-                'attempt' => $attempt->id
+                'attempt' => $attempt->id,
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
 
             return back()->withErrors([
-                'error' => 'Failed to submit assessment: ' . $e->getMessage(),
+                'error' => 'Failed to submit assessment: '.$e->getMessage(),
             ])->withInput();
         }
     }
@@ -275,12 +276,12 @@ class AssessmentController extends Controller
     {
         $student = auth()->user()->student;
 
-        if (!$student) {
+        if (! $student) {
             abort(403, 'Student record not found');
         }
 
         // Verify student can access this assessment
-        if (!$assessment->canBeAccessedBy($student)) {
+        if (! $assessment->canBeAccessedBy($student)) {
             abort(403, 'You do not have access to this assessment');
         }
 
@@ -296,66 +297,18 @@ class AssessmentController extends Controller
 
         $totalQuestions = $assessment->items->count();
 
-        // Recursive helper to load the full tree of adaptive assessments
-        $loadAdaptiveTree = function ($assessment) use (&$loadAdaptiveTree, $student) {
-            return $assessment->children()
-                ->where('type', 'adaptive')
-                ->orderBy('created_at')
-                ->get()
-                ->map(function ($child) use (&$loadAdaptiveTree, $student) {
-                    $latestAttempt = $child->attempts()
-                        ->where('student_id', $student->id)
-                        ->latest()
-                        ->first();
-
-                    $score = null;
-                    if ($latestAttempt) {
-                        $totalItems = max($child->items()->count(), 1);
-                        $correct = $latestAttempt->answers()->where('correct_answer', true)->count();
-                        $score = round(($correct / $totalItems) * 100, 2);
-                    }
-
-                    return [
-                        'id' => $child->id,
-                        'title' => $child->title,
-                        'created_at' => $child->created_at,
-                        'score' => $score,
-                        'children' => $loadAdaptiveTree($child),
-                    ];
-                })
-                ->values()
-                ->all();
-        };
-
-        // Load direct adaptive assessments grouped by source_attempt_id, and include their nested children
+        // Load direct adaptive assessments grouped by source_attempt_id, including nested children and all retakes
         $adaptivesByAttemptId = Assessment::where('parent_assessment_id', $assessment->id)
             ->whereNotNull('source_attempt_id')
             ->where('type', 'adaptive')
             ->orderBy('created_at')
             ->get()
             ->groupBy('source_attempt_id')
-            ->map(function ($group) use (&$loadAdaptiveTree, $student) {
-                return $group->map(function ($adaptive) use (&$loadAdaptiveTree, $student) {
-                    $latestAttempt = $adaptive->attempts()
-                        ->where('student_id', $student->id)
-                        ->latest()
-                        ->first();
-
-                    $score = null;
-                    if ($latestAttempt) {
-                        $totalItems = max($adaptive->items()->count(), 1);
-                        $correct = $latestAttempt->answers()->where('correct_answer', true)->count();
-                        $score = round(($correct / $totalItems) * 100, 2);
-                    }
-
-                    return [
-                        'id' => $adaptive->id,
-                        'title' => $adaptive->title,
-                        'created_at' => $adaptive->created_at,
-                        'score' => $score,
-                        'children' => $loadAdaptiveTree($adaptive),
-                    ];
-                })->values()->all();
+            ->map(function ($group) use ($student) {
+                return AdaptiveAssessmentHistoryTree::mapBranchesWithFollowUpTitles(
+                    $group,
+                    $student->id
+                );
             });
 
         // Process each attempt to calculate scores and stats
@@ -393,6 +346,7 @@ class AssessmentController extends Controller
             'assessment' => [
                 'id' => $assessment->id,
                 'title' => $assessment->title,
+                'type' => $assessment->type,
                 'lesson' => [
                     'title' => $assessment->lesson->title,
                 ],
@@ -418,7 +372,7 @@ class AssessmentController extends Controller
     {
         $student = auth()->user()->student;
 
-        if (!$student) {
+        if (! $student) {
             abort(403, 'Student record not found');
         }
 
@@ -448,7 +402,7 @@ class AssessmentController extends Controller
 
             $studentAnswerText = null;
             // Check if answer exists and has non-empty choices
-            if ($studentAnswer && $studentAnswer->choices && !empty($studentAnswer->choices)) {
+            if ($studentAnswer && $studentAnswer->choices && ! empty($studentAnswer->choices)) {
                 $choices = $studentAnswer->choices;
                 $studentAnswerText = is_array($choices) ? ($choices[0] ?? '') : '';
             }
@@ -489,7 +443,7 @@ class AssessmentController extends Controller
                 'no_answer' => $noAnswer,
                 'score' => $score,
             ],
-            'show_adaptive_button' => $score < 100 && !empty($assessment->lesson->extracted_content),
+            'show_adaptive_button' => $score < 100 && ! empty($assessment->lesson->extracted_content),
             'has_wrong_answers' => $wrongAnswers > 0,
             'items' => $items,
         ]);
@@ -502,7 +456,7 @@ class AssessmentController extends Controller
     {
         $student = auth()->user()->student;
 
-        if (!$student) {
+        if (! $student) {
             abort(403, 'Student record not found');
         }
 
@@ -545,7 +499,7 @@ class AssessmentController extends Controller
         $mcqCount = (int) $request->multiple_choice_count;
         $idCount = (int) $request->identification_count;
         $tfCount = (int) $request->true_or_false_count;
-        
+
         $totalRequested = $mcqCount + $idCount + $tfCount;
         $minRequired = $wrongAnswers->count();
         $maxAllowed = $totalQuestions;
@@ -565,19 +519,19 @@ class AssessmentController extends Controller
         $wrongAnswersText = "STUDENT'S WRONG ANSWERS (use these learning gaps to generate new practice questions):\n\n";
         foreach ($wrongAnswers as $idx => $answer) {
             $item = $answer->item;
-            if (!$item) {
+            if (! $item) {
                 continue;
             }
             $studentAnswerText = $answer->choices && is_array($answer->choices)
                 ? ($answer->choices[0] ?? '(no answer)')
                 : '(no answer)';
-            $wrongAnswersText .= ($idx + 1) . ". Question: {$item->question}\n";
+            $wrongAnswersText .= ($idx + 1).". Question: {$item->question}\n";
             $wrongAnswersText .= "   Student Answer: {$studentAnswerText}\n";
-            $wrongAnswersText .= "   Correct Answer: " . ($item->correct_answer ?? '') . "\n";
+            $wrongAnswersText .= '   Correct Answer: '.($item->correct_answer ?? '')."\n";
             $wrongAnswersText .= "   Type: {$answer->type}\n\n";
         }
 
-        $content = $wrongAnswersText . "\n\nLESSON CONTENT (use this to generate questions that address the learning gaps above):\n\n" . $lesson->extracted_content;
+        $content = $wrongAnswersText."\n\nLESSON CONTENT (use this to generate questions that address the learning gaps above):\n\n".$lesson->extracted_content;
 
         $config = [
             'multiple_choice_count' => $mcqCount,
@@ -594,6 +548,7 @@ class AssessmentController extends Controller
                 'attempt_id' => $attempt->id,
                 'error' => $e->getMessage(),
             ]);
+
             return back()->withErrors(['error' => 'Failed to generate adaptive questions. Please try again.']);
         }
 
@@ -610,13 +565,14 @@ class AssessmentController extends Controller
             Log::error('Adaptive assessment parse failed', [
                 'error' => $e->getMessage(),
             ]);
+
             return back()->withErrors(['error' => 'Invalid response from question generator. Please try again.']);
         }
 
         DB::beginTransaction();
         try {
             $adaptiveAssessment = $this->assessmentGenerator->generate($lesson, $parsed, [
-                'title' => "Adaptive Assessment for {$assessment->title}",
+                'title' => AdaptiveAssessmentTitle::forNewAdaptive($assessment),
                 'type' => 'adaptive',
             ]);
 
@@ -627,7 +583,7 @@ class AssessmentController extends Controller
             ]);
 
             $sectionIds = $assessment->sections->pluck('id')->toArray();
-            if (!empty($sectionIds)) {
+            if (! empty($sectionIds)) {
                 $adaptiveAssessment->sections()->sync($sectionIds);
             }
 
@@ -637,6 +593,7 @@ class AssessmentController extends Controller
             Log::error('Adaptive assessment save failed', [
                 'error' => $e->getMessage(),
             ]);
+
             return back()->withErrors(['error' => 'Failed to save adaptive assessment. Please try again.']);
         }
 
@@ -647,9 +604,7 @@ class AssessmentController extends Controller
     /**
      * Format student answer based on question type.
      *
-     * @param string $type
-     * @param mixed $answer
-     * @return array|null
+     * @param  mixed  $answer
      */
     protected function formatAnswer(string $type, $answer): ?array
     {
@@ -664,10 +619,7 @@ class AssessmentController extends Controller
     /**
      * Compare student answer with correct answer.
      *
-     * @param string $type
-     * @param mixed $studentAnswer
-     * @param string|null $correctAnswer
-     * @return bool
+     * @param  mixed  $studentAnswer
      */
     protected function compareAnswer(string $type, $studentAnswer, ?string $correctAnswer): bool
     {
@@ -690,7 +642,7 @@ class AssessmentController extends Controller
     {
         $student = auth()->user()->student;
 
-        if (!$student) {
+        if (! $student) {
             abort(403, 'Student record not found');
         }
 

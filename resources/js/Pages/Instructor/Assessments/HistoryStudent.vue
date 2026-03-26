@@ -40,11 +40,19 @@ const hasAdaptives = (attempt) => {
 };
 
 // Also calculate total inner adaptives recursively for the counter badge
+const countAdaptiveSubtreeNodes = (adaptive) => {
+    let n = 1;
+    for (const att of adaptive.attempts || []) {
+        for (const child of att.adaptive_assessments || []) {
+            n += countAdaptiveSubtreeNodes(child);
+        }
+    }
+    return n;
+};
+
 const countTotalAdaptives = (adaptives) => {
     if (!adaptives || !Array.isArray(adaptives)) return 0;
-    return adaptives.reduce((total, adaptive) => {
-        return total + 1 + countTotalAdaptives(adaptive.children || []);
-    }, 0);
+    return adaptives.reduce((total, adaptive) => total + countAdaptiveSubtreeNodes(adaptive), 0);
 };
 
 const formatDate = (dateString) => {
@@ -269,7 +277,7 @@ const getEventLabel = (eventType) => {
                         </Link>
                     </div>
 
-                    <!-- Accordion: Adaptive assessments from this attempt -->
+                    <!-- Accordion: follow-up assessments -->
                     <div
                         v-if="hasAdaptives(attempt)"
                         class="pt-3 mt-3 border-t border-border-light dark:border-border-dark"
@@ -293,7 +301,7 @@ const getEventLabel = (eventType) => {
                                         d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                                     />
                                 </svg>
-                                Adaptive assessments from this attempt ({{
+                                Follow-ups ({{
                                     countTotalAdaptives(attempt.adaptive_assessments)
                                 }})
                             </span>

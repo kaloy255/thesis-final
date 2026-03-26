@@ -9,6 +9,7 @@ use App\Models\AssessmentItem;
 use App\Models\Notification;
 use App\Models\Student;
 use App\Models\StudentAnswer;
+use App\Support\AdaptiveAssessmentHistoryTree;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -21,7 +22,7 @@ class AssessmentHistoryController extends Controller
     {
         $professor = auth()->user()->professor;
 
-        if (!$professor) {
+        if (! $professor) {
             abort(403, 'Instructor record not found');
         }
 
@@ -132,6 +133,7 @@ class AssessmentHistoryController extends Controller
 
         $mostCommonMistakes = $mistakeCounts->values()->map(function ($row, $index) use ($items) {
             $item = $items->get($row->assessment_item_id);
+
             return [
                 'item_id' => $row->assessment_item_id,
                 'question' => $item ? strip_tags($item->question) : 'Unknown',
@@ -176,7 +178,7 @@ class AssessmentHistoryController extends Controller
     {
         $professor = auth()->user()->professor;
 
-        if (!$professor) {
+        if (! $professor) {
             abort(403, 'Instructor record not found');
         }
 
@@ -194,37 +196,7 @@ class AssessmentHistoryController extends Controller
 
         $totalQuestions = $assessment->items->count();
 
-        // Recursive helper to load the full tree of adaptive assessments
-        $loadAdaptiveTree = function ($assessment) use (&$loadAdaptiveTree, $student) {
-            return $assessment->children()
-                ->where('type', 'adaptive')
-                ->orderBy('created_at')
-                ->get()
-                ->map(function ($child) use (&$loadAdaptiveTree, $student) {
-                    $latestAttempt = $child->attempts()
-                        ->where('student_id', $student->id)
-                        ->latest()
-                        ->first();
-                    
-                    $score = null;
-                    if ($latestAttempt) {
-                        $totalItems = max($child->items()->count(), 1);
-                        $correct = $latestAttempt->answers()->where('correct_answer', true)->count();
-                        $score = round(($correct / $totalItems) * 100, 2);
-                    }
-
-                    return [
-                        'id' => $child->id,
-                        'title' => $child->title,
-                        'created_at' => $child->created_at,
-                        'latest_attempt_id' => $latestAttempt?->id,
-                        'score' => $score,
-                        'children' => $loadAdaptiveTree($child),
-                    ];
-                })
-                ->values()
-                ->all();
-        };
+        $adaptiveBranchOptions = ['include_latest_attempt_id' => true];
 
         $adaptivesByAttemptId = Assessment::where('parent_assessment_id', $assessment->id)
             ->whereNotNull('source_attempt_id')
@@ -232,29 +204,12 @@ class AssessmentHistoryController extends Controller
             ->orderBy('created_at')
             ->get()
             ->groupBy('source_attempt_id')
-            ->map(function ($group) use (&$loadAdaptiveTree, $student) {
-                return $group->map(function ($adaptive) use (&$loadAdaptiveTree, $student) {
-                    $latestAttempt = $adaptive->attempts()
-                        ->where('student_id', $student->id)
-                        ->latest()
-                        ->first();
-                    
-                    $score = null;
-                    if ($latestAttempt) {
-                        $totalItems = max($adaptive->items()->count(), 1);
-                        $correct = $latestAttempt->answers()->where('correct_answer', true)->count();
-                        $score = round(($correct / $totalItems) * 100, 2);
-                    }
-
-                    return [
-                        'id' => $adaptive->id,
-                        'title' => $adaptive->title,
-                        'created_at' => $adaptive->created_at,
-                        'latest_attempt_id' => $latestAttempt?->id,
-                        'score' => $score,
-                        'children' => $loadAdaptiveTree($adaptive),
-                    ];
-                })->values()->all();
+            ->map(function ($group) use ($student, $adaptiveBranchOptions) {
+                return AdaptiveAssessmentHistoryTree::mapBranchesWithFollowUpTitles(
+                    $group,
+                    $student->id,
+                    $adaptiveBranchOptions
+                );
             });
 
         $attemptsData = $attempts->map(function ($attempt) use ($totalQuestions, $adaptivesByAttemptId) {
@@ -345,7 +300,7 @@ class AssessmentHistoryController extends Controller
     {
         $professor = auth()->user()->professor;
 
-        if (!$professor) {
+        if (! $professor) {
             abort(403, 'Instructor record not found');
         }
 
@@ -375,7 +330,7 @@ class AssessmentHistoryController extends Controller
             $studentAnswer = $attempt->answers->firstWhere('assessment_item_id', $item->id);
 
             $studentAnswerText = null;
-            if ($studentAnswer && $studentAnswer->choices && !empty($studentAnswer->choices)) {
+            if ($studentAnswer && $studentAnswer->choices && ! empty($studentAnswer->choices)) {
                 $choices = $studentAnswer->choices;
                 $studentAnswerText = is_array($choices) ? ($choices[0] ?? '') : '';
             }
