@@ -15,6 +15,8 @@ use App\Services\Assessment\AssessmentGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class AssessmentController extends Controller
@@ -74,6 +76,7 @@ class AssessmentController extends Controller
                     'lesson' => [
                         'id' => $assessment->lesson->id,
                         'title' => $assessment->lesson->title,
+                        'has_file' => filled($assessment->lesson->path),
                     ],
                     'subject' => [
                         'id' => $assessment->lesson->subject->id,
@@ -92,6 +95,39 @@ class AssessmentController extends Controller
                 'search' => $search,
             ],
         ]);
+    }
+
+    /**
+     * Download the instructor-uploaded lesson file (DOCX/PDF/PPTX) for this assessment.
+     */
+    public function downloadLesson(Assessment $assessment)
+    {
+        $student = auth()->user()->student;
+
+        if (! $student) {
+            abort(403, 'Student record not found');
+        }
+
+        if (! $assessment->canBeAccessedBy($student)) {
+            abort(403, 'You do not have access to this assessment');
+        }
+
+        $assessment->loadMissing('lesson');
+        $lesson = $assessment->lesson;
+
+        if (! $lesson || ! filled($lesson->path)) {
+            abort(404, 'Lesson file not available');
+        }
+
+        if (! Storage::disk('public')->exists($lesson->path)) {
+            abort(404, 'Lesson file not found');
+        }
+
+        $extension = pathinfo($lesson->path, PATHINFO_EXTENSION);
+        $baseName = Str::slug($lesson->title) ?: 'lesson';
+        $downloadName = $baseName.'-assessment-'.$assessment->id.($extension ? '.'.$extension : '');
+
+        return Storage::disk('public')->download($lesson->path, $downloadName);
     }
 
     /**

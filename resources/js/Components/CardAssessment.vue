@@ -11,6 +11,12 @@ const props = defineProps({
 
 const hasAttempts = computed(() => props.assessment.attempt_count > 0);
 
+const hasLessonFile = computed(() => !!props.assessment.lesson?.has_file);
+
+const lessonDownloadUrl = computed(() =>
+    route("student.assessments.lesson.download", props.assessment.id)
+);
+
 const actionLabel = computed(() =>
     hasAttempts.value ? "Retake Assessment" : "Take Assessment"
 );
@@ -96,10 +102,27 @@ const headerImageStyle = computed(() => {
                 <span v-else>No attempts yet</span>
             </div>
 
-            <div :class="[
-                'mt-4 gap-2',
-                hasAttempts ? 'grid grid-cols-2 sm:flex sm:items-center sm:justify-end' : 'flex'
-            ]">
+            <div
+                :class="[
+                    'mt-4 gap-2',
+                    hasAttempts && hasLessonFile
+                        ? 'grid grid-cols-1 sm:grid-cols-3'
+                        : hasAttempts
+                          ? 'grid grid-cols-2 sm:flex sm:items-center sm:justify-end'
+                          : hasLessonFile
+                            ? 'flex flex-col sm:flex-row sm:items-center sm:justify-end'
+                            : 'flex',
+                ]"
+            >
+                <a
+                    v-if="hasLessonFile"
+                    :href="lessonDownloadUrl"
+                    class="w-full inline-flex items-center justify-center px-3 py-2 border border-border-light dark:border-border-dark bg-surface dark:bg-surface-dark-muted text-text-primary dark:text-text-inverted text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 whitespace-nowrap"
+                >
+                    <span class="sm:hidden">Download</span>
+                    <span class="hidden sm:inline">Download lesson</span>
+                </a>
+
                 <Link
                     v-if="hasAttempts"
                     :href="route('student.assessments.history', assessment.id)"
@@ -112,7 +135,7 @@ const headerImageStyle = computed(() => {
                     :href="route('student.assessments.show', assessment.id)"
                     :class="[
                         'inline-flex items-center justify-center px-3 py-2 bg-accent-primary text-white text-sm font-medium rounded-lg hover:bg-accent-muted transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 whitespace-nowrap',
-                        hasAttempts ? 'w-full' : 'w-full sm:w-auto sm:ml-auto'
+                        hasAttempts || hasLessonFile ? 'w-full' : 'w-full sm:w-auto sm:ml-auto',
                     ]"
                 >
                     <span class="sm:hidden">{{ mobileActionLabel }}</span>

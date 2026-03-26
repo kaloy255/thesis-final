@@ -1,6 +1,13 @@
 <script setup>
 import StudentLayout from "@/Layouts/StudentLayout.vue";
-import { Head } from "@inertiajs/vue3";
+import { Head, Link } from "@inertiajs/vue3";
+
+defineProps({
+    stats: {
+        type: Object,
+        required: true,
+    },
+});
 </script>
 
 <template>
@@ -14,23 +21,27 @@ import { Head } from "@inertiajs/vue3";
 
         <!-- Quick Stats -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="card p-6 hover:shadow-xl hover:border-l-4 hover:border-blue-500 transition-all duration-300">
-                <div class="text-sm text-text-secondary mb-2">My Subjects</div>
-                <div class="text-3xl font-bold text-text-primary dark:text-text-inverted">0</div>
-                <p class="text-xs text-text-secondary mt-2">Enrolled subjects</p>
-            </div>
+            <Link
+                :href="route('student.assessments.index')"
+                class="card p-6 hover:shadow-xl hover:border-l-4 hover:border-blue-500 transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            >
+                <div class="text-sm text-text-secondary mb-2">Assessments</div>
+                <div class="text-3xl font-bold text-text-primary dark:text-text-inverted">
+                    {{ stats.assessments_count }}
+                </div>
+                <p class="text-xs text-text-secondary mt-2">Total assessments</p>
+            </Link>
 
-            <div class="card p-6 hover:shadow-xl hover:border-l-4 hover:border-amber-500 transition-all duration-300">
-                <div class="text-sm text-text-secondary mb-2">Pending Assessments</div>
-                <div class="text-3xl font-bold text-text-primary dark:text-text-inverted">0</div>
-                <p class="text-xs text-text-secondary mt-2">To be completed</p>
-            </div>
-
-            <div class="card p-6 hover:shadow-xl hover:border-l-4 hover:border-green-500 transition-all duration-300">
-                <div class="text-sm text-text-secondary mb-2">Completed Assessments</div>
-                <div class="text-3xl font-bold text-text-primary dark:text-text-inverted">0</div>
-                <p class="text-xs text-text-secondary mt-2">Finished assessments</p>
-            </div>
+            <Link
+                :href="route('student.subjects.index')"
+                class="card p-6 hover:shadow-xl hover:border-l-4 hover:border-blue-500 transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            >
+                <div class="text-sm text-text-secondary mb-2">Joined Subjects</div>
+                <div class="text-3xl font-bold text-text-primary dark:text-text-inverted">
+                    {{ stats.joined_subjects_count }}
+                </div>
+                <p class="text-xs text-text-secondary mt-2">Total joined subjects</p>
+            </Link>
         </div>
 
         <!-- Recent Activity -->

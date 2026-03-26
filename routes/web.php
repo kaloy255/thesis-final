@@ -89,6 +89,7 @@ Route::middleware(['auth', 'student'])->prefix('student')->as('student.')->group
 
     // Assessments
     Route::get('assessments', [StudentAssessmentController::class, 'index'])->name('assessments.index');
+    Route::get('assessments/{assessment}/lesson/download', [StudentAssessmentController::class, 'downloadLesson'])->name('assessments.lesson.download');
     Route::get('assessments/{assessment}/take', [StudentAssessmentController::class, 'show'])->name('assessments.show');
     Route::post('assessments/{assessment}/submit', [StudentAssessmentController::class, 'store'])->name('assessments.store');
     Route::get('assessments/{assessment}/history', [StudentAssessmentController::class, 'history'])->name('assessments.history');
