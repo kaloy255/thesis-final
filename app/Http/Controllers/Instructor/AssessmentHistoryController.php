@@ -72,11 +72,13 @@ class AssessmentHistoryController extends Controller
 
         $studentsData = $attemptsData->groupBy('student_id')->map(function ($studentAttempts) {
             $first = $studentAttempts->first();
-            $weightedScoreSum = $studentAttempts->sum(function ($attempt) {
-                return $attempt['score'] * $attempt['attempt_no'];
-            });
-            $weightSum = $studentAttempts->sum('attempt_no');
-            $masteryPercent = $weightSum > 0 ? round($weightedScoreSum / $weightSum, 2) : 0;
+            $alpha = 0.5;
+            $sorted = $studentAttempts->sortBy('attempt_no')->values();
+            $ema = $sorted->first()['score'];
+            foreach ($sorted->skip(1) as $attempt) {
+                $ema = $alpha * $attempt['score'] + (1 - $alpha) * $ema;
+            }
+            $masteryPercent = round($ema, 2);
 
             return [
                 'student_id' => $first['student_id'],

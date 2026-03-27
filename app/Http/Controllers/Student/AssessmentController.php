@@ -418,10 +418,13 @@ class AssessmentController extends Controller
             ];
         });
 
+        $historyHub = $assessment->rootAssessment();
+
         return Inertia::render('Student/Assessments/Results', [
             'assessment' => [
                 'id' => $assessment->id,
                 'title' => $assessment->title,
+                'history_hub_id' => $historyHub->id,
                 'lesson' => [
                     'title' => $assessment->lesson->title,
                 ],

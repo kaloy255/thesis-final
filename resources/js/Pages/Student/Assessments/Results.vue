@@ -36,6 +36,11 @@ onMounted(() => {
 
 const showAdaptiveButton = computed(() => props.show_adaptive_button === true);
 
+/** Root quiz history (hub); same as assessment.id when not an adaptive chain. */
+const historyHubId = computed(
+    () => props.assessment.history_hub_id ?? props.assessment.id
+);
+
 const openAdaptiveModal = () => {
     adaptiveForm.reset();
     showAdaptiveModal.value = true;
@@ -243,7 +248,7 @@ const questionStatusAccent = (item) => {
                         </p>
                     </div>
                     <Link
-                        :href="route('student.assessments.history', assessment.id)"
+                        :href="route('student.assessments.history', historyHubId)"
                         class="inline-flex shrink-0 items-center justify-center min-h-[44px] px-5 rounded-full text-sm font-medium border border-border-light dark:border-border-dark text-text-primary dark:text-text-inverted hover:bg-surface-muted dark:hover:bg-surface-dark-muted transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-surface-dark"
                     >
                         All attempts

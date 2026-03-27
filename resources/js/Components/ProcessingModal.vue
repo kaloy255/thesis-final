@@ -18,7 +18,7 @@
                     <div class="w-48 h-48 flex items-center justify-center">
                         <iframe
                             v-if="processing"
-                            :src="type === 'adaptive' ? 'https://lottie.host/embed/15e622ed-4892-4591-983e-c832bbb09e76/oD908eaZLZ.lottie' : 'https://lottie.host/embed/8f34be24-f75a-42c9-968e-9bb15a9559bc/Z7FOgMJKo9.lottie'"
+                            :src="type === 'adaptive' ? 'https://lottie.host/embed/15e622ed-4892-4591-983e-c832bbb09e76/oD908eaZLZ.lottie' : 'https://lottie.host/embed/260805d5-ace2-4d62-a71f-0245fd579a62/8dH3PkIiuM.lottie'"
                             class="w-full h-full border-0"
                             style="border: none; background: transparent;"
                         ></iframe>

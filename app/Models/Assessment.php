@@ -42,6 +42,26 @@ class Assessment extends Model
         return $this->hasMany(self::class, 'parent_assessment_id');
     }
 
+    /**
+     * Top-level assessment in an adaptive chain (no parent), or self if already root.
+     */
+    public function rootAssessment(): self
+    {
+        $current = $this;
+        $guard = 0;
+
+        while ($current->parent_assessment_id !== null && $guard < 64) {
+            $parent = $current->parent;
+            if (! $parent) {
+                break;
+            }
+            $current = $parent;
+            $guard++;
+        }
+
+        return $current;
+    }
+
     public function sections()
     {
         return $this->belongsToMany(Section::class, 'assessment_section');
@@ -69,9 +89,6 @@ class Assessment extends Model
 
     /**
      * Check if a student can access this assessment.
-     *
-     * @param Student $student
-     * @return bool
      */
     public function canBeAccessedBy(Student $student): bool
     {
@@ -101,8 +118,7 @@ class Assessment extends Model
     /**
      * Scope to get assessments accessible by a student.
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param Student $student
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeAccessibleBy($query, Student $student)
