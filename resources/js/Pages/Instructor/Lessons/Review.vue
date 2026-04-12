@@ -38,6 +38,24 @@
                             </p>
                         </div>
 
+                        <div class="mb-6 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-900/10">
+                            <label for="review_time_limit" class="block text-xs font-semibold text-indigo-900 dark:text-indigo-200 uppercase tracking-wide">
+                                Time limit (optional)
+                            </label>
+                            <input
+                                id="review_time_limit"
+                                v-model.number="reviewTimeLimitMinutes"
+                                type="number"
+                                min="1"
+                                max="600"
+                                placeholder="No limit"
+                                class="mt-2 block w-full max-w-xs text-sm border-indigo-200 dark:border-indigo-700/50 bg-white dark:bg-gray-900 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                            <p class="mt-1 text-xs text-text-secondary">
+                                Minutes for students to complete the assessment. Leave empty for no limit.
+                            </p>
+                        </div>
+
                         <!-- Save Error Banner -->
                         <div v-if="saveError" class="mb-6 p-4 border-l-4 border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-r-lg shadow-sm">
                             <div class="flex items-center gap-2">
@@ -531,6 +549,7 @@ onMounted(() => {
         return;
     }
     reviewData.value = data;
+    reviewTimeLimitMinutes.value = data.time_limit_minutes ?? null;
     const rawItems = questionsToItems(data.questions);
     items.value = rawItems.map((item) => {
         if (item.type === "multiple_choice") {
@@ -579,6 +598,7 @@ const providerBadgeClass = computed(() => {
 const saving = ref(false);
 const cancelling = ref(false);
 const selectedSectionIds = ref([]);
+const reviewTimeLimitMinutes = ref(null);
 
 // Bloom's Taxonomy badge styling
 const bloomBadgeStyles = {
@@ -702,6 +722,7 @@ const saveAssessment = (status = "draft") => {
 
     saving.value = true;
 
+    const tlm = reviewTimeLimitMinutes.value;
     const payload = {
         subject_id: reviewData.value.subject_id,
         professor_id: reviewData.value.professor_id,
@@ -716,6 +737,10 @@ const saveAssessment = (status = "draft") => {
         items: items.value,
         section_ids: selectedSectionIds.value,
         status,
+        time_limit_minutes:
+            tlm === "" || tlm === null || Number.isNaN(Number(tlm))
+                ? null
+                : Number(tlm),
     };
 
     router.post(route("instructor.lessons.review.save"), payload, {

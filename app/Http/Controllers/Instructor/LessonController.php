@@ -10,7 +10,6 @@ use App\Models\AssessmentItem;
 use App\Models\Department;
 use App\Models\Lesson;
 use App\Models\Log as LogModel;
-use App\Models\Subject;
 use App\Services\AI\AIResponseParser;
 use App\Services\AI\AIServiceManager;
 use App\Services\Assessment\AssessmentGenerator;
@@ -20,9 +19,9 @@ use App\Services\FileProcessing\TextCleaner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Storage;
 
 class LessonController extends Controller
 {
@@ -64,9 +63,9 @@ class LessonController extends Controller
 
         // Section filter - show lessons whose assessments are assigned to ANY of the selected sections
         $sectionIds = $request->input('section_ids', []);
-        if (!empty($sectionIds) && is_array($sectionIds)) {
+        if (! empty($sectionIds) && is_array($sectionIds)) {
             $sectionIds = array_filter(array_map('intval', $sectionIds));
-            if (!empty($sectionIds)) {
+            if (! empty($sectionIds)) {
                 $query->whereHas('assessments', function ($assessmentQuery) use ($sectionIds) {
                     $assessmentQuery->whereHas('sections', function ($sectionQuery) use ($sectionIds) {
                         $sectionQuery->whereIn('sections.id', $sectionIds);
@@ -180,8 +179,9 @@ class LessonController extends Controller
             try {
                 // Validate file (password protection, media content)
                 $validation = $this->fileValidator->validateAll($file, $filePath);
-                if (!$validation['valid']) {
+                if (! $validation['valid']) {
                     Storage::disk('public')->delete($path);
+
                     return back()->withErrors(['file' => $validation['error']])->withInput();
                 }
 
@@ -195,7 +195,8 @@ class LessonController extends Controller
                 Log::error('Manual lesson file processing failed', [
                     'error' => $e->getMessage(),
                 ]);
-                return back()->withErrors(['file' => 'Failed to process file: ' . $e->getMessage()])->withInput();
+
+                return back()->withErrors(['file' => 'Failed to process file: '.$e->getMessage()])->withInput();
             }
         }
 
@@ -217,6 +218,7 @@ class LessonController extends Controller
                 'title' => "Assessment for {$request->title}",
                 'type' => 'regular',
                 'status' => $request->input('status', 'draft'), // Default to draft if not provided
+                'time_limit_minutes' => $request->input('time_limit_minutes'),
             ]);
 
             // Create assessment items from questions
@@ -239,7 +241,7 @@ class LessonController extends Controller
             }
 
             // Sync sections to assessment if provided
-            if ($request->has('section_ids') && !empty($request->section_ids)) {
+            if ($request->has('section_ids') && ! empty($request->section_ids)) {
                 $assessment->sections()->sync($request->section_ids);
             }
 
@@ -264,7 +266,7 @@ class LessonController extends Controller
             ]);
 
             return back()->withErrors([
-                'error' => 'Failed to create assessment: ' . $e->getMessage(),
+                'error' => 'Failed to create assessment: '.$e->getMessage(),
             ])->withInput();
         }
     }
@@ -299,7 +301,7 @@ class LessonController extends Controller
             // Stage 2: Validation
             $validation = $this->fileValidator->validateAll($file, $filePath);
 
-            if (!$validation['valid']) {
+            if (! $validation['valid']) {
                 // Delete uploaded file if validation fails
                 Storage::disk('public')->delete($path);
 
@@ -439,6 +441,7 @@ class LessonController extends Controller
                 'extracted_content' => $cleanedText,
                 'assessment_title' => "Assessment for {$request->title}",
                 'questions' => $parsedResponse,
+                'time_limit_minutes' => $request->input('time_limit_minutes'),
                 'ai_metadata' => [
                     'provider_used' => $aiResult['provider_used'] ?? null,
                     'chunks_processed' => $aiResult['chunks_processed'] ?? 1,
@@ -469,7 +472,7 @@ class LessonController extends Controller
             ]);
 
             return back()->withErrors([
-                'error' => 'Failed to process lesson: ' . $e->getMessage(),
+                'error' => 'Failed to process lesson: '.$e->getMessage(),
             ])->withInput();
         }
     }
@@ -538,6 +541,7 @@ class LessonController extends Controller
             'section_ids' => 'nullable|array',
             'section_ids.*' => 'exists:sections,id',
             'status' => 'required|in:draft,published',
+            'time_limit_minutes' => 'nullable|integer|min:1|max:600',
         ]);
 
         $payload = $request->all();
@@ -628,7 +632,10 @@ class LessonController extends Controller
             $assessment = $this->assessmentGenerator->generate(
                 $lesson,
                 $questions,
-                ['title' => $payload['assessment_title']]
+                [
+                    'title' => $payload['assessment_title'],
+                    'time_limit_minutes' => $request->input('time_limit_minutes'),
+                ]
             );
 
             if ($request->has('section_ids')) {
@@ -672,7 +679,7 @@ class LessonController extends Controller
             ]);
 
             return back()->withErrors([
-                'error' => 'Failed to save lesson: ' . $e->getMessage(),
+                'error' => 'Failed to save lesson: '.$e->getMessage(),
             ])->setStatusCode(303);
         }
     }
@@ -760,6 +767,7 @@ class LessonController extends Controller
             'items.*.bloom_level' => 'nullable|string|in:remember,understand,apply,analyze,evaluate,create',
             'section_ids' => 'nullable|array',
             'section_ids.*' => 'exists:sections,id',
+            'time_limit_minutes' => 'nullable|integer|min:1|max:600',
         ]);
 
         DB::beginTransaction();
@@ -767,9 +775,13 @@ class LessonController extends Controller
         try {
             $assessment = $lesson->assessments()->first();
 
-            if (!$assessment) {
+            if (! $assessment) {
                 throw new \Exception('No assessment found for this lesson');
             }
+
+            $assessment->update([
+                'time_limit_minutes' => $request->input('time_limit_minutes'),
+            ]);
 
             // Delete existing items
             $assessment->items()->delete();
@@ -797,7 +809,7 @@ class LessonController extends Controller
             DB::rollBack();
 
             return back()->withErrors([
-                'error' => 'Failed to update assessment: ' . $e->getMessage(),
+                'error' => 'Failed to update assessment: '.$e->getMessage(),
             ]);
         }
     }
@@ -867,7 +879,7 @@ class LessonController extends Controller
                 ->with('success', 'Lesson deleted successfully!');
         } catch (\Exception $e) {
             return back()->withErrors([
-                'error' => 'Failed to delete lesson: ' . $e->getMessage(),
+                'error' => 'Failed to delete lesson: '.$e->getMessage(),
             ]);
         }
     }

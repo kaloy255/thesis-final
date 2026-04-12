@@ -21,6 +21,7 @@ class StoreManualLessonRequest extends FormRequest
         $subjectId = $this->input('subject_id');
         if ($subjectId) {
             $professor = $this->user()->professor;
+
             return $professor && $professor->subjects()->where('subjects.id', $subjectId)->exists();
         }
 
@@ -37,6 +38,7 @@ class StoreManualLessonRequest extends FormRequest
         return [
             'subject_id' => 'required|exists:subjects,id',
             'title' => 'required|string|max:255',
+            'time_limit_minutes' => 'nullable|integer|min:1|max:600',
             'status' => 'nullable|in:draft,published',
             'section_ids' => 'nullable|array',
             'section_ids.*' => 'exists:sections,id',
@@ -50,15 +52,13 @@ class StoreManualLessonRequest extends FormRequest
                 'file',
                 'mimes:docx,pdf,pptx,txt',
                 'max:10240', // 10MB in KB
-                new NoMediaFilesRule(),
+                new NoMediaFilesRule,
             ],
         ];
     }
 
     /**
      * Get custom messages for validator errors.
-     *
-     * @return array
      */
     public function messages(): array
     {

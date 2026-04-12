@@ -69,6 +69,23 @@
                                             Publish Directly
                                         </button>
                                     </div>
+                                    <div class="mt-3 pt-3 border-t border-indigo-200/50 dark:border-indigo-800/50">
+                                        <label for="edit_time_limit" class="block text-xs font-semibold text-indigo-900 dark:text-indigo-200">
+                                            Time limit (optional)
+                                        </label>
+                                        <input
+                                            id="edit_time_limit"
+                                            v-model.number="timeLimitMinutes"
+                                            type="number"
+                                            min="1"
+                                            max="600"
+                                            placeholder="No limit"
+                                            class="mt-1.5 block w-full text-sm border-indigo-200 dark:border-indigo-700/50 bg-white dark:bg-gray-900 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        />
+                                        <p class="mt-1 text-[10px] text-indigo-800/70 dark:text-indigo-300/80">
+                                            Minutes per attempt. Empty = no limit.
+                                        </p>
+                                    </div>
                                 </div>
 
                                 <!-- Question Type Counts -->
@@ -564,6 +581,7 @@ const props = defineProps({
 });
 
 const assessment = ref(props.lesson.assessments?.[0] || null);
+const timeLimitMinutes = ref(assessment.value?.time_limit_minutes ?? null);
 
 // Ensure items have proper structure, especially choices as arrays
 const items = ref(
@@ -753,11 +771,16 @@ const removeChoiceFromItem = (itemIndex, choiceIndex) => {
 const saveChanges = () => {
     saving.value = true;
 
+    const tlm = timeLimitMinutes.value;
     router.put(
         route("instructor.lessons.update", props.lesson.id),
         {
             items: items.value,
             section_ids: selectedSectionIds.value,
+            time_limit_minutes:
+                tlm === "" || tlm === null || Number.isNaN(Number(tlm))
+                    ? null
+                    : Number(tlm),
         },
         {
             onSuccess: () => {

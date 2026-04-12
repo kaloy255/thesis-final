@@ -181,7 +181,7 @@ onBeforeUnmount(() => {
                     v-else-if="hasAssessments"
                     class="flex flex-col flex-1 min-h-0 gap-4"
                 >
-                    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 [&>*]:min-w-0">
                         <CardAssessment
                             v-for="assessment in assessmentList"
                             :key="assessment.id"

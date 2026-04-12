@@ -12,10 +12,6 @@ class AssessmentGenerator
     /**
      * Generate and save assessment from AI response.
      *
-     * @param Lesson $lesson
-     * @param array $aiResponse
-     * @param array $config
-     * @return Assessment
      * @throws \Exception
      */
     public function generate(Lesson $lesson, array $aiResponse, array $config = []): Assessment
@@ -29,6 +25,7 @@ class AssessmentGenerator
                 'title' => $config['title'] ?? "Assessment for {$lesson->title}",
                 'type' => $config['type'] ?? 'quiz',
                 'status' => 'draft',
+                'time_limit_minutes' => $config['time_limit_minutes'] ?? null,
             ]);
 
             // Save multiple choice questions
@@ -82,7 +79,7 @@ class AssessmentGenerator
 
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception('Failed to generate assessment: ' . $e->getMessage());
+            throw new \Exception('Failed to generate assessment: '.$e->getMessage());
         }
     }
 }

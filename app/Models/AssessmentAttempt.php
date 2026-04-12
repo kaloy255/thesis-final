@@ -15,6 +15,13 @@ class AssessmentAttempt extends Model
         'student_id',
         'assessment_id',
         'attempt_no',
+        'started_at',
+        'completed_at',
+    ];
+
+    protected $casts = [
+        'started_at' => 'datetime',
+        'completed_at' => 'datetime',
     ];
 
     public function student()
@@ -34,10 +41,6 @@ class AssessmentAttempt extends Model
 
     /**
      * Get the next attempt number for a student and assessment.
-     *
-     * @param int $studentId
-     * @param int $assessmentId
-     * @return int
      */
     public static function getNextAttemptNumber(int $studentId, int $assessmentId): int
     {
@@ -48,4 +51,3 @@ class AssessmentAttempt extends Model
         return $maxAttempt ? $maxAttempt + 1 : 1;
     }
 }
-

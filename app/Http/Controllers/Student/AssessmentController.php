@@ -14,6 +14,7 @@ use App\Services\Assessment\AssessmentGenerator;
 use App\Support\AdaptiveAssessmentHistoryTree;
 use App\Support\AdaptiveAssessmentTitle;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -91,6 +92,10 @@ class AssessmentController extends Controller
                     'item_count' => $assessment->items->count(),
                     'attempt_count' => $attemptCount,
                     'last_attempt_at' => $latestAttempt?->created_at,
+                    'time_limit_minutes' => $assessment->time_limit_minutes,
+                    'has_timer_session' => $assessment->time_limit_minutes
+                        ? session()->has($this->assessmentTimerSessionKey($student->id, $assessment->id))
+                        : false,
                 ];
             });
 
@@ -169,10 +174,21 @@ class AssessmentController extends Controller
             ];
         });
 
+        // Timer start lives in session only — no assessment_attempt row until submit.
+        $timerStartedAt = null;
+        if ($assessment->time_limit_minutes) {
+            $timerKey = $this->assessmentTimerSessionKey($student->id, $assessment->id);
+            if (! session()->has($timerKey)) {
+                session([$timerKey => now()->toIso8601String()]);
+            }
+            $timerStartedAt = session($timerKey);
+        }
+
         return Inertia::render('Student/Assessments/Take', [
             'assessment' => [
                 'id' => $assessment->id,
                 'title' => $assessment->title,
+                'time_limit_minutes' => $assessment->time_limit_minutes,
                 'lesson' => [
                     'title' => $assessment->lesson->title,
                 ],
@@ -182,6 +198,7 @@ class AssessmentController extends Controller
                 ],
             ],
             'items' => $items,
+            'timerStartedAt' => $timerStartedAt,
         ]);
     }
 
@@ -207,15 +224,49 @@ class AssessmentController extends Controller
         DB::beginTransaction();
 
         try {
-            // Get next attempt number
-            $attemptNo = AssessmentAttempt::getNextAttemptNumber($student->id, $assessment->id);
+            if ($assessment->time_limit_minutes) {
+                $timerKey = $this->assessmentTimerSessionKey($student->id, $assessment->id);
+                $startedAtRaw = session($timerKey);
 
-            // Create assessment attempt
-            $attempt = AssessmentAttempt::create([
-                'student_id' => $student->id,
-                'assessment_id' => $assessment->id,
-                'attempt_no' => $attemptNo,
-            ]);
+                if (! $startedAtRaw) {
+                    DB::rollBack();
+
+                    return back()->withErrors([
+                        'error' => 'Your session expired or the assessment was not opened properly. Please reopen the assessment and try again.',
+                    ])->withInput();
+                }
+
+                $startedAt = Carbon::parse($startedAtRaw);
+
+                $deadline = $startedAt->copy()
+                    ->addMinutes($assessment->time_limit_minutes)
+                    ->addSeconds(60);
+
+                if (now()->gt($deadline)) {
+                    DB::rollBack();
+
+                    return back()->withErrors([
+                        'error' => 'Time limit exceeded. Your answers cannot be submitted.',
+                    ])->withInput();
+                }
+
+                $attemptNo = AssessmentAttempt::getNextAttemptNumber($student->id, $assessment->id);
+
+                $attempt = AssessmentAttempt::create([
+                    'student_id' => $student->id,
+                    'assessment_id' => $assessment->id,
+                    'attempt_no' => $attemptNo,
+                    'started_at' => $startedAt,
+                ]);
+            } else {
+                $attemptNo = AssessmentAttempt::getNextAttemptNumber($student->id, $assessment->id);
+
+                $attempt = AssessmentAttempt::create([
+                    'student_id' => $student->id,
+                    'assessment_id' => $assessment->id,
+                    'attempt_no' => $attemptNo,
+                ]);
+            }
 
             // Process each answer
             $answers = $request->validated()['answers'];
@@ -252,6 +303,12 @@ class AssessmentController extends Controller
                     'choices' => $formattedAnswer,
                     'correct_answer' => $isCorrect,
                 ]);
+            }
+
+            $attempt->update(['completed_at' => now()]);
+
+            if ($assessment->time_limit_minutes) {
+                session()->forget($this->assessmentTimerSessionKey($student->id, $assessment->id));
             }
 
             DB::commit();
@@ -583,6 +640,7 @@ class AssessmentController extends Controller
                 'parent_assessment_id' => $assessment->id,
                 'source_attempt_id' => $attempt->id,
                 'status' => 'published',
+                'time_limit_minutes' => $assessment->time_limit_minutes,
             ]);
 
             $sectionIds = $assessment->sections->pluck('id')->toArray();
@@ -677,5 +735,13 @@ class AssessmentController extends Controller
         }
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Session key for timed assessment clock (no DB row until submit).
+     */
+    private function assessmentTimerSessionKey(int $studentId, int $assessmentId): string
+    {
+        return "assessment_timer_{$studentId}_{$assessmentId}";
     }
 }

@@ -21,6 +21,7 @@ class StoreLessonRequest extends FormRequest
         $subjectId = $this->input('subject_id');
         if ($subjectId) {
             $professor = $this->user()->professor;
+
             return $professor && $professor->subjects()->where('subjects.id', $subjectId)->exists();
         }
 
@@ -37,12 +38,13 @@ class StoreLessonRequest extends FormRequest
         return [
             'subject_id' => 'required|exists:subjects,id',
             'title' => 'required|string|max:255',
+            'time_limit_minutes' => 'nullable|integer|min:1|max:600',
             'file' => [
                 'required',
                 'file',
                 'mimes:docx,pdf,pptx,txt',
                 'max:10240', // 10MB in KB
-                new NoMediaFilesRule(),
+                new NoMediaFilesRule,
             ],
             'bloom_levels' => 'required|array|min:1',
             'bloom_levels.*' => 'in:remember,understand,apply,analyze,evaluate,create',
@@ -67,8 +69,6 @@ class StoreLessonRequest extends FormRequest
 
     /**
      * Get custom messages for validator errors.
-     *
-     * @return array
      */
     public function messages(): array
     {

@@ -1,6 +1,6 @@
 <script setup>
 import StudentLayout from "@/Layouts/StudentLayout.vue";
-import { Head, useForm } from "@inertiajs/vue3";
+import { Head, useForm, usePage } from "@inertiajs/vue3";
 import { computed, ref, watch, nextTick, onMounted, onUnmounted } from "vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
 import InputError from "@/Components/InputError.vue";
@@ -9,7 +9,14 @@ import axios from "axios";
 const props = defineProps({
     assessment: Object,
     items: Array,
+    /** ISO8601 from server session when assessment is timed; null otherwise */
+    timerStartedAt: {
+        type: String,
+        default: null,
+    },
 });
+
+const page = usePage();
 
 const form = useForm({
     answers: {},
@@ -38,13 +45,76 @@ const unansweredQuestions = computed(() => {
     return totalQuestions.value - answeredQuestions.value;
 });
 
+/** localStorage key: draft answers until submit (same browser only) */
+const draftStorageKey = computed(() => {
+    const uid = page.props.auth?.user?.id;
+    if (!uid || !props.assessment?.id) {
+        return null;
+    }
+    return `assessment_draft_${props.assessment.id}_${uid}`;
+});
+
+function saveDraftToStorage() {
+    try {
+        const key = draftStorageKey.value;
+        if (!key) {
+            return;
+        }
+        const payload = {
+            answers: JSON.parse(JSON.stringify(form.answers)),
+            savedAt: new Date().toISOString(),
+        };
+        localStorage.setItem(key, JSON.stringify(payload));
+    } catch {
+        // quota / private mode
+    }
+}
+
+function loadDraftFromStorage() {
+    try {
+        const key = draftStorageKey.value;
+        if (!key) {
+            return false;
+        }
+        const raw = localStorage.getItem(key);
+        if (!raw) {
+            return false;
+        }
+        const parsed = JSON.parse(raw);
+        if (!parsed?.answers || typeof parsed.answers !== "object") {
+            return false;
+        }
+        let restored = false;
+        for (const itemId of Object.keys(form.answers)) {
+            const v = parsed.answers[itemId];
+            if (v && v.answer !== undefined && v.answer !== null && v.answer !== "") {
+                form.answers[itemId] = { answer: v.answer };
+                restored = true;
+            }
+        }
+        return restored;
+    } catch {
+        return false;
+    }
+}
+
+function clearAssessmentDraft() {
+    try {
+        const key = draftStorageKey.value;
+        if (key) {
+            localStorage.removeItem(key);
+        }
+    } catch {
+        // ignore
+    }
+}
+
 // Initialize form answers and ensure choices is always an array
 props.items?.forEach((item) => {
     form.answers[item.id] = { answer: "" };
 
-    // Ensure choices is an array for multiple choice questions
-    if (item.type === 'multiple_choice' && item.choices) {
-        if (typeof item.choices === 'string') {
+    if (item.type === "multiple_choice" && item.choices) {
+        if (typeof item.choices === "string") {
             try {
                 item.choices = JSON.parse(item.choices);
             } catch (e) {
@@ -57,15 +127,30 @@ props.items?.forEach((item) => {
     }
 });
 
+const draftRestored = ref(loadDraftFromStorage());
+
+let draftDebounce = null;
+watch(
+    () => form.answers,
+    () => {
+        clearTimeout(draftDebounce);
+        draftDebounce = setTimeout(() => saveDraftToStorage(), 400);
+    },
+    { deep: true }
+);
+
 const updateAnswer = (itemId, answer) => {
     form.answers[itemId] = { answer };
 };
 
-// Helper to get choices as array
 const getChoices = (item) => {
-    if (!item.choices) return [];
-    if (Array.isArray(item.choices)) return item.choices;
-    if (typeof item.choices === 'string') {
+    if (!item.choices) {
+        return [];
+    }
+    if (Array.isArray(item.choices)) {
+        return item.choices;
+    }
+    if (typeof item.choices === "string") {
         try {
             return JSON.parse(item.choices);
         } catch (e) {
@@ -93,7 +178,6 @@ const goToQuestion = (index) => {
     }
 };
 
-// Refs for pagination scroll-into-view
 const paginationButtonRefs = ref([]);
 const setPaginationButtonRef = (el, index) => {
     if (el) {
@@ -101,7 +185,6 @@ const setPaginationButtonRef = (el, index) => {
     }
 };
 
-// Keep current question button visible when navigating
 watch(currentQuestionIndex, async () => {
     await nextTick();
     const btn = paginationButtonRefs.value[currentQuestionIndex.value];
@@ -112,8 +195,23 @@ watch(currentQuestionIndex, async () => {
 
 const isSubmittingAssessment = ref(false);
 
-const submitForm = () => {
+const hasTimeLimit = computed(
+    () => (props.assessment?.time_limit_minutes ?? 0) > 0 && !!props.timerStartedAt
+);
+
+const remainingSeconds = ref(null);
+const autoExpiredSubmit = ref(false);
+let timerIntervalId = null;
+
+const formatCountdown = (totalSec) => {
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+};
+
+const doSubmit = (fromTimer = false) => {
     if (
+        !fromTimer &&
         unansweredQuestions.value > 0 &&
         !confirm(
             `You have ${unansweredQuestions.value} unanswered question(s). Do you want to submit anyway?`
@@ -123,23 +221,44 @@ const submitForm = () => {
     }
 
     isSubmittingAssessment.value = true;
+    saveDraftToStorage();
     form.post(route("student.assessments.store", props.assessment.id), {
         preserveScroll: true,
+        onSuccess: () => {
+            clearAssessmentDraft();
+        },
         onFinish: () => {
             isSubmittingAssessment.value = false;
         },
     });
 };
 
+const submitForm = () => doSubmit(false);
+
+const tickTimer = () => {
+    if (!hasTimeLimit.value) {
+        return;
+    }
+    const end =
+        new Date(props.timerStartedAt).getTime() +
+        props.assessment.time_limit_minutes * 60 * 1000;
+    const sec = Math.max(0, Math.floor((end - Date.now()) / 1000));
+    remainingSeconds.value = sec;
+    if (sec <= 0 && !autoExpiredSubmit.value && !form.processing && !isSubmittingAssessment.value) {
+        autoExpiredSubmit.value = true;
+        doSubmit(true);
+    }
+};
+
 // ===================== Cheating Detection =====================
 
 const lastEventTime = ref({});
-const DEBOUNCE_MS = 5000; // 5 seconds debounce per event type
+const DEBOUNCE_MS = 5000;
 
 const logCheatingEvent = async (eventType) => {
     const now = Date.now();
     if (lastEventTime.value[eventType] && now - lastEventTime.value[eventType] < DEBOUNCE_MS) {
-        return; // debounce: skip if same event fired within 5s
+        return;
     }
     lastEventTime.value[eventType] = now;
     violationCount.value++;
@@ -149,39 +268,49 @@ const logCheatingEvent = async (eventType) => {
             event_type: eventType,
         });
     } catch (e) {
-        // silently fail – don't block the student
+        // silently fail
     }
 };
 
 const handleVisibilityChange = () => {
     if (document.hidden) {
-        logCheatingEvent('tab_switch');
+        saveDraftToStorage();
+        logCheatingEvent("tab_switch");
     }
 };
 
 const handleWindowBlur = () => {
-    logCheatingEvent('window_blur');
+    logCheatingEvent("window_blur");
 };
 
 const handleBeforeUnload = (e) => {
-    // Don't log as cheating when user is legitimately submitting the assessment
-    if (isSubmittingAssessment.value) return;
-
-    logCheatingEvent('page_leave');
+    if (isSubmittingAssessment.value) {
+        return;
+    }
+    saveDraftToStorage();
+    logCheatingEvent("page_leave");
     e.preventDefault();
-    e.returnValue = '';
+    e.returnValue = "";
 };
 
 onMounted(() => {
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('blur', handleWindowBlur);
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleWindowBlur);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    if (hasTimeLimit.value) {
+        tickTimer();
+        timerIntervalId = setInterval(tickTimer, 1000);
+    }
 });
 
 onUnmounted(() => {
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
-    window.removeEventListener('blur', handleWindowBlur);
-    window.removeEventListener('beforeunload', handleBeforeUnload);
+    if (timerIntervalId) {
+        clearInterval(timerIntervalId);
+        timerIntervalId = null;
+    }
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+    window.removeEventListener("blur", handleWindowBlur);
+    window.removeEventListener("beforeunload", handleBeforeUnload);
 });
 </script>
 
@@ -192,6 +321,22 @@ onUnmounted(() => {
         <div
             class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-36 sm:pb-10 pt-4 sm:pt-6"
         >
+            <!-- Draft + leave UX -->
+            <div
+                v-if="draftRestored"
+                class="mb-4 rounded-lg border border-emerald-200/90 bg-emerald-50/90 px-3 py-2.5 text-sm text-emerald-950 dark:border-emerald-800/60 dark:bg-emerald-950/35 dark:text-emerald-100"
+            >
+                Your previous answers were restored from this browser. Nothing is saved on the server until you submit.
+            </div>
+            <div
+                class="mb-6 rounded-lg border border-sky-200/90 bg-sky-50/90 px-3 py-2.5 text-xs sm:text-sm text-sky-950 dark:border-sky-800/60 dark:bg-sky-950/35 dark:text-sky-100"
+            >
+                <p class="font-medium text-sky-900 dark:text-sky-50">Answers stay in this browser until you submit</p>
+                <p class="mt-1 text-sky-800/95 dark:text-sky-200/90 leading-relaxed">
+                    If you leave or refresh, your work is kept locally so you can continue (same device/browser). Your instructor only sees results after you submit.
+                </p>
+            </div>
+
             <!-- Monitoring: thin accent strip, no card -->
             <div
                 class="mb-8 sm:mb-10 pl-6 border-l-2 border-amber-500/90 dark:border-amber-400/80 py-0.5"
@@ -208,12 +353,24 @@ onUnmounted(() => {
                     </span>
                 </div>
                 <p class="text-xs sm:text-[13px] text-text-secondary mt-1.5 max-w-prose leading-relaxed">
-                    Tab switches and leaving this page may be logged for your instructor.
+                    Tab switches and leaving this page may be logged for your instructor. Closing the tab may show a browser warning.
                 </p>
             </div>
 
             <!-- Title + meta: typography only -->
             <header class="mb-8 sm:mb-10">
+                <div
+                    v-if="hasTimeLimit && remainingSeconds !== null"
+                    class="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200/80 bg-amber-50/90 px-3 py-2.5 text-sm dark:border-amber-800/60 dark:bg-amber-950/40"
+                >
+                    <span class="font-medium text-amber-950 dark:text-amber-100">Time remaining</span>
+                    <span
+                        class="tabular-nums text-lg font-semibold tracking-tight"
+                        :class="remainingSeconds <= 60 ? 'text-red-600 dark:text-red-400' : 'text-amber-900 dark:text-amber-200'"
+                    >
+                        {{ formatCountdown(remainingSeconds) }}
+                    </span>
+                </div>
                 <h1
                     class="text-[clamp(1.375rem,4vw,1.875rem)] font-semibold tracking-tight text-text-primary dark:text-text-inverted leading-tight"
                 >

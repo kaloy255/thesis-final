@@ -57,6 +57,27 @@
                                 />
                             </div>
 
+                            <!-- Optional time limit (carried to review step) -->
+                            <div>
+                                <InputLabel for="time_limit_minutes" value="Time limit (optional)" />
+                                <input
+                                    id="time_limit_minutes"
+                                    v-model.number="form.time_limit_minutes"
+                                    type="number"
+                                    min="1"
+                                    max="600"
+                                    class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+                                    placeholder="No limit"
+                                />
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    Minutes per attempt for students. Leave empty for no limit.
+                                </p>
+                                <InputError
+                                    class="mt-2"
+                                    :message="form.errors.time_limit_minutes"
+                                />
+                            </div>
+
                             <!-- File Upload -->
                             <div>
                                 <InputLabel for="file" value="Lesson File" />
@@ -403,6 +424,7 @@ const hotsEnabled = ref(false);
 const form = useForm({
     subject_id: "",
     title: "",
+    time_limit_minutes: null,
     file: null,
     question_distribution: {
         remember: { mcq: 0, identification: 0, tf: 0 },
@@ -520,34 +542,42 @@ const confirmGenerate = () => {
     currentStage.value = "Uploading file...";
 
     // Use transform to only send active distribution and levels
-    form.transform((data) => ({
-        ...data,
-        question_distribution: summarizedDistribution.value
-    })).post(route("instructor.lessons.store"), {
-        onSuccess: (page) => {
-            showProcessingModal.value = false;
-            const data = page.props.lessonReviewData;
-            const token = page.props.reviewToken;
-            if (data && token) {
-                playSound('success');
-                lessonReviewStore.save(token, data);
-                router.visit(route("instructor.lessons.review", { token }));
-            } else {
-                playSound('success');
-                const msg = page.props.flash?.success || "Assessment generated successfully! Please review before saving.";
-                showToast(msg);
-            }
-        },
-        onError: (errors) => {
-            playSound('failed');
-            uploadError.value =
-                getUploadErrorMessage(errors) || "An error occurred during upload";
-            uploadProgress.value = 0;
-        },
-        onProgress: (progress) => {
-            uploadProgress.value = Math.min(90, progress.percentage || 0);
-        },
-    });
+    form
+        .transform((data) => ({
+            ...data,
+            question_distribution: summarizedDistribution.value,
+            time_limit_minutes:
+                data.time_limit_minutes === "" ||
+                data.time_limit_minutes === null ||
+                Number.isNaN(Number(data.time_limit_minutes))
+                    ? null
+                    : Number(data.time_limit_minutes),
+        }))
+        .post(route("instructor.lessons.store"), {
+            onSuccess: (page) => {
+                showProcessingModal.value = false;
+                const data = page.props.lessonReviewData;
+                const token = page.props.reviewToken;
+                if (data && token) {
+                    playSound('success');
+                    lessonReviewStore.save(token, data);
+                    router.visit(route("instructor.lessons.review", { token }));
+                } else {
+                    playSound('success');
+                    const msg = page.props.flash?.success || "Assessment generated successfully! Please review before saving.";
+                    showToast(msg);
+                }
+            },
+            onError: (errors) => {
+                playSound('failed');
+                uploadError.value =
+                    getUploadErrorMessage(errors) || "An error occurred during upload";
+                uploadProgress.value = 0;
+            },
+            onProgress: (progress) => {
+                uploadProgress.value = Math.min(90, progress.percentage || 0);
+            },
+        });
 };
 
 const handleHotsToggle = () => {
@@ -598,34 +628,42 @@ const retryUpload = () => {
     currentStage.value = "Uploading file...";
 
     // Retry the actual upload (same as confirmGenerate), not the confirmation flow
-    form.transform((data) => ({
-        ...data,
-        question_distribution: summarizedDistribution.value
-    })).post(route("instructor.lessons.store"), {
-        onSuccess: (page) => {
-            showProcessingModal.value = false;
-            const data = page.props.lessonReviewData;
-            const token = page.props.reviewToken;
-            if (data && token) {
-                playSound('success');
-                lessonReviewStore.save(token, data);
-                router.visit(route("instructor.lessons.review", { token }));
-            } else {
-                playSound('success');
-                const msg = page.props.flash?.success || "Assessment generated successfully! Please review before saving.";
-                showToast(msg);
-            }
-        },
-        onError: (errors) => {
-            playSound('failed');
-            uploadError.value =
-                getUploadErrorMessage(errors) || "An error occurred during upload";
-            uploadProgress.value = 0;
-        },
-        onProgress: (progress) => {
-            uploadProgress.value = Math.min(90, progress.percentage || 0);
-        },
-    });
+    form
+        .transform((data) => ({
+            ...data,
+            question_distribution: summarizedDistribution.value,
+            time_limit_minutes:
+                data.time_limit_minutes === "" ||
+                data.time_limit_minutes === null ||
+                Number.isNaN(Number(data.time_limit_minutes))
+                    ? null
+                    : Number(data.time_limit_minutes),
+        }))
+        .post(route("instructor.lessons.store"), {
+            onSuccess: (page) => {
+                showProcessingModal.value = false;
+                const data = page.props.lessonReviewData;
+                const token = page.props.reviewToken;
+                if (data && token) {
+                    playSound('success');
+                    lessonReviewStore.save(token, data);
+                    router.visit(route("instructor.lessons.review", { token }));
+                } else {
+                    playSound('success');
+                    const msg = page.props.flash?.success || "Assessment generated successfully! Please review before saving.";
+                    showToast(msg);
+                }
+            },
+            onError: (errors) => {
+                playSound('failed');
+                uploadError.value =
+                    getUploadErrorMessage(errors) || "An error occurred during upload";
+                uploadProgress.value = 0;
+            },
+            onProgress: (progress) => {
+                uploadProgress.value = Math.min(90, progress.percentage || 0);
+            },
+        });
 };
 </script>
 

@@ -16,10 +16,12 @@ class Assessment extends Model
         'parent_assessment_id',
         'source_attempt_id',
         'status',
+        'time_limit_minutes',
     ];
 
     protected $casts = [
         'status' => 'string',
+        'time_limit_minutes' => 'integer',
     ];
 
     public function lesson()

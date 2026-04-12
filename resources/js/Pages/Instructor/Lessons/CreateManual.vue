@@ -71,6 +71,22 @@
                                     />
                                     <InputError class="mt-1" :message="form.errors.title" />
                                 </div>
+                                <div>
+                                    <InputLabel for="time_limit_minutes" value="Time limit (optional)" class="text-xs font-semibold text-indigo-900 dark:text-indigo-200" />
+                                    <input
+                                        id="time_limit_minutes"
+                                        v-model.number="form.time_limit_minutes"
+                                        type="number"
+                                        min="1"
+                                        max="600"
+                                        class="mt-1 block w-full text-sm border-indigo-200 dark:border-indigo-700/50 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        placeholder="No limit"
+                                    />
+                                    <p class="mt-1 text-[11px] text-indigo-700/80 dark:text-indigo-300/80">
+                                        Minutes for students to complete the assessment. Leave empty for no limit.
+                                    </p>
+                                    <InputError class="mt-1" :message="form.errors.time_limit_minutes" />
+                                </div>
                             </div>
                             <!-- Status Toggles -->
                             <div class="flex gap-2 w-full mt-1">
@@ -888,6 +904,7 @@ const props = defineProps({
 const form = useForm({
     subject_id: "",
     title: "",
+    time_limit_minutes: null,
     status: "draft",
     section_ids: [],
     questions: [],
@@ -1171,15 +1188,25 @@ const submitForm = () => {
 
     form.questions = questions.value;
 
-    form.post(route("instructor.lessons.storeManual"), {
-        forceFormData: true,
-        onSuccess: () => {
-            // Success handled by redirect
-        },
-        onError: (errors) => {
-            // Errors are displayed via form.errors
-            console.error("Validation errors:", errors);
-        },
-    });
+    form
+        .transform((data) => ({
+            ...data,
+            time_limit_minutes:
+                data.time_limit_minutes === "" ||
+                data.time_limit_minutes === null ||
+                Number.isNaN(Number(data.time_limit_minutes))
+                    ? null
+                    : Number(data.time_limit_minutes),
+        }))
+        .post(route("instructor.lessons.storeManual"), {
+            forceFormData: true,
+            onSuccess: () => {
+                // Success handled by redirect
+            },
+            onError: (errors) => {
+                // Errors are displayed via form.errors
+                console.error("Validation errors:", errors);
+            },
+        });
 };
 </script>
